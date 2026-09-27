@@ -90,6 +90,7 @@ is to Anthropic's own quota endpoint, with the token Claude Code already stored 
 | Copy & move | Transfer a resource between levels, with a backup written first |
 | Plugin import | Pull a skill out of the plugin cache into Library, Global or a project |
 | Reveal & delete | Open the file in the Finder, or delete it (the copy in the backup folder is kept) |
+| Symlinked resources | Listed and marked as links; copy, move and delete are disabled so the link's target is never touched by mistake |
 | Project discovery | Configured roots are scanned up to three levels deep for `.claude/` directories |
 
 ### Sessions

@@ -205,7 +205,9 @@ struct SessionsBrowserView: View {
             guard !Task.isCancelled else { return }
             let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
             store.sessionFilter.query = trimmed
-            hits = trimmed.isEmpty ? [] : await store.searchSessions(trimmed)
+            let results = trimmed.isEmpty ? [] : await store.searchSessions(trimmed)
+            guard !Task.isCancelled else { return }
+            hits = results
         }
     }
 

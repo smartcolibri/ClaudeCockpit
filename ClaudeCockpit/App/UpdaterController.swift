@@ -78,6 +78,10 @@ private final class ActivationPolicyDelegate: NSObject, SPUStandardUserDriverDel
     private func lower() {
         guard raisedFromAccessory else { return }
         raisedFromAccessory = false
+        // Don't hide the Dock icon out from under a window the user is looking at;
+        // it will drop back to `.accessory` when that window closes instead.
+        let mainWindowVisible = NSApp.windows.contains { $0.title == "Claude Cockpit" && $0.isVisible }
+        guard !mainWindowVisible else { return }
         NSApp.setActivationPolicy(.accessory)
     }
 }

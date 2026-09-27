@@ -102,6 +102,69 @@ final class ModelTokensTests: XCTestCase {
         XCTAssertEqual(inputs, 1_000)
     }
 
+    /// Claude Code writes one line per content block of a response, all sharing `message.id`,
+    /// and the usage grows across them: 8 output tokens on the first, 204 on the last in the
+    /// real archive. Each field takes its largest value, once — line order is not reliable,
+    /// so input is largest on the first line here and output on the second.
+    func testAResponseSplitOverSeveralLinesCountsItsLargestUsageOnce() async throws {
+        try fixture.write([
+            Line.user(uuid: "sp-u", text: "vas-y", at: TestClock.offset(0), sessionId: "sess-split"),
+            Line.assistant(
+                uuid: "sp-1", at: TestClock.offset(1), blocks: [Line.thinking("réflexion")],
+                messageId: "msg-split", sessionId: "sess-split",
+                inputTokens: 50, outputTokens: 8, cacheReadTokens: 300, cacheCreationTokens: 1),
+            Line.assistant(
+                uuid: "sp-2", at: TestClock.offset(1), blocks: [Line.text("voilà")],
+                messageId: "msg-split", sessionId: "sess-split",
+                inputTokens: 3, outputTokens: 204, cacheReadTokens: 300, cacheCreationTokens: 40),
+        ], to: "\(Line.project)/sess-split.jsonl")
+        try await service.index()
+
+        let session = try XCTUnwrapAsync(try await service.session(id: "sess-split"))
+        XCTAssertEqual(session.inputTokens, 50)
+        XCTAssertEqual(session.outputTokens, 204)
+        XCTAssertEqual(session.cacheReadTokens, 300)
+        XCTAssertEqual(session.cacheCreationTokens, 40)
+        let opus = try XCTUnwrap(session.tokensByModel["claude-opus-5"])
+        XCTAssertEqual(opus, ModelTokens(inputTokens: 50, outputTokens: 204,
+                                         cacheReadTokens: 300, cacheCreationTokens: 40))
+
+        let report = try await service.activity(
+            since: TestClock.offset(-60), until: TestClock.offset(60), calendar: TestClock.calendar)
+        let model = try XCTUnwrap(report.models.first { $0.model == "claude-opus-5" })
+        XCTAssertEqual(model.turns, 1, "une réponse, même écrite en deux lignes")
+        XCTAssertEqual(model.tokens.outputTokens, 204)
+        XCTAssertEqual(model.tokens.inputTokens, 50)
+        XCTAssertEqual(report.turns, 1)
+    }
+
+    /// The copy that counts is the first one stored. When its transcript goes, the copy left
+    /// in the other transcript has to take over, not count for nothing.
+    func testASharedResponseStillCountsOnceWhenTheCountedCopyIsDeleted() async throws {
+        let shared = Line.assistant(
+            uuid: "dup-1", at: TestClock.offset(0), blocks: [Line.text("partagé")],
+            messageId: "msg-dup", model: "claude-opus-5", sessionId: "dup-a",
+            inputTokens: 1_000, outputTokens: 2_000)
+        try fixture.write([shared], to: "\(Line.project)/dup-a.jsonl")
+        try fixture.write(
+            [shared.replacingOccurrences(of: "\"dup-a\"", with: "\"dup-b\"")
+                .replacingOccurrences(of: "\"dup-1\"", with: "\"dup-2\"")],
+            to: "\(Line.project)/dup-b.jsonl")
+        try await service.index()
+
+        // `dup-a` sorts first, so it holds the counted copy.
+        try FileManager.default.removeItem(at: fixture.url("\(Line.project)/dup-a.jsonl"))
+        try await service.index()
+
+        let survivor = try XCTUnwrapAsync(try await service.session(id: "dup-b"))
+        XCTAssertEqual(survivor.inputTokens, 1_000)
+        XCTAssertEqual(survivor.tokensByModel["claude-opus-5"]?.outputTokens, 2_000)
+        let report = try await service.activity(
+            since: TestClock.offset(-60), until: TestClock.offset(60), calendar: TestClock.calendar)
+        XCTAssertEqual(report.turns, 1)
+        XCTAssertEqual(report.tokensByModel["claude-opus-5"]?.inputTokens, 1_000)
+    }
+
     /// Re-reading a transcript must replace the per-model rows, not add to them.
     func testTokensAreNotDoubledByAReread() async throws {
         try writeMixedSession()

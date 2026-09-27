@@ -4,7 +4,7 @@ import CockpitShared
 /// Incrementally scans Claude Code's JSONL transcripts under `~/.claude/projects/**` and
 /// extracts `UsageEvent`s from assistant turns. The tree holds both session transcripts
 /// (`<encoded cwd>/<session>.jsonl`) and sub-agent ones (`…/subagents/agent-*.jsonl`);
-/// both are read, and assistant messages carrying a `message.id` are deduped across files.
+/// both are read, and assistant lines sharing a `message.id` are merged into one event.
 ///
 /// Transcripts are append-only, so each scan only reads the bytes appended since the last
 /// scan of a given file (tracked by byte offset + mtime + size). Call `reset()` to force a
@@ -184,23 +184,57 @@ public actor TranscriptScanner {
         )
     }
 
-    /// Flattens the per-file caches in path order, dropping assistant messages already seen
-    /// under the same `message.id`. Lines without a `message.id` are always kept: there is no
-    /// key to dedupe them on.
+    /// Flattens the per-file caches in path order, merging every line that shares a
+    /// `message.id` into one event. Lines without a `message.id` are always kept: there is no
+    /// key to merge them on.
+    ///
+    /// Claude Code writes one assistant line per content block of an API response, all with
+    /// the same `message.id`, and the usage on them grows as the response streams (output 8
+    /// on the first line, 204 on a later one). The same message can also be copied into a
+    /// sub-agent transcript. So each token field is the max over every copy, taken
+    /// independently — line order says nothing about which one holds the final count. The
+    /// first copy (in path, then line order) supplies the identity, timestamp and position.
+    ///
+    /// The per-file caches hold every raw line, duplicates included, and this runs on every
+    /// scan: a line read in a later incremental pass, or restored from `scan-events.json`,
+    /// always takes part in the merge.
     private func dedupedEvents() -> [UsageEvent] {
-        var seen = Set<String>()
+        var indexByMessageId: [String: Int] = [:]
         var result: [UsageEvent] = []
         for path in fileStates.keys.sorted() {
             guard let state = fileStates[path] else { continue }
             for event in state.events {
-                if let messageId = event.messageId {
-                    if seen.contains(messageId) { continue }
-                    seen.insert(messageId)
+                guard let messageId = event.messageId else {
+                    result.append(event)
+                    continue
                 }
-                result.append(event)
+                if let index = indexByMessageId[messageId] {
+                    result[index] = Self.merged(result[index], event)
+                } else {
+                    indexByMessageId[messageId] = result.count
+                    result.append(event)
+                }
             }
         }
         return result
+    }
+
+    /// `kept` with each token field raised to `other`'s where larger.
+    private static func merged(_ kept: UsageEvent, _ other: UsageEvent) -> UsageEvent {
+        UsageEvent(
+            id: kept.id,
+            messageId: kept.messageId,
+            sessionId: kept.sessionId,
+            model: kept.model,
+            timestamp: kept.timestamp,
+            inputTokens: max(kept.inputTokens, other.inputTokens),
+            outputTokens: max(kept.outputTokens, other.outputTokens),
+            cacheCreationTokens: max(kept.cacheCreationTokens, other.cacheCreationTokens),
+            cacheReadTokens: max(kept.cacheReadTokens, other.cacheReadTokens),
+            cwd: kept.cwd,
+            attributionAgent: kept.attributionAgent,
+            attributionSkill: kept.attributionSkill
+        )
     }
 
     // MARK: - Persistence

@@ -26,15 +26,28 @@ public actor SessionService {
     }
 
     /// Opens the database, rebuilding it from scratch when it was written by an older schema.
+    /// Stars, custom names and hidden sessions are carried over, exactly as `index(full: true)`
+    /// does: they live nowhere else, and a new version must not cost the user them.
     private func store() throws -> SessionStore {
         if let openStore { return openStore }
+        var preserved: [SessionStore.UserState] = []
         if let stored = SessionStore.storedSchemaVersion(at: databaseURL),
            stored != SessionStore.schemaVersion {
+            preserved = SessionStore.storedUserState(at: databaseURL)
             removeDatabaseFiles()
         }
         let store = try SessionStore(databaseURL: databaseURL)
+        try store.restore(preserved)
         openStore = store
         return store
+    }
+
+    /// Makes sure a pass that ends — even by throwing — is reported as stopped. Otherwise the
+    /// last snapshot published says `isRunning`, and whatever waits on it waits forever.
+    private func settle(_ progress: (@Sendable (IndexProgress) -> Void)?) {
+        guard currentProgress.isRunning else { return }
+        currentProgress.isRunning = false
+        progress?(currentProgress)
     }
 
     private func removeDatabaseFiles() {
@@ -57,6 +70,7 @@ public actor SessionService {
         full: Bool = false,
         progress: (@Sendable (IndexProgress) -> Void)? = nil
     ) async throws -> IndexProgress {
+        defer { settle(progress) }
         if full {
             let preserved = (try? store().userState()) ?? []
             removeDatabaseFiles()
@@ -108,6 +122,7 @@ public actor SessionService {
         progress: (@Sendable (IndexProgress) -> Void)? = nil
     ) async throws -> IndexProgress {
         guard !changedPaths.isEmpty else { return try await index(progress: progress) }
+        defer { settle(progress) }
 
         let store = try store()
         var seen = Set<String>()

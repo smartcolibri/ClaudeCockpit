@@ -147,6 +147,30 @@ final class SessionQueriesTests: XCTestCase {
         await XCTAssertEqualAsync(try await service.search("licorn*", filter: SessionFilter()).count, 1)
     }
 
+    /// A token made only of stars used to become `"*"*`, which matches nothing and, joined
+    /// with `AND`, emptied the whole search.
+    func testAStarOnlyTokenDoesNotEmptyTheSearch() async throws {
+        try await indexCorpus()
+        await XCTAssertEqualAsync(try await service.search("licornes **", filter: SessionFilter()).count, 1)
+        await XCTAssertEqualAsync(try await service.search("lic*ornes", filter: SessionFilter()).count, 1)
+        XCTAssertNil(SessionStore.ftsQuery("** *"))
+        XCTAssertEqual(SessionStore.ftsQuery("licorn**"), "\"licorn\"*")
+    }
+
+    /// A resumed or forked session replays uuids under its own id. Each session's copy is a
+    /// hit of its own.
+    func testTheSameMessageInTwoSessionsIsTwoHits() async throws {
+        for sessionId in ["sess-orig", "sess-fork"] {
+            try fixture.write([
+                Line.user(uuid: "shared-u", text: "le basilic du jardin", at: TestClock.offset(0),
+                          sessionId: sessionId),
+            ], to: "\(Line.project)/\(sessionId).jsonl")
+        }
+        try await service.index()
+        let hits = try await service.search("basilic", filter: SessionFilter())
+        XCTAssertEqual(Set(hits.map(\.sessionId)), ["sess-orig", "sess-fork"])
+    }
+
     func testSearchHonoursTheListFilters() async throws {
         try await indexCorpus()
         var filter = SessionFilter()

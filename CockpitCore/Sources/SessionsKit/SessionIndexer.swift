@@ -155,26 +155,41 @@ extension SessionStore {
                 nextSequence = Int(row[3] as? Int64 ?? 0)
             }
         }
+        // Reading from byte zero replaces whatever the index holds for the session. That is
+        // the case for a known file read again, and for a session already indexed from another
+        // path — its project folder renamed under `~/.claude/projects`. Left alone, every line
+        // of the new path would hit `UNIQUE(session_id, uuid)` and be dropped, the file would
+        // be recorded as read, and pruning the old path would then take the session with it.
+        // A second path that coexists with the first (a copy, a symlink) is not a move: it
+        // only adds its own lines, as before, rather than replacing the session wholesale.
+        let replaces = try startOffset == 0 && (isKnown || rows("""
+            SELECT path FROM files WHERE session_id = ? AND path <> ?
+            """, [file.sessionId, path]).contains { row in
+                (row[0] as? String).map { !FileManager.default.fileExists(atPath: $0) } ?? false
+            })
 
         guard let handle = try? FileHandle(forReadingFrom: file.url) else { return 0 }
         defer { try? handle.close() }
         try? handle.seek(toOffset: UInt64(startOffset))
-        guard let chunk = try? handle.readToEnd(), !chunk.isEmpty else {
-            try rememberFile(file, offset: startOffset, mtime: mtime, size: size,
-                             inode: inode, nextSeq: nextSequence)
-            return 0
-        }
-        guard let lastNewline = chunk.lastIndex(of: UInt8(ascii: "\n")) else {
-            // Caught mid-write: no complete line yet. Retry from the same offset next pass.
-            try rememberFile(file, offset: startOffset, mtime: mtime, size: size,
-                             inode: inode, nextSeq: nextSequence)
+        // With nothing complete to read, a file read from zero holds nothing indexable any
+        // more — truncated, or rewritten and caught mid-line — so its old rows go now rather
+        // than stay on screen until the writer finishes.
+        guard let chunk = try? handle.readToEnd(), !chunk.isEmpty,
+              let lastNewline = chunk.lastIndex(of: UInt8(ascii: "\n"))
+        else {
+            // Caught mid-write, or empty: retry from the same offset next pass.
+            try transaction {
+                if replaces { try purgeRecountingShared(sessionId: file.sessionId) }
+                try rememberFile(file, offset: startOffset, mtime: mtime, size: size,
+                                 inode: inode, nextSeq: nextSequence)
+            }
             return 0
         }
         let complete = chunk[chunk.startIndex...lastNewline]
         let newOffset = startOffset + Int64(complete.count)
 
         try transaction {
-            if startOffset == 0 && isKnown { try purge(sessionId: file.sessionId) }
+            if replaces { try purgeRecountingShared(sessionId: file.sessionId) }
             try ensureSession(file)
             try rememberFile(file, offset: startOffset, mtime: mtime, size: size,
                              inode: inode, nextSeq: nextSequence)
@@ -185,8 +200,31 @@ extension SessionStore {
             try rememberFile(file, offset: newOffset, mtime: mtime, size: size,
                              inode: inode, nextSeq: sequence)
             try recomputeAggregates(sessionId: file.sessionId)
+            // A response this file shares with another transcript may now report a larger
+            // usage, and the other session may hold the copy that counts it.
+            for other in try sessionsSharingResponses(with: file.sessionId) {
+                try recomputeAggregates(sessionId: other)
+            }
         }
         return Int64(complete.count)
+    }
+
+    /// Sessions, other than this one, holding a copy of one of its API responses. Their token
+    /// totals depend on this session's rows, so they are recounted whenever those change.
+    private func sessionsSharingResponses(with sessionId: String) throws -> [String] {
+        try rows("""
+            SELECT DISTINCT d.session_id FROM messages m
+            JOIN messages d ON d.api_message_id = m.api_message_id
+            WHERE m.session_id = ? AND m.api_message_id IS NOT NULL AND d.session_id <> ?
+            """, [sessionId, sessionId]).compactMap { $0[0] as? String }
+    }
+
+    /// ``purge(sessionId:)``, then a recount of every session that shared a response with the
+    /// purged one: if the purged copy was the one counted, another copy counts now.
+    private func purgeRecountingShared(sessionId: String) throws {
+        let sharing = try sessionsSharingResponses(with: sessionId)
+        try purge(sessionId: sessionId)
+        for other in sharing { try recomputeAggregates(sessionId: other) }
     }
 
     // MARK: - One chunk of lines
@@ -346,22 +384,16 @@ extension SessionStore {
         if let version = message.version { facts.version = version }
         if let slug = message.slug { facts.slug = slug }
 
-        // Assistant turns are deduped on `message.id`, the same rule UsageKit uses: one API
-        // response can be written into more than one transcript, and its tokens must be
-        // counted once. The row is still stored so the transcript reads in full.
-        var isDuplicate = false
-        if let apiMessageId = message.apiMessageId, message.role == .assistant {
-            isDuplicate = try scalar(
-                "SELECT 1 FROM messages WHERE api_message_id = ? LIMIT 1", [apiMessageId]) != nil
-        }
-
+        // Every line is stored with its own usage, so the transcript reads in full. Which copy
+        // of an API response counts, and for how much, is decided when counting — see
+        // ``countedResponses(where:)``.
         try insertMessage.run([
             message.uuid, file.sessionId, message.parentUuid, sequence,
             message.timestamp.timeIntervalSince1970, message.role.rawValue,
             message.isSidechain ? 1 : 0, message.isMeta ? 1 : 0,
             message.isCompactBoundary ? 1 : 0, message.isApiError ? 1 : 0,
             message.isAborted ? 1 : 0,
-            message.systemSubtype, message.model, message.apiMessageId, isDuplicate ? 1 : 0,
+            message.systemSubtype, message.model, message.apiMessageId,
             message.inputTokens, message.outputTokens,
             message.cacheReadTokens, message.cacheCreationTokens,
             location.fileId, location.offset, location.length,
@@ -495,19 +527,42 @@ extension SessionStore {
 
     // MARK: - Aggregates
 
+    /// One row per API response whose counted copy matches `filter`, with each usage field
+    /// at its largest over every copy of that response.
+    ///
+    /// Claude Code writes one line per content block of a response, all sharing `message.id`,
+    /// and `usage.output_tokens` grows across them — 8 on the first line, 204 on the last in
+    /// the real archive. The same response can also land in a second transcript. So the copy
+    /// stored first (lowest rowid) is the one counted, and each field takes its maximum over
+    /// all copies independently, since line order cannot be trusted. Deriving this when
+    /// counting, rather than flagging rows as they arrive, keeps it right when the counted
+    /// copy's transcript is purged: the next copy simply takes over. A line without a
+    /// `message.id` counts for itself.
+    ///
+    /// - Parameter filter: a predicate on `o`, the counted copy. Its bindings come first.
+    static func countedResponses(where filter: String) -> String {
+        """
+        SELECT o.id, o.session_id, o.ts, o.role, o.model,
+               COALESCE(MAX(d.input_tokens), o.input_tokens) AS input_tokens,
+               COALESCE(MAX(d.output_tokens), o.output_tokens) AS output_tokens,
+               COALESCE(MAX(d.cache_read), o.cache_read) AS cache_read,
+               COALESCE(MAX(d.cache_create), o.cache_create) AS cache_create
+        FROM messages o LEFT JOIN messages d ON d.api_message_id = o.api_message_id
+        WHERE (\(filter))
+          AND NOT EXISTS (SELECT 1 FROM messages e
+                          WHERE e.api_message_id = o.api_message_id AND e.id < o.id)
+        GROUP BY o.id
+        """
+    }
+
     /// Recomputes one session's counters from its rows rather than adding deltas as lines
-    /// arrive. One session lives in exactly one file, so this runs once per changed file, and
-    /// a recount can never drift the way an accumulated delta can.
+    /// arrive, so a recount can never drift the way an accumulated delta can. Runs once per
+    /// changed file, plus once for each session sharing an API response with it, whose token
+    /// totals may have moved.
     func recomputeAggregates(sessionId: String) throws {
         var userTurns = 0, assistantTurns = 0, apiErrors = 0
-        var input = 0, output = 0, cacheRead = 0, cacheCreate = 0
         for row in try rows("""
-            SELECT role, COUNT(*),
-                   COALESCE(SUM(CASE WHEN is_duplicate = 0 THEN input_tokens ELSE 0 END), 0),
-                   COALESCE(SUM(CASE WHEN is_duplicate = 0 THEN output_tokens ELSE 0 END), 0),
-                   COALESCE(SUM(CASE WHEN is_duplicate = 0 THEN cache_read ELSE 0 END), 0),
-                   COALESCE(SUM(CASE WHEN is_duplicate = 0 THEN cache_create ELSE 0 END), 0),
-                   COALESCE(SUM(is_api_error), 0)
+            SELECT role, COUNT(*), COALESCE(SUM(is_api_error), 0)
             FROM messages WHERE session_id = ? GROUP BY role
             """, [sessionId]) {
             let count = Self.int(row[1])
@@ -516,10 +571,15 @@ extension SessionStore {
             case MessageRole.assistant.rawValue: assistantTurns = count
             default: break
             }
-            input += Self.int(row[2]); output += Self.int(row[3])
-            cacheRead += Self.int(row[4]); cacheCreate += Self.int(row[5])
-            apiErrors += Self.int(row[6])
+            apiErrors += Self.int(row[2])
         }
+        let tokens = try rows("""
+            SELECT COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0),
+                   COALESCE(SUM(cache_read), 0), COALESCE(SUM(cache_create), 0)
+            FROM (\(Self.countedResponses(where: "o.session_id = ?")))
+            """, [sessionId]).first
+        let input = Self.int(tokens?[0]), output = Self.int(tokens?[1])
+        let cacheRead = Self.int(tokens?[2]), cacheCreate = Self.int(tokens?[3])
 
         let span = try rows("SELECT MIN(ts), MAX(ts) FROM messages WHERE session_id = ?", [sessionId]).first
         let toolCounts = try rows("""
@@ -549,8 +609,9 @@ extension SessionStore {
             SELECT session_id, model, COUNT(*),
                    COALESCE(SUM(input_tokens), 0), COALESCE(SUM(output_tokens), 0),
                    COALESCE(SUM(cache_read), 0), COALESCE(SUM(cache_create), 0)
-            FROM messages
-            WHERE session_id = ? AND role = 'assistant' AND model IS NOT NULL AND is_duplicate = 0
+            FROM (\(Self.countedResponses(where: """
+                o.session_id = ? AND o.role = 'assistant' AND o.model IS NOT NULL
+                """)))
             GROUP BY session_id, model
             """, [sessionId])
 
@@ -650,9 +711,16 @@ extension SessionStore {
     /// row, taking `starred`, `custom_name` and `deleted_at` with it: the only data in this
     /// database the user created and that no re-index can bring back. A stale list is
     /// recoverable; those flags are not.
+    ///
+    /// For the same reason a session is only dropped when no walked file carries it any more
+    /// — a moved transcript has already been re-read from its new path — and even then a row
+    /// holding a star, a custom name or a hide keeps them, the way ``restore(_:)`` does: its
+    /// content goes, and without timestamps it drops out of every listing, but the marks are
+    /// there again if the transcript comes back.
     private func forgetDisappearedFiles(keeping files: [TranscriptFile]) throws {
         guard !files.isEmpty else { return }
         let known = Set(files.map(\.url.path))
+        let walkedSessions = Set(files.map(\.sessionId))
         let stale = try rows("SELECT path, session_id FROM files").compactMap { row -> (String, String)? in
             guard let path = row[0] as? String, let sessionId = row[1] as? String else { return nil }
             return known.contains(path) ? nil : (path, sessionId)
@@ -660,10 +728,20 @@ extension SessionStore {
         guard !stale.isEmpty else { return }
         try transaction {
             for (path, sessionId) in stale {
-                try purge(sessionId: sessionId)
-                try run("DELETE FROM sessions WHERE id = ?", [sessionId])
-                try run("DELETE FROM subagents WHERE agent_id = ?", [sessionId])
                 try run("DELETE FROM files WHERE path = ?", [path])
+                guard !walkedSessions.contains(sessionId) else { continue }
+                // A sub-agent that is gone must not leave its `Agent` card opening onto nothing.
+                try run("""
+                    UPDATE blocks SET subagent_id = NULL
+                    WHERE subagent_id = ? AND kind = 'toolUse' AND tool_use_id IN
+                          (SELECT parent_tool_use_id FROM subagents WHERE agent_id = ?)
+                    """, [sessionId, sessionId])
+                try purgeRecountingShared(sessionId: sessionId)
+                try run("""
+                    DELETE FROM sessions WHERE id = ?
+                      AND starred = 0 AND custom_name IS NULL AND deleted_at IS NULL
+                    """, [sessionId])
+                try run("DELETE FROM subagents WHERE agent_id = ?", [sessionId])
             }
         }
     }
@@ -680,9 +758,9 @@ extension SessionStore {
             INSERT OR IGNORE INTO messages
                 (uuid, session_id, parent_uuid, seq, ts, role, is_sidechain, is_meta,
                  is_compact_boundary, is_api_error, is_aborted, system_subtype, model,
-                 api_message_id, is_duplicate, input_tokens, output_tokens, cache_read,
+                 api_message_id, input_tokens, output_tokens, cache_read,
                  cache_create, file_id, line_offset, line_len)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """)
     }
 

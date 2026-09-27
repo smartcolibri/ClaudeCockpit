@@ -114,4 +114,97 @@ final class DataLossGuardTests: XCTestCase {
         let survivor = try XCTUnwrapAsync(try await service.session(id: Line.session))
         XCTAssertTrue(survivor.isStarred, "les autres sessions ne sont pas touchées")
     }
+
+    /// A transcript that leaves takes its content with it, but not the name the user gave it:
+    /// if it comes back — a restored backup, a project moved back — the name is still there.
+    func testATranscriptThatComesBackFindsItsCustomName() async throws {
+        try await writeAndMark()
+        let path = fixture.url("\(Line.project)/sess-keep.jsonl")
+        let parked = fixture.home.appendingPathComponent("sess-keep.jsonl")
+        try FileManager.default.moveItem(at: path, to: parked)
+        try await service.index()
+        await XCTAssertNilAsync(try await service.session(id: "sess-keep"))
+
+        try FileManager.default.moveItem(at: parked, to: path)
+        try await service.index()
+        let back = try XCTUnwrapAsync(try await service.session(id: "sess-keep"))
+        XCTAssertEqual(back.customName, "Nom que j'ai tapé")
+    }
+
+    /// Renaming a project folder moves every transcript under it to a new path. The new path
+    /// carries the same session ids, so it must replace the old one, not erase the session.
+    func testAMovedProjectKeepsItsSessionsAndTheirStars() async throws {
+        try await writeAndMark()
+        let before = try await service.messageCount(sessionId: Line.session)
+        XCTAssertGreaterThan(before, 0)
+
+        try FileManager.default.moveItem(
+            at: fixture.url(Line.project), to: fixture.url("-Users-test-DevApps-Renamed"))
+        try await service.index()
+        try await service.index()   // the second pass is the one that used to see nothing
+
+        let moved = try XCTUnwrapAsync(try await service.session(id: Line.session))
+        XCTAssertTrue(moved.isStarred, "l'étoile doit suivre le transcript déplacé")
+        await XCTAssertEqualAsync(try await service.messageCount(sessionId: Line.session), before)
+        let renamed = try XCTUnwrapAsync(try await service.session(id: "sess-keep"))
+        XCTAssertEqual(renamed.customName, "Nom que j'ai tapé")
+        await XCTAssertEqualAsync(try await service.subagentMessages(agentId: Line.agentId).count, 2)
+        let messages = try await service.messages(sessionId: Line.session, limit: 500)
+        let agentCall = try XCTUnwrap(messages.flatMap(\.blocks).first { $0.toolName == "Agent" })
+        XCTAssertEqual(agentCall.subagentId, Line.agentId)
+        await XCTAssertEqualAsync(try await service.search("parseur", filter: SessionFilter()).count, 1)
+    }
+
+    /// Empty tool results and images are stored as blocks but never enter the full-text
+    /// index. Purging must not send FTS5 a `'delete'` for them: each one lowers its document
+    /// count, and on a small index the count hits zero and SQLite reports the file malformed —
+    /// which made a renamed project folder fail every pass from then on.
+    func testPurgingASessionWithUnindexedBlocksDoesNotCorruptTheSearchIndex() async throws {
+        try fixture.write([
+            Line.user(uuid: "e-u", text: "lance les tests", at: TestClock.offset(0)),
+            Line.assistant(uuid: "e-a", at: TestClock.offset(1), blocks: [
+                ["type": "tool_use", "id": "toolu_e", "name": "Bash", "input": ["command": "true"]],
+            ], messageId: "msg_e"),
+            Line.toolResult(uuid: "e-r", at: TestClock.offset(2), toolUseId: "toolu_e", text: ""),
+        ], to: "\(Line.project)/\(Line.session).jsonl")
+        try await service.index()
+        let before = try await service.messageCount(sessionId: Line.session)
+
+        try FileManager.default.moveItem(
+            at: fixture.url(Line.project), to: fixture.url("-Users-test-DevApps-Renamed"))
+        try await service.index()
+        try await service.index()
+
+        await XCTAssertEqualAsync(try await service.messageCount(sessionId: Line.session), before)
+        await XCTAssertEqualAsync(
+            try await service.search("tests", filter: SessionFilter()).count, 1)
+    }
+
+    /// A schema bump rebuilds the index, and must carry the user's marks across exactly like
+    /// `index(full: true)` does.
+    func testASchemaBumpKeepsStarsNamesAndHiddenSessions() async throws {
+        try await writeAndMark()
+        try await service.hide(sessionId: "sess-keep")
+        service = nil
+
+        // Pretend an older build wrote this file. `init` stamps the current version, so the
+        // stale one is written afterwards.
+        let old = try SessionStore(databaseURL: fixture.databaseURL)
+        try old.setMetaValue(String(SessionStore.schemaVersion - 1), for: "schema_version")
+        XCTAssertEqual(SessionStore.storedSchemaVersion(at: fixture.databaseURL),
+                       SessionStore.schemaVersion - 1)
+
+        let upgraded = fixture.service()
+        try await upgraded.index()
+        XCTAssertEqual(SessionStore.storedSchemaVersion(at: fixture.databaseURL),
+                       SessionStore.schemaVersion)
+
+        let starred = try XCTUnwrapAsync(try await upgraded.session(id: Line.session))
+        XCTAssertTrue(starred.isStarred, "l'étoile doit survivre à un changement de schéma")
+        let hidden = try XCTUnwrapAsync(try await upgraded.session(id: "sess-keep"))
+        XCTAssertEqual(hidden.customName, "Nom que j'ai tapé")
+        let listed = try await upgraded.listSessions(SessionFilter())
+        XCTAssertFalse(listed.contains { $0.id == "sess-keep" }, "la session masquée doit le rester")
+        XCTAssertTrue(listed.contains { $0.id == Line.session })
+    }
 }
