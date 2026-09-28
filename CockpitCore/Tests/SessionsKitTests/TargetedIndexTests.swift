@@ -112,6 +112,88 @@ final class TargetedIndexTests: XCTestCase {
     }
 }
 
+/// A sub-agent that can never be paired stays unlinked, and retrying it costs a scan of its
+/// parent's blocks. The watcher runs a targeted pass on every write of a live session, so that
+/// pass must only retry the sub-agents of the sessions it just read.
+final class TargetedLinkingTests: XCTestCase {
+
+    private var fixture: TranscriptFixture!
+    private var store: SessionStore!
+
+    private static let orphan = "aghost-fedcba9876543210"
+    private var parentPath: String { "\(Line.project)/\(Line.session).jsonl" }
+    private var agentPath: String {
+        "\(Line.project)/\(Line.session)/subagents/agent-\(Line.agentId).jsonl"
+    }
+
+    override func setUpWithError() throws {
+        fixture = try TranscriptFixture()
+        // A parent whose `Agent` call never shows up: its sub-agent cannot be paired, ever.
+        try fixture.write([
+            Line.user(uuid: "o-u", text: "orphelin", at: TestClock.offset(0), sessionId: "sess-orphan"),
+        ], to: "\(Line.project)/sess-orphan.jsonl")
+        try fixture.write([
+            Line.user(uuid: "o-s", text: "seul", at: TestClock.offset(1), sessionId: "sess-orphan",
+                      agentId: Self.orphan),
+        ], to: "\(Line.project)/sess-orphan/subagents/agent-\(Self.orphan).jsonl")
+        store = try SessionStore(databaseURL: fixture.databaseURL)
+        let full = try store.index(files: TranscriptWalker.files(in: fixture.paths.projectsDir))
+        XCTAssertEqual(full.linkAttempts, 1, "le passage complet tente bien l'orphelin")
+        XCTAssertNil(try parentToolUse(of: Self.orphan))
+    }
+
+    override func tearDown() {
+        store = nil
+        fixture = nil
+    }
+
+    private func targeted(_ relativePaths: [String]) throws -> SessionStore.IndexOutcome {
+        let files = relativePaths.compactMap {
+            TranscriptWalker.describe(path: fixture.url($0).path, in: fixture.paths.projectsDir)
+        }
+        XCTAssertEqual(files.count, relativePaths.count)
+        return try store.index(files: files, pruneMissing: false)
+    }
+
+    private func parentToolUse(of agentId: String) throws -> String? {
+        try store.scalar("SELECT parent_tool_use_id FROM subagents WHERE agent_id = ?",
+                         [agentId]) as? String
+    }
+
+    /// Live order: the sub-agent's transcript appears first, the parent's result naming it
+    /// later. Each pass retries only the new sub-agent — by `agent_id`, then by `session_id`.
+    func testATargetedPassLinksItsOwnSubagentAndLeavesUnrelatedOrphansAlone() throws {
+        try fixture.writeDemoSession()
+
+        let agentFirst = try targeted([agentPath])
+        XCTAssertEqual(agentFirst.linkAttempts, 1, "seul le sous-agent relu est tenté")
+        XCTAssertNil(try parentToolUse(of: Line.agentId), "le parent n'est pas encore indexé")
+
+        let parentLater = try targeted([parentPath])
+        XCTAssertEqual(parentLater.linkAttempts, 1, "l'orphelin d'une autre session n'est pas retenté")
+        XCTAssertEqual(try parentToolUse(of: Line.agentId), "tool-agent")
+        XCTAssertNil(try parentToolUse(of: Self.orphan))
+
+        // The next write of the live session: its sub-agent is linked, nothing is left to try.
+        try fixture.append(Line.user(uuid: "u-more", text: "encore", at: TestClock.offset(20)),
+                           to: parentPath)
+        XCTAssertEqual(try targeted([parentPath]).linkAttempts, 0)
+
+        // The full pass still retries every orphan of the archive.
+        let full = try store.index(files: TranscriptWalker.files(in: fixture.paths.projectsDir))
+        XCTAssertEqual(full.linkAttempts, 1)
+    }
+
+    /// The other order: parent and sub-agent read in the same targeted pass.
+    func testATargetedPassOverParentAndSubagentTogetherLinksThem() throws {
+        try fixture.writeDemoSession()
+        let outcome = try targeted([parentPath, agentPath])
+        XCTAssertEqual(outcome.linkAttempts, 1)
+        XCTAssertEqual(try parentToolUse(of: Line.agentId), "tool-agent")
+        XCTAssertNil(try parentToolUse(of: Self.orphan))
+    }
+}
+
 /// An exported document is built from a transcript, and a transcript is not a trusted source.
 final class ExportSafetyTests: XCTestCase {
 

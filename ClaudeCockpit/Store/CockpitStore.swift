@@ -246,7 +246,8 @@ final class CockpitStore {
         })
         startRTKWatch()
         loopTasks.append(Task { [weak self] in
-            // Fallback poll for rtk in case the watcher stream ended (no DB at launch).
+            // Fallback poll for rtk in case the watcher stream ended (no DB at launch); a refresh
+            // that finds the database re-arms the live watch.
             while !Task.isCancelled {
                 try? await Task.sleep(for: .seconds(60))
                 await self?.refreshRTK()
@@ -275,9 +276,14 @@ final class CockpitStore {
     /// service replaces it and this task has to be cancelled and restarted, or nobody
     /// subscribes to the new service's stream.
     private var rtkWatchTask: Task<Void, Never>?
+    /// Set when the stream ended on its own — rtk had no database yet, so the service
+    /// handed back a finished stream. The next refresh that finds the database re-arms the
+    /// watch; without it, installing rtk after launch meant no live updates until relaunch.
+    private var rtkWatchEnded = false
 
     private func startRTKWatch() {
         rtkWatchTask?.cancel()
+        rtkWatchEnded = false
         // Captured now, so the loop can never end up awaiting a stream from a service the
         // store has since replaced.
         let service = rtkService
@@ -287,6 +293,7 @@ final class CockpitStore {
                 if Task.isCancelled { return }
                 await self?.refreshRTK()
             }
+            if !Task.isCancelled { self?.rtkWatchEnded = true }
         }
     }
 
@@ -378,6 +385,7 @@ final class CockpitStore {
             let snapshot = try await Task.detached(priority: .utility) { try service.snapshot() }.value
             rtk = snapshot
             rtkState = .ready(snapshot.generatedAt)
+            if rtkWatchEnded { startRTKWatch() }
         } catch {
             rtkState = .failed(error.localizedDescription)
         }

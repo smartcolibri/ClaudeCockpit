@@ -105,9 +105,9 @@ extension Insight {
     var frenchText: String {
         switch kind {
         case .costUp(let fraction):
-            "Coût en hausse de \(FRFormat.percent(fraction)) par rapport à la semaine dernière."
+            "Coût en hausse de \(FRFormat.percent(fraction)) par rapport à la même période de la semaine dernière."
         case .costDown(let fraction):
-            "Coût en baisse de \(FRFormat.percent(fraction)) par rapport à la semaine dernière."
+            "Coût en baisse de \(FRFormat.percent(fraction)) par rapport à la même période de la semaine dernière."
         case .unpricedModel(let model):
             "\(model) n'a pas de tarif dédié — le tarif Sonnet par défaut est appliqué."
         case .cacheHitRate(let rate):

@@ -77,6 +77,67 @@ final class DirectoryWatcherTests: XCTestCase {
         try await waitForTick(ticks, above: 0, message: "no tick after a file was written")
     }
 
+    /// One directory present, one missing: the present one gets a kernel source, and the
+    /// missing one must still be polled for so it is watched once it appears.
+    func testWatcherPollsForAMissingDirectoryAlongsideAnExistingOne() async throws {
+        let present = root.appendingPathComponent("present", isDirectory: true)
+        let late = root.appendingPathComponent("late", isDirectory: true)
+        try FileManager.default.createDirectory(at: present, withIntermediateDirectories: true)
+
+        let watcher = DirectoryWatcher(directories: [present, late], debounce: 0.05, pollingInterval: 0.2)
+        defer { watcher.stop() }
+        let ticks = consume(watcher)
+
+        try FileManager.default.createDirectory(at: late, withIntermediateDirectories: true)
+        try await waitForPollingToStop(watcher, message: "the late directory was never attached")
+
+        let baseline = ticks.count
+        try "bonjour".write(to: late.appendingPathComponent("c.md"), atomically: true, encoding: .utf8)
+        try await waitForTick(ticks, above: baseline, message: "no tick after a write in the late directory")
+    }
+
+    /// While a directory is still missing the poller keeps retrying it, but a poll that attaches
+    /// nothing new must stay silent: otherwise every caller re-scans every interval forever.
+    /// The tick comes once the missing directory appears and gets a kernel source.
+    func testPollingForAMissingDirectoryDoesNotTickUntilItAppears() async throws {
+        let present = root.appendingPathComponent("present", isDirectory: true)
+        let late = root.appendingPathComponent("late", isDirectory: true)
+        try FileManager.default.createDirectory(at: present, withIntermediateDirectories: true)
+
+        let watcher = DirectoryWatcher(directories: [present, late], debounce: 0.05, pollingInterval: 0.1)
+        defer { watcher.stop() }
+        let ticks = consume(watcher)
+
+        try await Task.sleep(for: .milliseconds(600))
+        XCTAssertTrue(watcher.isPolling, "the missing directory should still be polled for")
+        XCTAssertEqual(ticks.count, 0, "a poll that attached nothing must not tick")
+
+        try FileManager.default.createDirectory(at: late, withIntermediateDirectories: true)
+        try await waitForTick(ticks, above: 0, message: "no tick once the missing directory appeared")
+        try await waitForPollingToStop(watcher, message: "the late directory was never attached")
+    }
+
+    /// A watched directory deleted then recreated must not stay on the dead descriptor of the
+    /// removed one: the watcher drops it, polls, and re-attaches to the new directory.
+    func testWatcherReattachesADirectoryThatWasDeletedAndRecreated() async throws {
+        let dir = root.appendingPathComponent("volatile", isDirectory: true)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+
+        let watcher = DirectoryWatcher(directories: [dir], debounce: 0.05, pollingInterval: 0.2)
+        defer { watcher.stop() }
+        let ticks = consume(watcher)
+        XCTAssertFalse(watcher.isPolling)
+
+        try FileManager.default.removeItem(at: dir)
+        try await waitForTick(ticks, above: 0, message: "no tick after the directory was deleted")
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        try await waitForPollingToStop(watcher, message: "the recreated directory was never re-attached")
+
+        let baseline = ticks.count
+        try "bonjour".write(to: dir.appendingPathComponent("d.md"), atomically: true, encoding: .utf8)
+        try await waitForTick(ticks, above: baseline, message: "no tick after a write in the recreated directory")
+    }
+
     // MARK: - Helpers
 
     private func consume(_ watcher: DirectoryWatcher) -> TickCounter {
@@ -86,6 +147,27 @@ final class DirectoryWatcherTests: XCTestCase {
             for await _ in stream { counter.bump() }
         }
         return counter
+    }
+
+    /// Waits until every directory has a kernel source (the poller cancels itself), then lets
+    /// the last poll tick drain so later ticks can only come from kernel events.
+    private func waitForPollingToStop(
+        _ watcher: DirectoryWatcher,
+        timeout: TimeInterval = 3,
+        message: String,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        try await Task.sleep(for: .milliseconds(50))
+        while Date() < deadline {
+            if !watcher.isPolling {
+                try await Task.sleep(for: .milliseconds(200))
+                return
+            }
+            try await Task.sleep(for: .milliseconds(25))
+        }
+        XCTFail(message, file: file, line: line)
     }
 
     /// Fails rather than hangs: bounded by an explicit timeout.

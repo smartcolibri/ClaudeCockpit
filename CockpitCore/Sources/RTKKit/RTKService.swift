@@ -80,15 +80,14 @@ public final class RTKService: @unchecked Sendable {
     ///
     /// The watcher starts on first access. When no database resolves, the
     /// stream is created already finished, so `for await` simply completes and
-    /// the caller falls back to manual refreshes.
+    /// the caller falls back to manual refreshes. That empty stream is not
+    /// cached: a later access, once rtk is installed, starts the live watcher.
     public var changes: AsyncStream<Void> {
         lock.lock()
         defer { lock.unlock() }
         if let cachedStream { return cachedStream }
         guard let url = databaseURL else {
-            let empty = AsyncStream<Void> { $0.finish() }
-            cachedStream = empty
-            return empty
+            return AsyncStream<Void> { $0.finish() }
         }
         let watcher = DBWatcher(databaseURL: url)
         watcher.start()

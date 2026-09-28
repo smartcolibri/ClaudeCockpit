@@ -103,6 +103,36 @@ final class RTKServiceTests: XCTestCase {
         XCTAssertEqual(ticks, 0)
     }
 
+    /// rtk installed after the first `changes` access: the finished empty stream must not be
+    /// cached, or live updates never start for the rest of the session.
+    func testChangesGoLiveOnceTheDatabaseAppears() async throws {
+        let paths = ClaudePaths(home: makeTemporaryDirectory())
+        let service = RTKService(paths: paths)
+        defer { service.stop() }
+        for await _ in service.changes {}
+
+        let database = try Fixture.makeDatabase(in: paths.rtkDatabaseCandidates[0].deletingLastPathComponent())
+        let stream = service.changes
+
+        let received = expectation(description: "change tick")
+        let consumer = Task {
+            for await _ in stream {
+                received.fulfill()
+                return
+            }
+        }
+        defer { consumer.cancel() }
+
+        // FSEvents needs the stream to be live before the write lands.
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let handle = try FileHandle(forWritingTo: database)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data("x".utf8))
+        try handle.close()
+
+        await fulfillment(of: [received], timeout: 5)
+    }
+
     func testErrorMessagesAreLocalised() {
         XCTAssertNotNil(RTKError.databaseNotFound.errorDescription)
         XCTAssertNotNil(RTKError.invalidSchema.errorDescription)

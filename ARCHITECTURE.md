@@ -196,7 +196,9 @@ sauvegarde revient à l'appelant, et l'interface l'affiche dans la confirmation.
 assainis avant de devenir des noms de fichiers.
 
 **Cadence :** un `DirectoryWatcher` sur les six répertoires globaux et de bibliothèque, plus un
-rafraîchissement manuel. Les mutations rafraîchissent l'inventaire elles-mêmes.
+rafraîchissement manuel. Les mutations rafraîchissent l'inventaire elles-mêmes. Un répertoire
+qui n'existe pas encore est sondé et rattaché dès qu'il apparaît, sans émettre de signal entre-temps ;
+un répertoire surveillé supprimé ou renommé est détaché puis sondé à nouveau.
 
 ### Sessions — l'archive de transcriptions indexée
 

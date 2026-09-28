@@ -180,7 +180,9 @@ the caller, and the UI shows it in the confirmation. Names are sanitized before 
 names.
 
 **Cadence:** a `DirectoryWatcher` over the six global and library directories, plus a manual
-refresh. Mutations refresh the inventory themselves.
+refresh. Mutations refresh the inventory themselves. A directory that does not exist yet is
+polled for and attached when it appears, without ticking in the meantime; a watched directory
+that is deleted or renamed is dropped and polled for again.
 
 ### Sessions — the indexed transcript archive
 

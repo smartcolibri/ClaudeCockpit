@@ -7,27 +7,40 @@ public enum InsightEngine {
     /// insights on ordinary day-to-day variance.
     public static let notableCostChange = 0.20
     public static let notableCacheHitRate = 0.50
+    /// The week-over-week trend waits for this much of the week to have elapsed: early on
+    /// Monday last week's matching stretch is only minutes long, and any spend reads as a
+    /// huge jump.
+    public static let minimumElapsedForCostTrend: TimeInterval = 24 * 3600
+    /// Below this last-week baseline the trend is skipped: a few cents last week would turn
+    /// ordinary spend into "+4900 %".
+    public static let minimumBaselineCostUSD = 1.0
 
+    /// - Parameters:
+    ///   - thisWeekCostUSD: cost of the current week so far.
+    ///   - lastWeekCostUSD: cost of last week up to the same point in the week, so the two
+    ///     figures cover comparable stretches of time.
+    ///   - elapsedThisWeek: time since the start of the current week.
     public static func derive(
         events: [UsageEvent],
         thisWeekCostUSD: Double,
         lastWeekCostUSD: Double,
+        elapsedThisWeek: TimeInterval,
         pricingSettings: PricingSettings
     ) -> [Insight] {
         var insights: [Insight] = []
 
-        if lastWeekCostUSD > 0 {
+        if elapsedThisWeek >= minimumElapsedForCostTrend, lastWeekCostUSD >= minimumBaselineCostUSD {
             let change = (thisWeekCostUSD - lastWeekCostUSD) / lastWeekCostUSD
             if change >= notableCostChange {
                 insights.append(Insight(
                     level: .critical,
                     kind: .costUp(fraction: change),
-                    text: "Cost is up \(percent(change)) vs last week."))
+                    text: "Cost is up \(percent(change)) vs the same point last week."))
             } else if change <= -notableCostChange {
                 insights.append(Insight(
                     level: .good,
                     kind: .costDown(fraction: abs(change)),
-                    text: "Cost is down \(percent(abs(change))) vs last week."))
+                    text: "Cost is down \(percent(abs(change))) vs the same point last week."))
             }
         }
 

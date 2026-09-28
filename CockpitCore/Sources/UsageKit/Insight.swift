@@ -14,9 +14,9 @@ public struct Insight: Identifiable, Hashable, Sendable {
     }
 
     public enum Kind: Hashable, Sendable {
-        /// Cost rose by this fraction (0.35 == +35 %) versus last week.
+        /// Cost rose by this fraction (0.35 == +35 %) versus the same point last week.
         case costUp(fraction: Double)
-        /// Cost fell by this fraction (positive value) versus last week.
+        /// Cost fell by this fraction (positive value) versus the same point last week.
         case costDown(fraction: Double)
         /// This model id has no dedicated pricing tier and falls back to the Sonnet rate.
         case unpricedModel(String)

@@ -297,9 +297,9 @@ struct OverviewView: View {
     private func sentence(_ insight: Insight) -> String {
         switch insight.kind {
         case .costUp(let fraction):
-            return "Le coût a augmenté de \(FRFormat.percent(fraction)) par rapport à la semaine précédente."
+            return "Le coût a augmenté de \(FRFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
         case .costDown(let fraction):
-            return "Le coût a baissé de \(FRFormat.percent(fraction)) par rapport à la semaine précédente."
+            return "Le coût a baissé de \(FRFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
         case .unpricedModel(let model):
             return "Le modèle \(model) n'a pas de tarif dédié : le tarif Sonnet lui est appliqué."
         case .cacheHitRate(let rate):
