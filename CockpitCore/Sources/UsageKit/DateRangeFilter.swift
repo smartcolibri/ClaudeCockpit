@@ -40,7 +40,11 @@ public enum DateRangeFilter: String, CaseIterable, Identifiable, Codable, Hashab
             let end = calendar.date(byAdding: .day, value: 1, to: today)
             return (today, end)
         case .thisWeek:
-            let start = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? today
+            // ISO weeks (Monday start) in the caller's time zone, like the weekly cards —
+            // the locale calendar would start on Sunday in en_US.
+            var isoCalendar = Calendar(identifier: .iso8601)
+            isoCalendar.timeZone = calendar.timeZone
+            let start = isoCalendar.dateInterval(of: .weekOfYear, for: now)?.start ?? today
             return (start, nil)
         case .thisMonth:
             let start = calendar.dateInterval(of: .month, for: now)?.start ?? today

@@ -124,6 +124,17 @@ public enum UsageAggregator {
         let sessionsLastWeekTotal = weeklySessionTotal(events: unranged, weekStart: lastWeekStart, calendar: isoCalendar)
         let costThisWeek = weeklyCost(events: unranged, weekStart: thisWeekStart, calendar: isoCalendar, pricing: pricing)
         let costLastWeek = weeklyCost(events: unranged, weekStart: lastWeekStart, calendar: isoCalendar, pricing: pricing)
+        // The trend insight compares this week so far with the same elapsed stretch of last
+        // week: against the whole previous week, Monday would always read as "cost is down".
+        // The end is `now` moved back seven calendar days, which keeps the wall-clock time
+        // across a DST switch; adding the elapsed seconds (or hour components, which Foundation
+        // also adds as absolute durations) would land an hour off. Clamped to the week boundary.
+        let lastWeekToDateEnd = min(
+            isoCalendar.date(byAdding: .day, value: -7, to: now) ?? thisWeekStart,
+            thisWeekStart)
+        let costLastWeekToDate = PricingCalculator.estimatedCostUSD(
+            for: unranged.filter { $0.timestamp >= lastWeekStart && $0.timestamp < lastWeekToDateEnd },
+            pricing: pricing)
 
         let todayEnd = calendar.date(byAdding: .day, value: 1, to: todayStart) ?? todayStart
         let todayEvents = unranged.filter { $0.timestamp >= todayStart && $0.timestamp < todayEnd }
@@ -133,7 +144,8 @@ public enum UsageAggregator {
         let insights = InsightEngine.derive(
             events: filtered,
             thisWeekCostUSD: costThisWeek,
-            lastWeekCostUSD: costLastWeek,
+            lastWeekCostUSD: costLastWeekToDate,
+            elapsedThisWeek: now.timeIntervalSince(thisWeekStart),
             pricingSettings: pricing)
 
         // MARK: Picker options (whole event set, before any filter)

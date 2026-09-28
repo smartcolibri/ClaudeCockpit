@@ -99,6 +99,8 @@ extension SessionStore {
     struct IndexOutcome {
         var filesDone = 0
         var bytesRead: Int64 = 0
+        /// Unlinked sub-agents the linking step tried to pair, successful or not.
+        var linkAttempts = 0
     }
 
     /// Brings every transcript up to date, then links sub-agents to the calls that spawned them.
@@ -108,7 +110,8 @@ extension SessionStore {
     /// next pass, exactly like `UsageKit.TranscriptScanner`.
     /// - Parameter pruneMissing: whether to drop sessions whose transcript is gone. Only a
     ///   pass that walked the whole archive knows that; a targeted pass sees a handful of
-    ///   paths and must never conclude anything about the rest.
+    ///   paths and must never conclude anything about the rest. It also bounds linking: only
+    ///   the sub-agents of the sessions it read are retried, see ``linkSubagents(scope:)``.
     func index(
         files: [TranscriptFile],
         pruneMissing: Bool = true,
@@ -121,7 +124,10 @@ extension SessionStore {
             onFile(outcome.filesDone, outcome.bytesRead)
         }
         if pruneMissing { try forgetDisappearedFiles(keeping: files) }
-        try linkSubagents()
+        let scope: Set<String>? = pruneMissing
+            ? nil
+            : Set(files.flatMap { [$0.sessionId, $0.parentSessionId].compactMap { $0 } })
+        outcome.linkAttempts = try linkSubagents(scope: scope)
         return outcome
     }
 
@@ -667,11 +673,42 @@ extension SessionStore {
     ///
     /// The link can legitimately fail, so `parent_tool_use_id` stays nullable: the sub-agent
     /// transcript is still listed and readable on its own.
-    func linkSubagents() throws {
-        let pending = try rows("""
+    ///
+    /// A sub-agent that can never be paired stays unlinked for good, and each retry costs a
+    /// `json_extract` scan over its parent's blocks. The watcher runs a targeted pass on every
+    /// write of a live session, so retrying every orphan of the archive there would repeat that
+    /// cost for nothing: a pairing can only appear when the parent or the sub-agent was re-read.
+    /// - Parameter scope: the session ids a targeted pass just read — a sub-agent is retried
+    ///   when its parent (`session_id`) or itself (`agent_id`) is among them. `nil` retries
+    ///   every unlinked sub-agent, which is what a full pass does.
+    /// - Returns: how many unlinked sub-agents were tried.
+    @discardableResult
+    func linkSubagents(scope: Set<String>? = nil) throws -> Int {
+        let unlinked = """
             SELECT agent_id, session_id FROM subagents
             WHERE parent_tool_use_id IS NULL AND session_id <> ''
-            """)
+            """
+        var pending: [[Binding?]]
+        if let scope {
+            pending = []
+            let ids = scope.sorted()
+            var seen = Set<String>()
+            for start in stride(from: 0, to: ids.count, by: Self.inClauseChunk) {
+                let chunk = ids[start..<min(ids.count, start + Self.inClauseChunk)]
+                let placeholders = chunk.map { _ in "?" }.joined(separator: ",")
+                let bindings = chunk.map { $0 as Binding? }
+                for row in try rows("""
+                    \(unlinked)
+                      AND (session_id IN (\(placeholders)) OR agent_id IN (\(placeholders)))
+                    """, bindings + bindings) {
+                    guard let agentId = row[0] as? String, seen.insert(agentId).inserted
+                    else { continue }
+                    pending.append(row)
+                }
+            }
+        } else {
+            pending = try rows(unlinked)
+        }
         for row in pending {
             guard let agentId = row[0] as? String, let sessionId = row[1] as? String else { continue }
             let name = TranscriptWalker.agentName(fromAgentId: agentId)
@@ -698,6 +735,7 @@ extension SessionStore {
             try run("UPDATE blocks SET subagent_id = ? WHERE tool_use_id = ? AND kind = 'toolUse'",
                     [agentId, toolUseId])
         }
+        return pending.count
     }
 
     // MARK: - Housekeeping

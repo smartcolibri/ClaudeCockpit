@@ -26,6 +26,9 @@ struct SessionDetailView: View {
     @State private var elapsedById: [String: TimeInterval] = [:]
     @State private var total = 0
     @State private var isLoading = false
+    /// Bumped by every `reload`. A page that comes back under an older generation was
+    /// fetched for another session or with the other `includeMeta`, and is dropped.
+    @State private var loadGeneration = 0
     @State private var reachedEnd = false
     @State private var health: SessionHealth?
     @State private var showHealth = false
@@ -526,24 +529,41 @@ struct SessionDetailView: View {
 
     // MARK: - Loading
 
+    /// Starts over from the first page — on a session change or a `showSystemLines` toggle.
+    ///
+    /// A page may still be in flight for the previous filter. Its `isLoading` must not block
+    /// the fresh load, and its result must not land in the new list: appended at offset 0
+    /// under the old filter, it would make every later offset skip or repeat messages. The
+    /// generation bump is what lets `loadNextPage` recognise and drop it.
     private func reload() async {
+        loadGeneration += 1
+        let generation = loadGeneration
+        let sessionId = session.id
         messages = []
         results = [:]
         elapsedById = [:]
+        isLoading = false
         reachedEnd = false
         targetMissing = false
         findMatches = []
         findIndex = 0
-        total = await store.sessionMessageCount(session.id)
+        let count = await store.sessionMessageCount(sessionId)
+        guard generation == loadGeneration else { return }
+        total = count
         await loadNextPage()
-        health = await store.sessionHealth(session.id)
+        let sessionHealth = await store.sessionHealth(sessionId)
+        guard generation == loadGeneration else { return }
+        health = sessionHealth
         resolveTarget()
     }
 
     private func loadNextPage() async {
         guard !isLoading, !reachedEnd else { return }
+        let generation = loadGeneration
         isLoading = true
         let page = await store.sessionMessages(session.id, offset: messages.count, limit: Self.pageSize)
+        // A `reload` ran meanwhile: it already reset `isLoading` and may own a newer load.
+        guard generation == loadGeneration else { return }
         var previous = messages.last?.timestamp
         for message in page {
             if let previous {

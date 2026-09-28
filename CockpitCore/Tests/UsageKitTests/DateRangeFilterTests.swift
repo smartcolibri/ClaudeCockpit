@@ -21,12 +21,27 @@ final class DateRangeFilterTests: XCTestCase {
             TestClock.date("2026-09-24T00:00:00Z"), now: now, calendar: calendar))
     }
 
-    /// The Gregorian calendar's week starts on Sunday, so the week of Wednesday the 23rd
-    /// opens on the 20th. The range is open-ended: everything from that Sunday onwards.
-    func testThisWeekStartsOnTheCalendarsFirstWeekday() {
+    /// "This week" follows ISO weeks (Monday start), like the weekly cards, whatever the
+    /// caller's locale: the week of Wednesday the 23rd opens on Monday the 21st.
+    func testThisWeekStartsOnTheISOMonday() {
         let (start, end) = bounds(.thisWeek)
-        XCTAssertEqual(start, TestClock.date("2026-09-20T00:00:00Z"))
+        XCTAssertEqual(start, TestClock.date("2026-09-21T00:00:00Z"))
         XCTAssertNil(end)
+    }
+
+    /// An en_US calendar starts weeks on Sunday; on Sunday the 27th it would reset "this week"
+    /// to that single day while the weekly cards still cover Monday the 21st onwards.
+    func testThisWeekIgnoresTheLocaleFirstWeekdayButKeepsTheTimeZone() {
+        var usCalendar = Calendar(identifier: .gregorian)
+        usCalendar.locale = Locale(identifier: "en_US")
+        usCalendar.firstWeekday = 1
+        usCalendar.timeZone = TimeZone(identifier: "America/New_York")!
+        // Sunday 2026-09-27, 12:00 in New York.
+        let sunday = TestClock.date("2026-09-27T16:00:00Z")
+
+        let start = DateRangeFilter.thisWeek.bounds(now: sunday, calendar: usCalendar).start
+        // Monday 2026-09-21 00:00 New York time (EDT, UTC-4).
+        XCTAssertEqual(start, TestClock.date("2026-09-21T04:00:00Z"))
     }
 
     func testThisMonthAndPreviousMonth() {

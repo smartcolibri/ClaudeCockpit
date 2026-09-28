@@ -64,7 +64,7 @@ is to Anthropic's own quota endpoint, with the token Claude Code already stored 
 | Filters | By model family, by project (working directory) and by date range, from Today to All |
 | Breakdown table | Cost and tokens grouped by project, by agent or by skill, sorted by cost |
 | Sessions list | Named sessions, most recent first, with a per-session detail pane |
-| Insights | Automatic signals: week-over-week cost swings, models with no dedicated pricing tier, cache hit rate |
+| Insights | Automatic signals: cost swings against the same point last week (from the second day, above $1), models with no dedicated pricing tier, cache hit rate |
 | Editable pricing | The four per-model-family rates are yours to correct when Anthropic changes prices |
 | Incremental scanning | Only bytes appended since the last pass are read, and the cache survives relaunches |
 
@@ -202,7 +202,7 @@ cd CockpitCore && swift test
 project after each clone and after every edit to it.
 
 **Requirements:** macOS 14+, Xcode 15+ (Swift 5.9), xcodegen. Dependencies resolve
-automatically through SwiftPM: Sparkle 2.9.1+ for updates and SQLite.swift 0.16+ for reading
+automatically through SwiftPM: Sparkle 2.10.0 (pinned) for updates and SQLite.swift 0.16+ for reading
 rtk's database.
 
 ## Project layout

@@ -58,13 +58,17 @@ BUILD_NUMBER="$(git rev-list --count HEAD 2>/dev/null || echo 1)"
 # is not higher, so never emit a number at or below the one already published.
 # The committed appcast is the record of what shipped; the working copy may have
 # just been overwritten by a previous run of this script.
-PUBLISHED="$(git show HEAD:appcast.xml 2>/dev/null | python3 -c "
+# The `{ …; } || true` group keeps pipefail from failing the pipeline when HEAD
+# has no appcast.xml yet: python already printed 0 in that case, and a trailing
+# `|| echo 0` would append a second line ("0\n0") that breaks the -le test.
+PUBLISHED="$({ git show HEAD:appcast.xml 2>/dev/null || true; } | python3 -c "
 import sys, re
 text = sys.stdin.read()
 builds = [int(n) for n in re.findall(r'<sparkle:version>\s*(\d+)\s*</sparkle:version>', text)]
 print(max(builds) if builds else 0)
-" 2>/dev/null || echo 0)"
-if [ -n "$PUBLISHED" ] && [ "$BUILD_NUMBER" -le "$PUBLISHED" ]; then
+")"
+PUBLISHED="${PUBLISHED:-0}"
+if [ "$BUILD_NUMBER" -le "$PUBLISHED" ]; then
   echo "▶︎ commit count $BUILD_NUMBER is not above published build $PUBLISHED (squash merge); using $((PUBLISHED + 1))"
   BUILD_NUMBER=$((PUBLISHED + 1))
 fi
@@ -130,14 +134,43 @@ ditto --norsrc --noextattr --noacl "$STAGING" "$DMG_LAYOUT/$APP_NAME.app"
 ln -s /Applications "$DMG_LAYOUT/Applications"
 "$ROOT/Scripts/make-dmg-background.swift" "$DMG_LAYOUT/.background/background.png" >/dev/null
 
+# hdiutil detach can fail with "resource busy" right after Finder touched the
+# volume. Retry, then force: a leftover mount makes the next run attach the new
+# image as "<name> 1" while Finder still sees the stale "<name>".
+detach_retry() {
+  local mnt="$1" i
+  for i in 1 2 3 4 5; do
+    if hdiutil detach "$mnt" -quiet; then
+      return 0
+    fi
+    echo "  …hdiutil detach retry $i/5 ($mnt busy) in 2s" >&2
+    sleep 2
+  done
+  hdiutil detach "$mnt" -force -quiet
+}
+# Detach any volume left mounted by an aborted previous run of this version.
+for STALE in "/Volumes/$DMG_VOLNAME" "/Volumes/$DMG_VOLNAME "[0-9]*; do
+  if [ -d "$STALE" ]; then
+    echo "  …detaching stale volume $STALE" >&2
+    detach_retry "$STALE"
+  fi
+done
+
 RW_DMG="$STAGING_DIR/temp.dmg"
 hdiutil create -volname "$DMG_VOLNAME" -srcfolder "$DMG_LAYOUT" \
   -fs HFS+ -format UDRW -ov "$RW_DMG" >/dev/null
 
 MOUNT="$(hdiutil attach -nobrowse -noverify -noautoopen "$RW_DMG" | awk -F '\t' 'END {print $NF}')"
-osascript <<APPLESCRIPT >/dev/null || true
+case "$MOUNT" in
+  /Volumes/*) ;;
+  *) echo "✗ could not determine DMG mount point (got: '$MOUNT')" >&2; exit 1 ;;
+esac
+# Target the volume actually mounted, which may differ from $DMG_VOLNAME.
+MOUNT_VOLNAME="$(basename "$MOUNT")"
+# Layout is cosmetic (Finder automation may be denied): warn, don't abort.
+osascript <<APPLESCRIPT >/dev/null || echo "⚠︎ Finder layout failed for \"$MOUNT_VOLNAME\"; DMG will have no custom layout" >&2
 tell application "Finder"
-    tell disk "$DMG_VOLNAME"
+    tell disk "$MOUNT_VOLNAME"
         open
         set current view of container window to icon view
         set toolbar visible of container window to false
@@ -156,7 +189,7 @@ tell application "Finder"
 end tell
 APPLESCRIPT
 sync
-hdiutil detach "$MOUNT" -quiet
+detach_retry "$MOUNT"
 hdiutil convert "$RW_DMG" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG" >/dev/null
 
 # 6. Notarize + staple
@@ -171,19 +204,63 @@ EOF
   exit 1
 fi
 echo "▶︎ notarize (this takes a few minutes)"
-xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait
+# `submit --wait` exits 0 even when Apple returns "Invalid": read the status.
+NOTARY_JSON="$(xcrun notarytool submit "$DMG" --keychain-profile "$NOTARY_PROFILE" --wait --output-format json)" || true
+# Any parse problem yields empty fields, so it reaches the "not accepted" path
+# below (log + exit 1) instead of a python traceback.
+NOTARY_FIELDS="$(printf '%s' "$NOTARY_JSON" | python3 -c "
+import sys, json
+text = sys.stdin.read()
+try:
+    d = json.loads(text)
+except ValueError:
+    # Progress text reached stdout: keep the last single-line JSON object.
+    try:
+        lines = [l for l in text.splitlines() if l.lstrip().startswith('{')]
+        d = json.loads(lines[-1]) if lines else {}
+    except ValueError:
+        d = {}
+if not isinstance(d, dict):
+    d = {}
+print(d.get('id', ''), d.get('status', ''), sep='\t')
+")"
+NOTARY_ID="$(printf '%s' "$NOTARY_FIELDS" | cut -f1)"
+NOTARY_STATUS="$(printf '%s' "$NOTARY_FIELDS" | cut -f2)"
+echo "  notarization $NOTARY_ID: $NOTARY_STATUS"
+if [ "$NOTARY_STATUS" != "Accepted" ]; then
+  echo "✗ notarization not accepted (status: ${NOTARY_STATUS:-unknown})" >&2
+  if [ -n "$NOTARY_ID" ]; then
+    xcrun notarytool log "$NOTARY_ID" --keychain-profile "$NOTARY_PROFILE" >&2 || true
+  fi
+  exit 1
+fi
 echo "▶︎ staple"
 xcrun stapler staple "$DMG"
 xcrun stapler validate "$DMG"
 
 # ── Sparkle: EdDSA-sign the DMG and refresh the appcast ──────────────────────
-SPARKLE_VERSION="2.9.1"
-SPARKLE_TOOLS="$ROOT/.sparkle-tools"
+# Keep in step with the Sparkle.framework version pinned in project.yml.
+SPARKLE_VERSION="2.10.0"
+# sign_update reads the private EdDSA key: never run an unverified download.
+# SHA-256 of the exact tarball below; update both lines together.
+SPARKLE_TARBALL_SHA256="c2bf58aa8387266ac179357b1415d6f2635f044da8be41042af32425dae6da0c"
+# One cache directory per version: bumping SPARKLE_VERSION fetches fresh tools
+# instead of silently reusing an older cached sign_update.
+SPARKLE_TOOLS="$ROOT/.sparkle-tools/$SPARKLE_VERSION"
 if [ ! -x "$SPARKLE_TOOLS/bin/sign_update" ]; then
   echo "▶︎ fetching Sparkle $SPARKLE_VERSION tools (one-time)"
+  SPARKLE_TARBALL="$STAGING_DIR/Sparkle-$SPARKLE_VERSION.tar.xz"
+  curl -fsSL -o "$SPARKLE_TARBALL" \
+    "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz"
+  ACTUAL_SHA256="$(shasum -a 256 "$SPARKLE_TARBALL" | cut -d ' ' -f1)"
+  if [ "$ACTUAL_SHA256" != "$SPARKLE_TARBALL_SHA256" ]; then
+    echo "✗ Sparkle tarball checksum mismatch" >&2
+    echo "  expected $SPARKLE_TARBALL_SHA256" >&2
+    echo "  got      $ACTUAL_SHA256" >&2
+    exit 1
+  fi
   mkdir -p "$SPARKLE_TOOLS"
-  curl -fsSL "https://github.com/sparkle-project/Sparkle/releases/download/$SPARKLE_VERSION/Sparkle-$SPARKLE_VERSION.tar.xz" \
-    | tar -xJ -C "$SPARKLE_TOOLS"
+  tar -xJf "$SPARKLE_TARBALL" -C "$SPARKLE_TOOLS"
 fi
 
 echo "▶︎ EdDSA-signing the DMG for Sparkle"
