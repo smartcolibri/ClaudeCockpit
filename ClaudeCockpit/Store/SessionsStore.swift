@@ -67,6 +67,7 @@ extension CockpitStore {
             sessionsState = .ready(progress.lastRun ?? Date())
         } catch {
             sessionsState = .failed(error.localizedDescription)
+            sessionIndex.isRunning = false
         }
     }
 

@@ -92,6 +92,12 @@ struct ResourceDetailView: View {
                     .foregroundStyle(Theme.ink)
                     .lineLimit(2)
                 LevelTag(label: resource.level.label)
+                if resource.isSymlink {
+                    Label("Lien symbolique", systemImage: "link")
+                        .font(.label(10))
+                        .foregroundStyle(Theme.slate)
+                        .help("Copie, déplacement et suppression désactivés : modifiez directement la cible du lien.")
+                }
                 Spacer(minLength: 0)
                 if busy { ProgressView().controlSize(.small) }
             }
@@ -122,7 +128,7 @@ struct ResourceDetailView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .disabled(otherLevels.isEmpty || busy)
+            .disabled(otherLevels.isEmpty || busy || resource.isSymlink)
 
             Menu("Déplacer vers…") {
                 ForEach(otherLevels, id: \.id) { level in
@@ -131,7 +137,7 @@ struct ResourceDetailView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .disabled(otherLevels.isEmpty || busy)
+            .disabled(otherLevels.isEmpty || busy || resource.isSymlink)
 
             Spacer(minLength: 8)
 
@@ -148,7 +154,7 @@ struct ResourceDetailView: View {
                 Label("Supprimer", systemImage: "trash")
             }
             .controlSize(.small)
-            .disabled(busy)
+            .disabled(busy || resource.isSymlink)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)

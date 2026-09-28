@@ -411,6 +411,143 @@ final class SkillsKitTests: XCTestCase {
         }
     }
 
+    // MARK: - Symbolic links
+
+    /// Mirrors the real layout: `~/.claude/skills/x -> ../../.agents/skills/x`, plus an
+    /// agent installed the same way. Returns the two link URLs.
+    private func makeSymlinkedResources() throws -> (skill: URL, agent: URL) {
+        let fm = FileManager.default
+        let agentsHome = fixture.home.appendingPathComponent(".agents", isDirectory: true)
+        try Fixture.writeSkill(
+            in: agentsHome.appendingPathComponent("skills", isDirectory: true),
+            name: "linked-skill", description: "Skill installé par lien")
+        try Fixture.writeFlat(
+            in: agentsHome.appendingPathComponent("agents", isDirectory: true),
+            name: "linked-agent", description: "Agent installé par lien")
+
+        let skillLink = fixture.paths.skillsDir.appendingPathComponent("linked-skill")
+        try fm.createSymbolicLink(atPath: skillLink.path, withDestinationPath: "../../.agents/skills/linked-skill")
+        try fm.createDirectory(at: fixture.paths.agentsDir, withIntermediateDirectories: true)
+        let agentLink = fixture.paths.agentsDir.appendingPathComponent("linked-agent.md")
+        try fm.createSymbolicLink(atPath: agentLink.path, withDestinationPath: "../../.agents/agents/linked-agent.md")
+        return (skillLink, agentLink)
+    }
+
+    private func isSymbolicLink(_ url: URL) -> Bool {
+        (try? FileManager.default.attributesOfItem(atPath: url.path)[.type] as? FileAttributeType) == .typeSymbolicLink
+    }
+
+    func testSymlinkedSkillAndAgentAreListedAndReadable() async throws {
+        _ = try makeSymlinkedResources()
+        let inventory = try await store.inventory()
+
+        let skill = try XCTUnwrap(inventory.resources.first { $0.name == "linked-skill" })
+        XCTAssertEqual(skill.level, .global)
+        XCTAssertTrue(skill.isSymlink)
+        XCTAssertEqual(skill.description, "Skill installé par lien")
+        let skillText = try await store.read(skill)
+        XCTAssertTrue(skillText.contains("# linked-skill"))
+
+        let agent = try XCTUnwrap(inventory.resources.first { $0.name == "linked-agent" })
+        XCTAssertEqual(agent.kind, .agent)
+        XCTAssertTrue(agent.isSymlink)
+        XCTAssertEqual(agent.description, "Agent installé par lien")
+        let target = fixture.home.appendingPathComponent(".agents/agents/linked-agent.md")
+        let targetSize = try XCTUnwrap(FileManager.default.attributesOfItem(atPath: target.path)[.size] as? NSNumber)
+        XCTAssertEqual(agent.sizeBytes, targetSize.int64Value, "taille de la cible, pas du lien")
+
+        let alpha = try XCTUnwrap(inventory.resources.first { $0.name == "alpha-skill" })
+        XCTAssertFalse(alpha.isSymlink)
+    }
+
+    func testTransferAndDeleteOfASymlinkAreRefused() async throws {
+        let links = try makeSymlinkedResources()
+        let inventory = try await store.inventory()
+        let skill = try XCTUnwrap(inventory.resources.first { $0.name == "linked-skill" })
+        let agent = try XCTUnwrap(inventory.resources.first { $0.name == "linked-agent" })
+
+        for resource in [skill, agent] {
+            for mode in TransferMode.allCases {
+                await XCTAssertThrowsErrorAsync(
+                    try await store.transfer(resource, to: .library, mode: mode)
+                ) { error in
+                    XCTAssertEqual(error as? SkillsError, .symlinkUnsupported(resource.url))
+                }
+            }
+            await XCTAssertThrowsErrorAsync(try await store.delete(resource)) { error in
+                XCTAssertEqual(error as? SkillsError, .symlinkUnsupported(resource.url))
+            }
+        }
+
+        XCTAssertTrue(isSymbolicLink(links.skill))
+        XCTAssertTrue(isSymbolicLink(links.agent))
+        XCTAssertTrue(fixture.exists(skill.contentURL), "le lien doit toujours pointer sur sa cible")
+        XCTAssertTrue(fixture.exists(agent.contentURL))
+        XCTAssertFalse(fixture.exists(fixture.paths.libraryDir.appendingPathComponent("skills/linked-skill")))
+        XCTAssertFalse(fixture.exists(fixture.paths.libraryDir.appendingPathComponent("agents/linked-agent.md")))
+        XCTAssertTrue(fixture.backupEntries().isEmpty)
+    }
+
+    /// A project whose `.claude/skills` is a link to `~/.claude/skills`: "moving" a global
+    /// skill there with overwrite would replace the skill with itself, then delete it.
+    func testTransferOntoAnAliasOfTheSourceIsRefused() async throws {
+        let aliasedURL = fixture.home.appendingPathComponent("DevApps/aliased-project", isDirectory: true)
+        let claudeDir = aliasedURL.appendingPathComponent(".claude", isDirectory: true)
+        try FileManager.default.createDirectory(at: claudeDir, withIntermediateDirectories: true)
+        try FileManager.default.createSymbolicLink(
+            atPath: claudeDir.appendingPathComponent("skills").path,
+            withDestinationPath: fixture.paths.skillsDir.path)
+        let aliased = ProjectRef(name: "aliased-project", url: aliasedURL)
+
+        let inventory = try await store.inventory()
+        let alpha = try XCTUnwrap(inventory.resources.first { $0.name == "alpha-skill" })
+
+        await XCTAssertThrowsErrorAsync(
+            try await store.transfer(alpha, to: .project(aliased), mode: .move, overwrite: true)
+        ) { error in
+            guard case .io = error as? SkillsError else {
+                return XCTFail("attendu .io, reçu \(error)")
+            }
+        }
+        XCTAssertTrue(fixture.exists(alpha.contentURL), "le skill ne doit pas disparaître")
+        XCTAssertTrue(fixture.backupEntries().isEmpty)
+    }
+
+    /// The destination is validated before the source is removed: an unreadable result
+    /// leaves the source where it was.
+    func testMoveKeepsTheSourceWhenTheDestinationIsUnreadable() async throws {
+        let brokenDir = fixture.paths.skillsDir.appendingPathComponent("broken-skill", isDirectory: true)
+        try FileManager.default.createDirectory(at: brokenDir, withIntermediateDirectories: true)
+        try "pas de SKILL.md".write(
+            to: brokenDir.appendingPathComponent("notes.txt"), atomically: true, encoding: .utf8)
+        let broken = ClaudeResource(kind: .skill, name: "broken-skill", level: .global, url: brokenDir)
+
+        await XCTAssertThrowsErrorAsync(try await store.transfer(broken, to: .library, mode: .move)) { error in
+            guard case .io = error as? SkillsError else {
+                return XCTFail("attendu .io, reçu \(error)")
+            }
+        }
+        XCTAssertTrue(fixture.exists(brokenDir.appendingPathComponent("notes.txt")), "la source doit rester en place")
+    }
+
+    func testSymlinkedPluginSkillIsListedAndImportedAsARealDirectory() async throws {
+        let real = fixture.home.appendingPathComponent(".agents/plugin-skills", isDirectory: true)
+        try Fixture.writeSkill(in: real, name: "linked-plugin-skill", description: "Skill de plugin lié")
+        let skillsDir = fixture.paths.pluginsCacheDir.appendingPathComponent("acme/toolkit/1.0.0/skills", isDirectory: true)
+        try FileManager.default.createSymbolicLink(
+            atPath: skillsDir.appendingPathComponent("linked-plugin-skill").path,
+            withDestinationPath: real.appendingPathComponent("linked-plugin-skill").path)
+
+        let inventory = try await store.inventory()
+        let plugin = try XCTUnwrap(inventory.plugins.first { $0.name == "linked-plugin-skill" })
+        XCTAssertEqual(plugin.description, "Skill de plugin lié")
+
+        let imported = try await store.importPlugin(plugin, to: .library)
+        XCTAssertFalse(isSymbolicLink(imported.url), "l'import doit copier le contenu, pas le lien")
+        XCTAssertFalse(imported.isSymlink)
+        XCTAssertTrue(fixture.exists(imported.contentURL))
+    }
+
     // MARK: - Naming
 
     func testNameSanitizerFollowsSkillManagerRule() {

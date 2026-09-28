@@ -75,7 +75,11 @@ public actor ResourceStore {
     ///
     /// - Refuses an existing destination unless `overwrite` is true; the
     ///   destination is then backed up before being replaced.
-    /// - In `.move` mode the source is backed up before being removed.
+    /// - In `.move` mode the source is backed up before being removed, and only once the
+    ///   destination has loaded back successfully.
+    /// - Refuses a source or destination that is a symbolic link, and a destination that
+    ///   resolves to the source itself (e.g. a project whose `.claude/skills` links to
+    ///   `~/.claude/skills`).
     @discardableResult
     public func transfer(
         _ resource: ClaudeResource,
@@ -89,11 +93,17 @@ public actor ResourceStore {
         let name = try sanitizedName(resource.name)
         let source = resource.url
         guard paths.isInsideHome(source) else { throw SkillsError.outsideHome }
+        // Before `fileExists`, which reports a dangling link as missing.
+        guard !isSymbolicLink(source) else { throw SkillsError.symlinkUnsupported(source) }
         guard fileManager.fileExists(atPath: source.path) else { throw SkillsError.notFound }
 
         let destinationDirectory = level.directory(for: resource.kind, paths: paths)
         guard paths.isInsideHome(destinationDirectory) else { throw SkillsError.outsideHome }
         let destination = itemURL(kind: resource.kind, name: name, in: destinationDirectory)
+        guard canonicalPath(source) != canonicalPath(destination) else {
+            throw SkillsError.io("La source et la destination sont identiques.")
+        }
+        guard !isSymbolicLink(destination) else { throw SkillsError.symlinkUnsupported(destination) }
 
         var backupRoot: URL?
         var backupURL: URL?
@@ -113,14 +123,14 @@ public actor ResourceStore {
             backup: backupURL,
             failureMessage: "Copie impossible")
 
+        guard let created = load(kind: resource.kind, level: level, itemURL: destination) else {
+            throw failure("La ressource transférée est illisible.", backup: backupURL)
+        }
+
         if mode == .move {
             let root = try backupRoot ?? makeBackupRoot()
             try backup(source, kind: resource.kind, level: resource.level, into: root)
             try remove(source)
-        }
-
-        guard let created = load(kind: resource.kind, level: level, itemURL: destination) else {
-            throw SkillsError.io("La ressource transférée est illisible.")
         }
         return created
     }
@@ -142,6 +152,8 @@ public actor ResourceStore {
         guard paths.isInsideHome(destinationDirectory) else { throw SkillsError.outsideHome }
         let destination = itemURL(kind: .skill, name: name, in: destinationDirectory)
 
+        guard !isSymbolicLink(destination) else { throw SkillsError.symlinkUnsupported(destination) }
+
         var backupURL: URL?
         let replacesExisting = fileManager.fileExists(atPath: destination.path)
         if replacesExisting {
@@ -151,8 +163,9 @@ public actor ResourceStore {
         }
 
         try createDirectory(destinationDirectory)
+        // A plugin skill may itself be a link; `copyItem` would copy the link verbatim.
         try install(
-            plugin.url,
+            plugin.url.resolvingSymlinksInPath(),
             at: destination,
             replacingExisting: replacesExisting,
             backup: backupURL,
@@ -165,10 +178,12 @@ public actor ResourceStore {
     }
 
     /// Backs the resource up, then removes it. Returns the backup location.
+    /// Refuses a symbolic link: its backup would only be the link.
     @discardableResult
     public func delete(_ resource: ClaudeResource) throws -> URL {
         let url = resource.url
         guard paths.isInsideHome(url) else { throw SkillsError.outsideHome }
+        guard !isSymbolicLink(url) else { throw SkillsError.symlinkUnsupported(url) }
         guard fileManager.fileExists(atPath: url.path) else { throw SkillsError.notFound }
         let root = try makeBackupRoot()
         let backupURL = try backup(url, kind: resource.kind, level: resource.level, into: root)
@@ -183,12 +198,14 @@ public actor ResourceStore {
         guard paths.isInsideHome(directory) else { return [] }
         let entries = (try? fileManager.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: [.isDirectoryKey],
+            includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         )) ?? []
         var result: [ClaudeResource] = []
         for entry in entries {
-            let isDirectory = (try? entry.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false
+            // Follows a final symlink, unlike `.isDirectoryKey`: skills installed as links
+            // (`~/.claude/skills/x -> ../../.agents/skills/x`) are real skills.
+            let isDirectory = isDirectoryFollowingLinks(entry)
             if kind.isDirectoryBased {
                 guard isDirectory else { continue }
             } else {
@@ -248,10 +265,15 @@ public actor ResourceStore {
     private func subdirectories(of directory: URL) -> [URL] {
         let entries = (try? fileManager.contentsOfDirectory(
             at: directory,
-            includingPropertiesForKeys: [.isDirectoryKey],
+            includingPropertiesForKeys: nil,
             options: [.skipsHiddenFiles]
         )) ?? []
-        return entries.filter { (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory ?? false }
+        return entries.filter { isDirectoryFollowingLinks($0) }
+    }
+
+    private func isDirectoryFollowingLinks(_ url: URL) -> Bool {
+        var isDirectory: ObjCBool = false
+        return fileManager.fileExists(atPath: url.path, isDirectory: &isDirectory) && isDirectory.boolValue
     }
 
     private func load(kind: ResourceKind, level: ResourceLevel, itemURL: URL) -> ClaudeResource? {
@@ -259,7 +281,9 @@ public actor ResourceStore {
         guard fileManager.fileExists(atPath: content.path) else { return nil }
         let text = (try? String(contentsOf: content, encoding: .utf8)) ?? ""
         let front = Frontmatter.parse(text)
-        let values = try? content.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
+        // Resolved, or a linked agent would report the link's own size and date.
+        let values = try? content.resolvingSymlinksInPath()
+            .resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey])
         let name = kind.isDirectoryBased
             ? itemURL.lastPathComponent
             : itemURL.deletingPathExtension().lastPathComponent
@@ -271,7 +295,8 @@ public actor ResourceStore {
             description: nonEmpty(front.description),
             frontmatter: front,
             modifiedAt: values?.contentModificationDate ?? .distantPast,
-            sizeBytes: Int64(values?.fileSize ?? 0)
+            sizeBytes: Int64(values?.fileSize ?? 0),
+            isSymlink: isSymbolicLink(itemURL)
         )
     }
 
@@ -281,6 +306,29 @@ public actor ResourceStore {
         kind.isDirectoryBased
             ? directory.appendingPathComponent(name, isDirectory: true)
             : directory.appendingPathComponent("\(name).md")
+    }
+
+    /// True when the item itself is a symbolic link (a dangling one included).
+    private func isSymbolicLink(_ url: URL) -> Bool {
+        let attributes = try? fileManager.attributesOfItem(atPath: url.path)
+        return attributes?[.type] as? FileAttributeType == .typeSymbolicLink
+    }
+
+    /// `url` with every symlink resolved, even when its last components do not exist yet:
+    /// `resolvingSymlinksInPath()` gives up on a missing path, so the nearest existing
+    /// ancestor is resolved and the rest appended back.
+    private func canonicalPath(_ url: URL) -> String {
+        var existing = url.standardizedFileURL
+        var missing: [String] = []
+        while !fileManager.fileExists(atPath: existing.path), existing.path != "/" {
+            missing.insert(existing.lastPathComponent, at: 0)
+            existing = existing.deletingLastPathComponent()
+        }
+        var resolved = existing.resolvingSymlinksInPath()
+        for component in missing {
+            resolved.appendPathComponent(component)
+        }
+        return resolved.path
     }
 
     private func sanitizedName(_ raw: String) throws -> String {

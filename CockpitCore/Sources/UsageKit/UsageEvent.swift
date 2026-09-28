@@ -3,12 +3,12 @@ import Foundation
 /// One assistant turn extracted from a Claude Code transcript, with its token usage.
 ///
 /// Ported from ClaudeCodeUsage `Models/UsageEvent.swift`. The only added field is
-/// `messageId`: the scanner uses it to drop the duplicate assistant lines that appear
-/// when the same message is written both to a session transcript and to a sub-agent one.
+/// `messageId`: the scanner uses it to merge the assistant lines of one API response
+/// (one per content block, and possibly copied into a sub-agent transcript).
 public struct UsageEvent: Identifiable, Hashable, Codable, Sendable {
     /// Stable identity of the transcript line (`uuid`, else `message.id`, else a fresh UUID).
     public let id: String
-    /// `message.id` when the line carried one — the dedupe key across files.
+    /// `message.id` when the line carried one — the merge key across lines and files.
     public let messageId: String?
     public let sessionId: String
     public let model: String
@@ -74,7 +74,8 @@ public enum UsagePath {
         home: URL = FileManager.default.homeDirectoryForCurrentUser
     ) -> String {
         let root = home.path
-        guard path.hasPrefix(root) else { return path }
+        // A whole path component only: home `/Users/vincent` must leave `/Users/vincent2` alone.
+        guard path == root || path.hasPrefix(root + "/") else { return path }
         return "~" + path.dropFirst(root.count)
     }
 }

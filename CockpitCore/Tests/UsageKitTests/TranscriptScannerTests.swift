@@ -87,8 +87,12 @@ final class TranscriptScannerTests: XCTestCase {
         let result = await scanner.scan()
 
         XCTAssertEqual(result.events.filter { $0.messageId == "msg-a2" }.count, 1)
-        // The session transcript sorts before its `subagents/` subdirectory, so its copy wins.
-        XCTAssertEqual(result.events.first { $0.messageId == "msg-a2" }?.id, "uuid-a2")
+        // The session transcript sorts before its `subagents/` subdirectory, so its copy
+        // supplies the identity; token counts are the max over every copy (equal here).
+        let merged = try XCTUnwrap(result.events.first { $0.messageId == "msg-a2" })
+        XCTAssertEqual(merged.id, "uuid-a2")
+        XCTAssertEqual(merged.inputTokens, 200)
+        XCTAssertEqual(merged.outputTokens, 80)
         // Both copies were parsed; only the flattened list is deduped.
         XCTAssertEqual(result.newEvents.count, 5)
     }
@@ -289,5 +293,101 @@ final class TranscriptScannerTests: XCTestCase {
                 return XCTFail("unexpected error \(error)")
             }
         }
+    }
+
+    // MARK: - Streamed lines sharing a message.id
+
+    /// Claude Code writes one assistant line per content block, all sharing the API
+    /// response's `message.id`, and usage grows across them. Each field is merged by max,
+    /// independently, since line order says nothing about which one carries the final count.
+    func testStreamedLinesOfOneMessageMergeByMaxPerField() async throws {
+        let file = "-Users-test-DevApps-ProjA/sess-stream.jsonl"
+        try fixture.write([
+            TranscriptFixture.assistantLine(
+                uuid: "uuid-m1", messageId: "msg-stream", sessionId: sessionA,
+                model: "claude-opus-5", timestamp: t0.addingTimeInterval(900), cwd: cwdA,
+                inputTokens: 10, outputTokens: 204, cacheReadTokens: 5, cacheCreationTokens: 300),
+            TranscriptFixture.assistantLine(
+                uuid: "uuid-m2", messageId: "msg-stream", sessionId: sessionA,
+                model: "claude-opus-5", timestamp: t0.addingTimeInterval(901), cwd: cwdA,
+                inputTokens: 50, outputTokens: 8, cacheReadTokens: 7_000, cacheCreationTokens: 0),
+        ], to: file)
+
+        let result = await TranscriptScanner(paths: fixture.paths).scan()
+
+        let streamed = result.events.filter { $0.messageId == "msg-stream" }
+        XCTAssertEqual(streamed.count, 1)
+        let event = try XCTUnwrap(streamed.first)
+        XCTAssertEqual(event.id, "uuid-m1", "the first line keeps the identity")
+        XCTAssertEqual(event.timestamp, t0.addingTimeInterval(900))
+        XCTAssertEqual(event.inputTokens, 50)
+        XCTAssertEqual(event.outputTokens, 204)
+        XCTAssertEqual(event.cacheReadTokens, 7_000)
+        XCTAssertEqual(event.cacheCreationTokens, 300)
+    }
+
+    /// The later line of a message arrives in a later incremental pass: it must raise the
+    /// event already reported, not be dropped as a duplicate.
+    func testStreamedLineReadInALaterPassUpdatesTheEvent() async throws {
+        let file = "-Users-test-DevApps-ProjA/sess-stream.jsonl"
+        try fixture.write([
+            TranscriptFixture.assistantLine(
+                uuid: "uuid-m1", messageId: "msg-stream", sessionId: sessionA,
+                model: "claude-opus-5", timestamp: t0.addingTimeInterval(900), cwd: cwdA,
+                inputTokens: 3, outputTokens: 8, cacheReadTokens: 12_000),
+        ], to: file)
+
+        let scanner = TranscriptScanner(paths: fixture.paths)
+        let first = await scanner.scan()
+        XCTAssertEqual(first.events.first { $0.messageId == "msg-stream" }?.outputTokens, 8)
+
+        try fixture.append(TranscriptFixture.assistantLine(
+            uuid: "uuid-m2", messageId: "msg-stream", sessionId: sessionA,
+            model: "claude-opus-5", timestamp: t0.addingTimeInterval(905), cwd: cwdA,
+            inputTokens: 3, outputTokens: 204, cacheReadTokens: 12_000), to: file)
+
+        let second = await scanner.scan()
+        XCTAssertEqual(second.newEvents.map(\.id), ["uuid-m2"], "only the appended line is read")
+        let streamed = second.events.filter { $0.messageId == "msg-stream" }
+        XCTAssertEqual(streamed.count, 1)
+        XCTAssertEqual(streamed.first?.id, "uuid-m1")
+        XCTAssertEqual(streamed.first?.outputTokens, 204)
+        XCTAssertEqual(streamed.first?.cacheReadTokens, 12_000)
+        XCTAssertEqual(second.events.count, 5)
+    }
+
+    /// A cache written by an earlier launch holds every raw line, so the merge is recomputed
+    /// from it without re-reading any transcript.
+    func testMergeIsRecomputedFromThePersistedCache() async throws {
+        let file = "-Users-test-DevApps-ProjA/sess-stream.jsonl"
+        try fixture.write([
+            TranscriptFixture.assistantLine(
+                uuid: "uuid-m1", messageId: "msg-stream", sessionId: sessionA,
+                model: "claude-opus-5", timestamp: t0.addingTimeInterval(900), cwd: cwdA,
+                outputTokens: 8),
+            TranscriptFixture.assistantLine(
+                uuid: "uuid-m2", messageId: "msg-stream", sessionId: sessionA,
+                model: "claude-opus-5", timestamp: t0.addingTimeInterval(901), cwd: cwdA,
+                outputTokens: 204),
+        ], to: file)
+
+        let cold = TranscriptScanner(paths: fixture.paths)
+        _ = await cold.scan()
+        await cold.flush()
+
+        let warm = TranscriptScanner(paths: fixture.paths)
+        let result = await warm.scan()
+        XCTAssertEqual(result.bytesRead, 0, "everything comes from the cache")
+        XCTAssertEqual(result.events.first { $0.messageId == "msg-stream" }?.outputTokens, 204)
+    }
+
+    // MARK: - Path shortening
+
+    func testShortenOnlyReplacesAWholeHomeComponent() {
+        let home = URL(fileURLWithPath: "/Users/vincent", isDirectory: true)
+        XCTAssertEqual(UsagePath.shorten("/Users/vincent2/app", home: home), "/Users/vincent2/app")
+        XCTAssertEqual(UsagePath.shorten("/Users/vincent", home: home), "~")
+        XCTAssertEqual(UsagePath.shorten("/Users/vincent/app", home: home), "~/app")
+        XCTAssertEqual(UsagePath.shorten("/opt/app", home: home), "/opt/app")
     }
 }

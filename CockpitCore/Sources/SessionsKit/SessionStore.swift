@@ -16,7 +16,7 @@ final class SessionStore {
     let db: Connection
 
     /// Bumped whenever the schema changes shape; a mismatch triggers a full rebuild.
-    static let schemaVersion = 4
+    static let schemaVersion = 5
 
     init(databaseURL: URL) throws {
         self.databaseURL = databaseURL
@@ -123,7 +123,6 @@ final class SessionStore {
                 system_subtype TEXT,
                 model TEXT,
                 api_message_id TEXT,
-                is_duplicate INTEGER NOT NULL DEFAULT 0,
                 input_tokens INTEGER NOT NULL DEFAULT 0,
                 output_tokens INTEGER NOT NULL DEFAULT 0,
                 cache_read INTEGER NOT NULL DEFAULT 0,
@@ -229,6 +228,30 @@ final class SessionStore {
                 ["schema_version", String(Self.schemaVersion)])
     }
 
+    /// The stars, custom names and hides held by a database file, read without opening it as
+    /// a ``SessionStore`` — whose schema setup would restamp the version and could throw on an
+    /// older layout. Tolerant by design: a file it cannot read yields nothing rather than an
+    /// error, so a schema bump is never blocked by the file it is replacing.
+    static func storedUserState(at url: URL) -> [UserState] {
+        guard FileManager.default.fileExists(atPath: url.path),
+              let db = try? Connection(url.path),
+              let statement = try? db.prepare("""
+                  SELECT id, starred, custom_name, deleted_at FROM sessions
+                  WHERE starred = 1 OR custom_name IS NOT NULL OR deleted_at IS NOT NULL
+                  """)
+        else { return [] }
+        var states: [UserState] = []
+        while let row = try? statement.failableNext() {
+            guard let id = row[0] as? String else { continue }
+            states.append(UserState(
+                id: id,
+                starred: (row[1] as? Int64 ?? 0) != 0,
+                customName: row[2] as? String,
+                deletedAt: row[3] as? Double))
+        }
+        return states
+    }
+
     /// The schema version already on disk, or `nil` for a database this code never wrote.
     static func storedSchemaVersion(at url: URL) -> Int? {
         guard FileManager.default.fileExists(atPath: url.path),
@@ -308,12 +331,15 @@ final class SessionStore {
     /// The FTS table is external-content, so its rows must be removed **before** the blocks
     /// they mirror: the `'delete'` command needs the original text to undo the tokenisation.
     /// Skipping this leaves phantom hits that match nothing, with no error anywhere.
+    /// Only the blocks the indexer put in the FTS table may be deleted from it — images and
+    /// empty bodies never were, and a `'delete'` for them still lowers FTS5's document count
+    /// until SQLite reports the file malformed.
     func purge(sessionId: String) throws {
         try run("""
             INSERT INTO blocks_fts(blocks_fts, rowid, body)
             SELECT 'delete', b.id, b.body
             FROM blocks b JOIN messages m ON b.message_id = m.id
-            WHERE m.session_id = ?
+            WHERE m.session_id = ? AND b.kind <> 'image' AND b.body <> ''
             """, [sessionId])
         try run("""
             DELETE FROM blocks WHERE message_id IN (SELECT id FROM messages WHERE session_id = ?)

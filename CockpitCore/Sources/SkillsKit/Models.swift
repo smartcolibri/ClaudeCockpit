@@ -120,6 +120,11 @@ public struct ClaudeResource: Identifiable, Hashable, Sendable {
     public let frontmatter: Frontmatter
     public let modifiedAt: Date
     public let sizeBytes: Int64
+    /// True when the item itself (skill directory or markdown file) is a symbolic link,
+    /// e.g. a skill installed as `~/.claude/skills/x -> ../../.agents/skills/x`. Such a
+    /// resource is listed and readable, but `ResourceStore` refuses to transfer or delete
+    /// it: the UI should show it as linked and disable those actions.
+    public let isSymlink: Bool
 
     public init(
         kind: ResourceKind,
@@ -129,7 +134,8 @@ public struct ClaudeResource: Identifiable, Hashable, Sendable {
         description: String? = nil,
         frontmatter: Frontmatter = Frontmatter(),
         modifiedAt: Date = .distantPast,
-        sizeBytes: Int64 = 0
+        sizeBytes: Int64 = 0,
+        isSymlink: Bool = false
     ) {
         self.kind = kind
         self.name = name
@@ -139,6 +145,7 @@ public struct ClaudeResource: Identifiable, Hashable, Sendable {
         self.frontmatter = frontmatter
         self.modifiedAt = modifiedAt
         self.sizeBytes = sizeBytes
+        self.isSymlink = isSymlink
     }
 
     /// Stable across refreshes: level identity + kind + name.
@@ -156,6 +163,7 @@ public struct ClaudeResource: Identifiable, Hashable, Sendable {
             && lhs.frontmatter == rhs.frontmatter
             && lhs.modifiedAt == rhs.modifiedAt
             && lhs.sizeBytes == rhs.sizeBytes
+            && lhs.isSymlink == rhs.isSymlink
     }
 
     public func hash(into hasher: inout Hasher) { hasher.combine(id) }
@@ -253,6 +261,10 @@ public enum SkillsError: Error, Equatable, LocalizedError {
     /// before the attempt is worth naming: it is the only other place the user
     /// can recover the resource from.
     case ioAfterBackup(String, URL)
+    /// The resource (or the item it would replace) is a symbolic link. Copying one copies
+    /// the link itself — a relative one then dangles — and backing one up saves only the
+    /// link, so transfers and deletions of links are refused outright.
+    case symlinkUnsupported(URL)
 
     public var errorDescription: String? {
         switch self {
@@ -266,6 +278,8 @@ public enum SkillsError: Error, Equatable, LocalizedError {
             return message
         case .ioAfterBackup(let message, let backup):
             return "\(message) Une sauvegarde reste disponible dans : \(backup.path)"
+        case .symlinkUnsupported(let url):
+            return "« \(url.lastPathComponent) » est un lien symbolique : le transfert et la suppression ne sont pas pris en charge. Modifiez directement sa cible."
         }
     }
 }

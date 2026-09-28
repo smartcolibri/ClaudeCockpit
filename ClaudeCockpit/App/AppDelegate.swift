@@ -10,6 +10,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
                 NSApp.windows.filter { $0.title == "Claude Cockpit" }.forEach { $0.close() }
             }
         }
+        NotificationCenter.default.addObserver(
+            self, selector: #selector(mainWindowWillClose(_:)),
+            name: NSWindow.willCloseNotification, object: nil)
+    }
+
+    /// `openMainWindow()` raises the app to `.regular` so the window has a reachable
+    /// Dock icon; nothing else drops it back. Filtered by title so the Settings
+    /// window (a different title) never triggers this.
+    @objc private func mainWindowWillClose(_ notification: Notification) {
+        guard let window = notification.object as? NSWindow, window.title == "Claude Cockpit" else { return }
+        guard UserDefaults.standard.bool(forKey: SettingsKey.menuBarOnly) else { return }
+        NSApp.setActivationPolicy(.accessory)
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool { false }

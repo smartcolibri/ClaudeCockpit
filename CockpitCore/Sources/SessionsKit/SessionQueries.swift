@@ -26,8 +26,11 @@ extension SessionStore {
 
         let trimmed = filter.query.trimmingCharacters(in: .whitespacesAndNewlines)
         if !trimmed.isEmpty, let match = Self.ftsQuery(trimmed) {
+            // DISTINCT: a common word matches tens of thousands of blocks but only a few
+            // hundred sessions, and the `IN` set only needs those. A correlated `EXISTS`
+            // would be no better — it would run the full-text query again for every session.
             sql += """
-                 AND s.id IN (SELECT m.session_id FROM blocks_fts
+                 AND s.id IN (SELECT DISTINCT m.session_id FROM blocks_fts
                               JOIN blocks b ON b.id = blocks_fts.rowid
                               JOIN messages m ON m.id = b.message_id
                               WHERE blocks_fts MATCH ?)
@@ -448,11 +451,13 @@ extension SessionStore {
         let limit = max(0, filter.limit)
         bindings.append((offset + limit) * Self.searchOverfetch + Self.searchOverfetch)
 
-        var seen = Set<String>()
+        // Keyed on the session too: a resumed or forked session replays uuids under its own
+        // id, and each session's copy is a hit of its own.
+        var seen = Set<[String]>()
         var hits: [SearchHit] = []
         for row in try rows(sql, bindings) {
             guard let sessionId = row[0] as? String, let uuid = row[1] as? String,
-                  let ts = row[3] as? Double, seen.insert(uuid).inserted
+                  let ts = row[3] as? Double, seen.insert([sessionId, uuid]).inserted
             else { continue }
             hits.append(SearchHit(
                 sessionId: sessionId, messageId: uuid,
@@ -472,19 +477,19 @@ extension SessionStore {
     /// Every token is quoted, so `AND`, `OR`, `NEAR`, `*`, `:` and `-` are matched as text
     /// rather than reinterpreted as operators — a raw `MATCH` on user input throws on the
     /// first stray quote. A trailing `*` is kept as the prefix operator, which is the one
-    /// piece of syntax worth exposing.
+    /// piece of syntax worth exposing. Any other `*` is dropped: a token made only of stars
+    /// would become `"*"*`, which matches nothing and, joined with `AND`, empties the search.
     static func ftsQuery(_ input: String) -> String? {
-        let tokens = input
+        let terms = input
             .split(whereSeparator: { !$0.isLetter && !$0.isNumber && $0 != "_" && $0 != "*" })
-            .map(String.init)
-            .filter { $0 != "*" }
-        guard !tokens.isEmpty else { return nil }
-        return tokens.map { token -> String in
-            let isPrefix = token.hasSuffix("*")
-            let word = isPrefix ? String(token.dropLast()) : token
-            let escaped = word.replacingOccurrences(of: "\"", with: "\"\"")
-            return isPrefix ? "\"\(escaped)\"*" : "\"\(escaped)\""
-        }.joined(separator: " AND ")
+            .compactMap { token -> String? in
+                let word = token.filter { $0 != "*" }
+                guard !word.isEmpty else { return nil }
+                let escaped = word.replacingOccurrences(of: "\"", with: "\"\"")
+                return token.hasSuffix("*") ? "\"\(escaped)\"*" : "\"\(escaped)\""
+            }
+        guard !terms.isEmpty else { return nil }
+        return terms.joined(separator: " AND ")
     }
 
     // MARK: - Projects and edits
@@ -553,10 +558,14 @@ extension SessionStore {
         var turnsPerDay: [String: Int] = [:]
         var sessionsPerDay: [String: Set<String>] = [:]
         var turns = 0
+        // A turn is one API response, however many lines and transcripts it was written into.
         for row in try rows("""
-            SELECT m.ts, m.session_id FROM messages m JOIN sessions s ON s.id = m.session_id
-            WHERE m.role = 'assistant' AND m.is_duplicate = 0 AND s.deleted_at IS NULL
-              AND m.ts >= ? AND m.ts < ?\(scope)
+            SELECT m.ts, m.session_id
+            FROM (\(Self.countedResponses(where: """
+                o.role = 'assistant' AND o.ts >= ? AND o.ts < ?
+                """))) m
+            JOIN sessions s ON s.id = m.session_id
+            WHERE s.deleted_at IS NULL\(scope)
             """, scoped) {
             guard let ts = row[0] as? Double, let sessionId = row[1] as? String else { continue }
             let date = Date(timeIntervalSince1970: ts)
@@ -611,9 +620,11 @@ extension SessionStore {
             SELECT m.model, COUNT(*),
                    COALESCE(SUM(m.input_tokens), 0), COALESCE(SUM(m.output_tokens), 0),
                    COALESCE(SUM(m.cache_read), 0), COALESCE(SUM(m.cache_create), 0)
-            FROM messages m JOIN sessions s ON s.id = m.session_id
-            WHERE m.role = 'assistant' AND m.model IS NOT NULL AND m.is_duplicate = 0
-              AND s.deleted_at IS NULL AND m.ts >= ? AND m.ts < ?\(scope)
+            FROM (\(Self.countedResponses(where: """
+                o.role = 'assistant' AND o.model IS NOT NULL AND o.ts >= ? AND o.ts < ?
+                """))) m
+            JOIN sessions s ON s.id = m.session_id
+            WHERE s.deleted_at IS NULL\(scope)
             GROUP BY m.model ORDER BY 2 DESC
             """, scoped).compactMap { row -> ModelCount? in
             guard let model = row[0] as? String else { return nil }

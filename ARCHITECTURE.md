@@ -109,9 +109,12 @@ Claude Code ajoute une transcription JSONL par session sous
 `…/subagents/agent-*.jsonl`. `TranscriptScanner` parcourt cette arborescence et retient, pour
 chaque fichier, sa date de modification et le nombre d'octets déjà lus, de sorte qu'un
 rafraîchissement n'analyse que ce qui a été ajouté depuis. Les lignes de type `assistant`
-portant un objet `message.usage` deviennent des `UsageEvent` ; les messages assistant présents à
-la fois dans une transcription de session et dans une transcription de sous-agent sont dédoublés
-sur `message.id`. Les titres de session viennent des lignes `ai-title` isolées et des champs
+portant un objet `message.usage` deviennent des `UsageEvent` ; toutes les lignes partageant un
+`message.id` sont fusionnées en un seul événement. Claude Code écrit une ligne par bloc de contenu
+d'une réponse, avec un usage qui croît de l'une à l'autre, et une même réponse peut figurer à la
+fois dans une transcription de session et dans une transcription de sous-agent : chaque champ de
+tokens prend donc le **maximum** des copies (l'ordre des lignes n'est pas fiable) et la réponse
+n'est comptée qu'une fois. Les titres de session viennent des lignes `ai-title` isolées et des champs
 `slug`, collectés dans la même passe.
 
 `UsageService` détient le scanner et la liste d'événements qui en résulte. L'agrégation est
@@ -247,7 +250,17 @@ n'écrit que dans `sessions.db` ; la transcription sur le disque n'est jamais to
 pose un `deleted_at` et la ligne sort de toutes les listes jusqu'à la prochaine reconstruction
 complète, qui est aussi le seul moyen de se remettre d'une base corrompue — `index(full: true)`
 la supprime et la reconstruit, en reportant les étoiles, les noms personnalisés et les sessions
-masquées, puisqu'ils ne vivent nulle part ailleurs.
+masquées, puisqu'ils ne vivent nulle part ailleurs. Ces mêmes marques sont reportées lors d'un
+changement de schéma, quand la base est reconstruite à la première ouverture. Une transcription
+disparue n'emporte sa session que si aucun fichier restant ne porte cet identifiant : un dossier
+de projet renommé relit ses sessions depuis le nouveau chemin au lieu de les perdre, et une ligne
+portant une marque n'est jamais supprimée.
+
+**Comptage des tokens.** Plusieurs lignes `messages` peuvent appartenir à une même réponse d'API
+(une ligne par bloc de contenu, ou la même réponse dans une transcription de session et de
+sous-agent). Les agrégats comptent chaque `api_message_id` une seule fois, en prenant le maximum
+de chaque champ d'usage sur ses copies, et sont recalculés pour toutes les sessions partageant une
+réponse dès que l'une d'elles est ingérée ou purgée.
 
 ## Modèle de concurrence
 
@@ -317,7 +330,7 @@ les mêmes valeurs.
 |---|---|---|
 | `~/Library/Application Support/ClaudeCockpit/scan-cache.json` | Par fichier, `(mtime, octets lus)` plus les métadonnées de session collectées | Réécrit seulement quand un scan a réellement lu de nouveaux octets ; vidé par un rescan complet |
 | `~/Library/Application Support/ClaudeCockpit/sessions.db` (+ `-wal`/`-shm`) | L'index Sessions : `sessions`, `messages`, `blocks` (offsets d'octets, pas les corps), `edits`, `subagents`, `pr_links`, et une table FTS5. Environ 206 Mo pour les 912 Mo d'archive de Vincent | Mis à jour de façon incrémentale par offset à chaque passage d'indexation ; « Reconstruire l'index » la supprime et la reconstruit, étoiles, noms et masquages reportés |
-| `~/.claude/backups/<aaaaMMjj-HHmmss>/<niveau>/<type>/…` | Une copie de tout ce qu'une mutation s'apprête à toucher | Jamais purgé par l'application — supprimer les vieilles sauvegardes est la décision de l'utilisateur |
+| `~/.claude/backups/<aaaaMMjj-HHmmss>/<niveau>/<type>/…` | Une copie de tout ce qu'une mutation s'apprête à toucher | Conservé 30 jours : `BackupPruner` supprime au lancement les racines plus anciennes ; les entrées non reconnues ne sont pas touchées |
 
 L'application n'écrit nulle part ailleurs. Les transcriptions, les identifiants et la base de rtk
 sont en lecture seule, toujours.
@@ -361,7 +374,7 @@ complète assez peu coûteuse pour valoir la peine à chaque changement.
 | `SessionsKitTests` | Analyse des lignes de transcription pour chaque type de ligne, indexation incrémentale et reprise, déduplication, requêtes du store (filtres de liste, extraits FTS, éditions récentes, buckets d'activité), notation de santé, exporteurs, et un benchmark sur le corpus réel complet |
 | `QuotaKitTests` | Lecture des identifiants dans les deux formes JSON et gestion de l'expiration, analyse de la jauge, calcul du rythme, et la politique de limitation pilotée par une horloge injectée |
 | `RTKKitTests` | Requêtes du repository contre un `history.db` de fixture construit dans un répertoire temporaire, validation de schéma, tics de l'observateur |
-| `SkillsKitTests` | Inventaire sur un `HOME` temporaire, transfert et import, création de sauvegarde, refus des chemins hors du dossier personnel |
+| `SkillsKitTests` | Inventaire sur un `HOME` temporaire (ressources en lien symbolique comprises), transfert et import, création de sauvegarde, refus des chemins hors du dossier personnel, des ressources en lien symbolique et d'une destination qui se résout sur la source |
 
 La testabilité vient de deux choix délibérés faits à la conception : chaque chemin découle d'un
 `ClaudePaths` injectable, et chaque dépendance qui touche le monde extérieur se tient derrière un

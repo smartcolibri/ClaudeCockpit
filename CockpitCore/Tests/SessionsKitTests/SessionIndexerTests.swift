@@ -433,6 +433,77 @@ final class SessionIndexerTests: XCTestCase {
         await XCTAssertNilAsync(try await service.session(id: Line.session))
     }
 
+    /// A transcript cut back to nothing, or to half a line, no longer holds what was indexed
+    /// from it. Waiting for a complete line must not keep the old rows on screen.
+    func testATranscriptTruncatedToNothingDropsItsOldRows() async throws {
+        let path = "\(Line.project)/sess-cut.jsonl"
+        try fixture.write([
+            Line.user(uuid: "c1", text: "manticore disparue", at: TestClock.offset(0),
+                      sessionId: "sess-cut"),
+        ], to: path)
+        let service = fixture.service()
+        try await service.index()
+        await XCTAssertEqualAsync(try await service.messageCount(sessionId: "sess-cut"), 1)
+
+        try Data("{\"type\":\"user\",\"uu".utf8).write(to: fixture.url(path))
+        try await service.index()
+        await XCTAssertEqualAsync(try await service.messageCount(sessionId: "sess-cut"), 0,
+                                  "une demi-ligne ne remplace pas l'ancien contenu")
+        await XCTAssertEqualAsync(try await service.search("manticore", filter: SessionFilter()), [])
+        await XCTAssertNilAsync(try await service.session(id: "sess-cut"))
+
+        // Truncated in place to zero bytes: same inode, nothing left to read.
+        try fixture.write([
+            Line.user(uuid: "c2", text: "chimère", at: TestClock.offset(1), sessionId: "sess-cut"),
+        ], to: path)
+        try await service.index()
+        await XCTAssertEqualAsync(try await service.messageCount(sessionId: "sess-cut"), 1)
+        let handle = try FileHandle(forWritingTo: fixture.url(path))
+        try handle.truncate(atOffset: 0)
+        try handle.close()
+        try await service.index()
+        await XCTAssertEqualAsync(try await service.messageCount(sessionId: "sess-cut"), 0)
+    }
+
+    /// The `Agent` card of a sub-agent whose transcript is gone must not open onto nothing.
+    func testPruningASubagentTranscriptUnlinksItsAgentCard() async throws {
+        try fixture.writeDemoSession()
+        let service = fixture.service()
+        try await service.index()
+
+        try FileManager.default.removeItem(
+            at: fixture.url("\(Line.project)/\(Line.session)/subagents/agent-\(Line.agentId).jsonl"))
+        try await service.index()
+
+        let messages = try await service.messages(sessionId: Line.session, limit: 500)
+        let agentCall = try XCTUnwrap(messages.flatMap(\.blocks).first { $0.toolName == "Agent" })
+        XCTAssertNil(agentCall.subagentId, "la carte ne doit plus pointer sur un transcript disparu")
+        await XCTAssertEqualAsync(try await service.subagentIds(ofSession: Line.session), [])
+    }
+
+    /// A pass that throws half-way must still report that it stopped, or the app's
+    /// "Reconstruire" button stays disabled for good.
+    func testAFailedPassDoesNotLeaveProgressRunning() async throws {
+        let path = try fixture.writeDemoSession()
+        let service = fixture.service()
+        try await service.index()
+
+        // Break the index from outside so the next recount throws.
+        let saboteur = try SessionStore(databaseURL: fixture.databaseURL)
+        try saboteur.run("DROP TABLE session_models")
+        try fixture.append(Line.user(uuid: "late", text: "encore", at: TestClock.offset(30)), to: path)
+
+        let log = ReportedProgress()
+        do {
+            try await service.index { log.append($0) }
+            XCTFail("la passe aurait dû échouer")
+        } catch {}
+
+        XCTAssertEqual(log.last?.isRunning, false, "le dernier état publié doit être à l'arrêt")
+        let progress = await service.progress()
+        XCTAssertFalse(progress.isRunning)
+    }
+
     func testTranscriptURLPointsAtTheIndexedFile() async throws {
         let path = try fixture.writeDemoSession()
         let service = fixture.service()
@@ -445,6 +516,22 @@ final class SessionIndexerTests: XCTestCase {
 }
 
 // MARK: - Helpers
+
+/// Collects what a `progress` callback reported, from whichever executor calls it.
+private final class ReportedProgress: @unchecked Sendable {
+    private let lock = NSLock()
+    private var entries: [IndexProgress] = []
+
+    func append(_ progress: IndexProgress) {
+        lock.lock(); defer { lock.unlock() }
+        entries.append(progress)
+    }
+
+    var last: IndexProgress? {
+        lock.lock(); defer { lock.unlock() }
+        return entries.last
+    }
+}
 
 /// `XCTUnwrap` on a value that had to be awaited out of an actor.
 func XCTUnwrapAsync<T>(

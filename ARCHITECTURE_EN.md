@@ -105,8 +105,10 @@ Claude Code appends one JSONL transcript per session under
 `…/subagents/agent-*.jsonl`. `TranscriptScanner` walks that tree and keeps, for each file, its
 modification date and how many bytes it has already read, so a refresh only parses what was
 appended since. Lines of type `assistant` carrying a `message.usage` object become `UsageEvent`s;
-assistant messages that appear in both a session transcript and a sub-agent one are deduped on
-`message.id`. Session titles come from standalone `ai-title` lines and `slug` fields, collected
+all lines sharing a `message.id` are merged into one event. Claude Code writes one line per
+content block of a response, with usage growing across them, and the same response can appear in
+both a session transcript and a sub-agent one, so each token field takes the **max** over the
+copies (line order is not reliable) and the response is counted once. Session titles come from standalone `ai-title` lines and `slug` fields, collected
 in the same pass.
 
 `UsageService` owns the scanner and the resulting event list. Aggregation is deliberately
@@ -226,7 +228,16 @@ shows a "live" badge.
 alone; the transcript on disk is never touched. Hiding sets `deleted_at` and the row drops out of
 every listing until the next full rebuild, which is also the only way to recover from a
 corrupted database — `index(full: true)` drops and rebuilds it, carrying stars, custom names and
-hidden sessions forward since they live nowhere else.
+hidden sessions forward since they live nowhere else. The same marks are carried across a
+schema bump, when the database is rebuilt on first open. A pruned transcript only takes its
+session with it when no remaining file carries that session id, so a renamed project folder
+re-reads its sessions from the new path instead of dropping them, and a row holding a mark is
+never deleted.
+
+**Token counting.** Several `messages` rows can belong to one API response (one line per content
+block, or the same response in a session and a sub-agent transcript). Aggregates count each
+`api_message_id` once, taking the max of each usage field over its copies, and are recomputed
+for every session sharing a response whenever one of them is ingested or purged.
 
 ## Concurrency model
 
@@ -293,7 +304,7 @@ initializer, so a fresh install and an upgraded one read the same values.
 |---|---|---|
 | `~/Library/Application Support/ClaudeCockpit/scan-cache.json` | Per-file `(mtime, bytesRead)` plus collected session metadata | Rewritten only when a scan actually read new bytes; cleared by a full rescan |
 | `~/Library/Application Support/ClaudeCockpit/sessions.db` (+ `-wal`/`-shm`) | The Sessions index: `sessions`, `messages`, `blocks` (byte offsets, not bodies), `edits`, `subagents`, `pr_links`, and an FTS5 table. About 206 MB for Vincent's 912 MB archive | Updated incrementally by byte offset on every index pass; "Reconstruire l'index" drops and rebuilds it, stars, names and hidden flags carried over |
-| `~/.claude/backups/<yyyyMMdd-HHmmss>/<level>/<kind>/…` | A copy of everything a mutation is about to touch | Never pruned by the app — deleting old backups is the user's call |
+| `~/.claude/backups/<yyyyMMdd-HHmmss>/<level>/<kind>/…` | A copy of everything a mutation is about to touch | Kept 30 days: `BackupPruner` removes roots older than that at launch; unrecognised entries are left alone |
 
 The app writes nowhere else. Transcripts, credentials and rtk's database are read-only, always.
 
@@ -334,7 +345,7 @@ be worth doing on every change.
 | `SessionsKitTests` | Transcript line parsing for every line kind, incremental indexing and resume, deduplication, store queries (list filters, FTS snippets, recent edits, activity buckets), health grading, exporters, and a benchmark against the full real corpus |
 | `QuotaKitTests` | Credential parsing for both JSON shapes and expiry, gauge parsing, pace math, and the rate-limit policy driven by an injected clock |
 | `RTKKitTests` | Repository queries against a fixture `history.db` built in a temp directory, schema validation, watcher ticks |
-| `SkillsKitTests` | Inventory over a temp `HOME`, transfer and import, backup creation, refusal of paths outside home |
+| `SkillsKitTests` | Inventory over a temp `HOME` (symlinked resources included), transfer and import, backup creation, refusal of paths outside home, of symlinked resources and of a destination that resolves to the source |
 
 The testability comes from two deliberate choices made in the design: every path flows from an
 injectable `ClaudePaths`, and every dependency that touches the outside world sits behind a

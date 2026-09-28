@@ -272,7 +272,7 @@ private struct ProjectsSettingsTab: View {
                 HStack {
                     Button("Rescanner") { Task { await store.refreshSkills() } }
                     Spacer()
-                    Text("\(store.projectRoots.count) racine(s) analysée(s)")
+                    Text(FRFormat.plural(store.projectRoots.count, "racine analysée"))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
