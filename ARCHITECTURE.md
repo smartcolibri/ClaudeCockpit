@@ -393,8 +393,10 @@ protocole (`TokenProviding`, `QuotaFetching`) ou reçoit une horloge injectée.
    `Autoupdate`, `Downloader.xpc`, `Installer.xpc`, `Updater.app` de Sparkle, puis le framework,
    puis l'application. Chaque signature est retentée jusqu'à cinq fois, car le serveur
    d'horodatage d'Apple est capricieux.
-4. Construction du DMG avec une mise en page Finder en vue icônes, image de fond et alias
-   `/Applications`, dans `release/`.
+4. Construction du DMG avec `dmgbuild` (réglages dans `Scripts/dmg-settings.py`, paquets épinglés
+   par empreinte dans `Scripts/dmgbuild-requirements.txt`) : vue icônes, image de fond et alias
+   `/Applications`, écrits dans un `.DS_Store` sans piloter le Finder, dans `release/`. Le script
+   monte ensuite le DMG et échoue si la mise en page ou la signature de l'app manque.
 5. Notarisation avec le profil de trousseau partagé `AppliMacVincentGithub`, puis agrafage et
    validation.
 6. Signature EdDSA du DMG avec `sign_update --account ClaudeCockpit` et écriture de

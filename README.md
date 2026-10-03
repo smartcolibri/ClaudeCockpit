@@ -224,7 +224,7 @@ ClaudeCockpit/
 │   ├── Sources/RTKKit/         read-only SQLite repository and database watcher
 │   ├── Sources/SkillsKit/      resource model, three-level store, transfers, backups
 │   └── Tests/                  XCTest suites, one per module
-├── Scripts/                    release.sh, make-app-icon.swift, make-dmg-background.swift
+├── Scripts/                    release.sh, dmg-settings.py, make-app-icon.swift, make-dmg-background.swift
 ├── docs/                       landing page, screenshots, design spec
 ├── appcast.xml                 Sparkle release feed
 └── README.md, ARCHITECTURE_EN.md, ARCHITECTURE.md, CONTRIBUTING.md, LICENSE
@@ -239,7 +239,7 @@ ClaudeCockpit/
 The script regenerates the project, builds Release, stages the app through `ditto
 --noextattr` and signs it by hand: Sparkle's nested helpers first, deepest first, then the
 framework, then the app, all with Hardened Runtime and a secure timestamp. It packages a DMG
-with a Finder layout into `release/`, notarizes it with the shared keychain profile, staples
+with a Finder layout (written by `dmgbuild`, no Finder scripting) into `release/`, notarizes it with the shared keychain profile, staples
 the ticket, EdDSA-signs the DMG for Sparkle and rewrites `appcast.xml`. It finishes by
 printing the `gh release create` command.
 
