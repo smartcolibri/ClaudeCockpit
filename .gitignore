@@ -27,3 +27,4 @@ PLAN.md
 .env
 .build-*/
 build-*/
+.dmgbuild-venv/

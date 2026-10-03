@@ -363,8 +363,10 @@ protocol (`TokenProviding`, `QuotaFetching`) or takes an injected clock.
 3. Codesign with Hardened Runtime and a secure timestamp, deepest first: Sparkle's `Autoupdate`,
    `Downloader.xpc`, `Installer.xpc`, `Updater.app`, then the framework, then the app. Each
    signature is retried up to five times, because Apple's timestamp server is flaky.
-4. Build the DMG with a Finder icon-view layout, background image and `/Applications` alias,
-   into `release/`.
+4. Build the DMG with `dmgbuild` (settings in `Scripts/dmg-settings.py`, wheels pinned by hash in
+   `Scripts/dmgbuild-requirements.txt`): icon-view layout, background image and `/Applications`
+   alias, written as a `.DS_Store` without scripting Finder, into `release/`. The script then
+   mounts the DMG and fails if the layout or the app's signature is missing.
 5. Notarize with the shared keychain profile `AppliMacVincentGithub`, then staple and validate.
 6. EdDSA-sign the DMG with `sign_update --account ClaudeCockpit` and write `appcast.xml`.
 7. Print the `gh release create` command.

@@ -126,17 +126,27 @@ echo "▶︎ codesign (Developer ID, Hardened Runtime)"
 codesign_ts "$STAGING"
 codesign --verify --strict --deep --verbose=1 "$STAGING"
 
-# 5. Build the DMG with a custom Finder layout
+# 5. Build the DMG with a custom Finder layout.
+#    dmgbuild writes the .DS_Store itself. The Finder AppleScript it replaces
+#    needs Apple Events, which some shells cannot send (osascript is killed with
+#    SIGTERM there), and 1.1.3 and 1.1.4 shipped without a layout because of it.
 echo "▶︎ build DMG"
-DMG_LAYOUT="$STAGING_DIR/dmg-layout"
-mkdir -p "$DMG_LAYOUT/.background"
-ditto --norsrc --noextattr --noacl "$STAGING" "$DMG_LAYOUT/$APP_NAME.app"
-ln -s /Applications "$DMG_LAYOUT/Applications"
-"$ROOT/Scripts/make-dmg-background.swift" "$DMG_LAYOUT/.background/background.png" >/dev/null
+DMG_BG="$STAGING_DIR/background.png"
+"$ROOT/Scripts/make-dmg-background.swift" "$DMG_BG" >/dev/null
 
-# hdiutil detach can fail with "resource busy" right after Finder touched the
-# volume. Retry, then force: a leftover mount makes the next run attach the new
-# image as "<name> 1" while Finder still sees the stale "<name>".
+# dmgbuild and its two dependencies, installed once per requirements file into a
+# private venv, every wheel checked against its pinned hash.
+DMGBUILD_REQS="$ROOT/Scripts/dmgbuild-requirements.txt"
+DMGBUILD_VENV="$ROOT/.dmgbuild-venv/$(shasum -a 256 "$DMGBUILD_REQS" | cut -c1-12)"
+if [ ! -x "$DMGBUILD_VENV/bin/dmgbuild" ]; then
+  echo "▶︎ installing dmgbuild (one-time)"
+  rm -rf "$DMGBUILD_VENV"
+  python3 -m venv "$DMGBUILD_VENV"
+  "$DMGBUILD_VENV/bin/pip" install --quiet --disable-pip-version-check \
+    --only-binary=:all: --require-hashes -r "$DMGBUILD_REQS"
+fi
+
+# hdiutil detach can fail with "resource busy". Retry, then force.
 detach_retry() {
   local mnt="$1" i
   for i in 1 2 3 4 5; do
@@ -156,41 +166,20 @@ for STALE in "/Volumes/$DMG_VOLNAME" "/Volumes/$DMG_VOLNAME "[0-9]*; do
   fi
 done
 
-RW_DMG="$STAGING_DIR/temp.dmg"
-hdiutil create -volname "$DMG_VOLNAME" -srcfolder "$DMG_LAYOUT" \
-  -fs HFS+ -format UDRW -ov "$RW_DMG" >/dev/null
+rm -f "$DMG"
+"$DMGBUILD_VENV/bin/dmgbuild" -s "$ROOT/Scripts/dmg-settings.py" \
+  -D app="$STAGING" -D background="$DMG_BG" \
+  "$DMG_VOLNAME" "$DMG" 2> >(grep -v "is deprecated" >&2) >/dev/null
 
-MOUNT="$(hdiutil attach -nobrowse -noverify -noautoopen "$RW_DMG" | awk -F '\t' 'END {print $NF}')"
-case "$MOUNT" in
-  /Volumes/*) ;;
-  *) echo "✗ could not determine DMG mount point (got: '$MOUNT')" >&2; exit 1 ;;
-esac
-# Target the volume actually mounted, which may differ from $DMG_VOLNAME.
-MOUNT_VOLNAME="$(basename "$MOUNT")"
-# Layout is cosmetic (Finder automation may be denied): warn, don't abort.
-osascript <<APPLESCRIPT >/dev/null || echo "⚠︎ Finder layout failed for \"$MOUNT_VOLNAME\"; DMG will have no custom layout" >&2
-tell application "Finder"
-    tell disk "$MOUNT_VOLNAME"
-        open
-        set current view of container window to icon view
-        set toolbar visible of container window to false
-        set statusbar visible of container window to false
-        set the bounds of container window to {200, 100, 740, 480}
-        set view_options to the icon view options of container window
-        set arrangement of view_options to not arranged
-        set icon size of view_options to 128
-        set background picture of view_options to file ".background:background.png"
-        set position of item "$APP_NAME.app" of container window to {140, 200}
-        set position of item "Applications" of container window to {400, 200}
-        update without registering applications
-        delay 1
-        close
-    end tell
-end tell
-APPLESCRIPT
-sync
-detach_retry "$MOUNT"
-hdiutil convert "$RW_DMG" -format UDZO -imagekey zlib-level=9 -ov -o "$DMG" >/dev/null
+# The layout is deterministic now, so its absence is a bug, not a Finder mood.
+CHECK_MOUNT="$(hdiutil attach -nobrowse -readonly -noverify -noautoopen "$DMG" | awk -F '\t' 'END {print $NF}')"
+LAYOUT_OK=1
+for ITEM in .DS_Store .background.png Applications "$APP_NAME.app"; do
+  [ -e "$CHECK_MOUNT/$ITEM" ] || { echo "✗ DMG is missing $ITEM" >&2; LAYOUT_OK=0; }
+done
+codesign --verify --strict --deep "$CHECK_MOUNT/$APP_NAME.app" || LAYOUT_OK=0
+detach_retry "$CHECK_MOUNT"
+[ "$LAYOUT_OK" = 1 ] || exit 1
 
 # 6. Notarize + staple
 if ! xcrun notarytool history --keychain-profile "$NOTARY_PROFILE" >/dev/null 2>&1; then
