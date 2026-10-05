@@ -14,6 +14,7 @@
 
 [Download the latest release](https://github.com/vincentlauriat/ClaudeCockpit/releases/latest) ·
 [Landing page](https://vincentlauriat.github.io/ClaudeCockpit/) ·
+[Launch film](https://vincentlauriat.github.io/ClaudeCockpit/#film) ·
 [Architecture](ARCHITECTURE_EN.md) ·
 [Interactive diagram](https://vincentlauriat.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html) ·
 [Contributing](CONTRIBUTING.md)
