@@ -4,185 +4,211 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Claude Cockpit — The cockpit for Claude Code on macOS</title>
-<meta name="description" content="A native macOS app that puts your Anthropic quotas and pace, your local Claude Code usage and cost, your RTK token savings and your skills, agents and commands in one place — a menu bar panel and a full window. Everything is read locally. Free and open source (MIT).">
-<meta property="og:title" content="Claude Cockpit">
-<meta property="og:description" content="Anthropic quotas and pace, local usage and cost, RTK token savings, and skills, agents and commands management — one native macOS app, menu bar panel plus full window.">
+<meta name="description" content="Four tools, one cockpit. A native macOS app that puts your Anthropic quotas and pace, your local Claude Code usage and cost, your RTK token savings, your sessions and your skills, agents and commands in one place. 100 % local. Free and open source (MIT).">
+<meta property="og:title" content="Claude Cockpit — Four tools. One cockpit.">
+<meta property="og:description" content="Anthropic quotas in the menu bar, today's cost to the cent, RTK savings, every session searchable. One native macOS app, 100 % local.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://vincentlauriat.github.io/ClaudeCockpit/">
-<meta property="og:image" content="https://vincentlauriat.github.io/ClaudeCockpit/assets/icon-1024.png">
+<meta property="og:image" content="https://vincentlauriat.github.io/ClaudeCockpit/assets/claude-cockpit-keynote.jpg">
+<meta property="og:image:width" content="1920">
+<meta property="og:image:height" content="1080">
+<meta property="og:video" content="https://vincentlauriat.github.io/ClaudeCockpit/assets/claude-cockpit-keynote.mp4">
+<meta property="og:video:type" content="video/mp4">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="theme-color" content="#0d0e11" media="(prefers-color-scheme: dark)">
-<meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)">
+<meta name="twitter:image" content="https://vincentlauriat.github.io/ClaudeCockpit/assets/claude-cockpit-keynote.jpg">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
 <link rel="icon" type="image/png" href="assets/icon-256.png">
 <link rel="apple-touch-icon" href="assets/icon-256.png">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap">
 <link rel="stylesheet" href="assets/base.css">
 <style>
   /* ----------------------------------------------------------------------
-     Claude Cockpit — palette et mise en page.
-     base.css pose les tokens sombres sur :root nu, sans bloc
-     prefers-color-scheme : le mode clair se joue donc ici, et il redéfinit
-     la palette ENTIÈRE, pas seulement le fond. Toute couleur écrite plus bas
-     passe par un token — sinon le sombre fuiterait dans le mode clair.
+     Claude Cockpit — landing « Keynote ».
+     Même grammaire que le film de lancement (assets/claude-cockpit-keynote.mp4) :
+     scène noire, typographie système très grande, une idée par écran.
+     Chaque instrument garde la teinte qu'il a dans l'app (Theme.swift) :
+     terracotta = quotas, bleu = usage, émeraude = RTK, violet = skills.
+     La page est volontairement sombre seulement : c'est une scène.
      ---------------------------------------------------------------------- */
   :root{
-    --bg:#0d0e11; --bg-lift:#121318; --surface:#16181f; --surface-2:#1c1f28;
-    --line:#292d3a; --line-soft:#1f222d;
-    --txt:#e9ebf2; --muted:#9298ab; --faint:#767d92;
-
-    --accent:#d97757; --accent-soft:rgba(217,119,87,.15); --accent-line:rgba(217,119,87,.34);
-    --hi:#f0a080;
-    --rtk:#1fd79b; --rtk-soft:rgba(31,215,155,.13); --rtk-line:rgba(31,215,155,.32);
-    --skills:#9b84ff; --skills-soft:rgba(155,132,255,.15); --skills-line:rgba(155,132,255,.34);
-
-    --nav-bg:rgba(13,14,17,.82);
-    --shadow:0 30px 70px rgba(0,0,0,.55);
-    --glow:radial-gradient(520px 320px at 76% -10%,rgba(217,119,87,.18),transparent 64%);
-    --maxw:1080px;
+    --bg:#000; --surface:#111214; --line:#26282c; --line-soft:#1a1b1e;
+    --txt:#f5f5f7; --muted:#a1a1a6; --faint:#86868b;
+    --quota:#d97757; --usage:#4d8ce0; --rtk:#1fd79b; --skills:#9b84ff; --sessions:#f0a080;
+    --accent:var(--quota); --accent-soft:rgba(217,119,87,.16);
+    --on-accent:#120804;
+    --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, Helvetica, Arial,
+               "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+    --rounded: ui-rounded, "SF Pro Rounded", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --maxw:1180px;
   }
-
-  @media (prefers-color-scheme: light){
-    :root{
-      --bg:#f7f7f5; --bg-lift:#ffffff; --surface:#ffffff; --surface-2:#f1f0ed;
-      --line:#dcd9d3; --line-soft:#e8e5e0;
-      --txt:#1b1c20; --muted:#565c6b; --faint:#727889;
-
-      --accent:#b3542f; --accent-soft:rgba(179,84,47,.10); --accent-line:rgba(179,84,47,.28);
-      --hi:#8f4023;
-      --rtk:#0c7a58; --rtk-soft:rgba(12,122,88,.10); --rtk-line:rgba(12,122,88,.26);
-      --skills:#5f43c9; --skills-soft:rgba(95,67,201,.10); --skills-line:rgba(95,67,201,.26);
-
-      --on-accent:#ffffff;
-      --nav-bg:rgba(247,247,245,.86);
-      --shadow:0 24px 50px rgba(28,22,18,.13);
-      --glow:radial-gradient(520px 320px at 76% -10%,rgba(179,84,47,.10),transparent 64%);
-    }
-  }
-
+  body{font-family:var(--display);background:var(--bg);color:var(--txt);font-size:17px;line-height:1.55}
   .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+  .narrow{max-width:760px;margin:0 auto}
+  .center{text-align:center}
+  h1,h2,h3{font-weight:700;letter-spacing:-.035em;line-height:1.04;text-wrap:balance}
 
-  nav{position:sticky;top:0;z-index:var(--z-nav);background:var(--nav-bg);
-      backdrop-filter:saturate(1.4) blur(12px);border-bottom:1px solid var(--line-soft)}
-  nav .wrap{display:flex;align-items:center;gap:18px;height:60px}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:-.01em}
-  .logo{width:26px;height:26px;border-radius:8px;background:var(--accent);color:var(--on-accent);
-        display:grid;place-items:center;font-size:12px;font-weight:800;font-family:var(--font-mono)}
-  .nav-links{display:flex;gap:18px;margin-left:auto;align-items:center;color:var(--muted);font-size:14px}
+  /* Navigation */
+  nav{position:sticky;top:0;z-index:var(--z-nav);background:rgba(0,0,0,.72);
+      backdrop-filter:saturate(1.6) blur(18px);-webkit-backdrop-filter:saturate(1.6) blur(18px);
+      border-bottom:1px solid var(--line-soft)}
+  nav .wrap{display:flex;align-items:center;gap:18px;height:52px}
+  .brand{display:flex;align-items:center;gap:10px;white-space:nowrap;font-weight:600;font-size:16px;letter-spacing:-.01em}
+  .brand img{width:24px;height:24px;border-radius:6px}
+  .nav-links{display:flex;gap:22px;margin-left:auto;align-items:center;color:var(--muted);font-size:13px}
   .nav-links a:hover{color:var(--txt)}
   .langtog{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
-  .langtog button{background:none;border:0;color:var(--muted);font:600 11px/1 var(--font-mono);
-                  padding:7px 9px;cursor:pointer}
-  .langtog button.on{background:var(--accent);color:var(--on-accent)}
-  .btn{display:inline-flex;align-items:center;gap:8px;border-radius:999px;padding:11px 20px;
-       font-weight:600;font-size:14px;border:1px solid transparent;transition:.15s}
-  .btn-primary{background:var(--accent);color:var(--on-accent)}
-  .btn-primary:hover{filter:brightness(1.08)}
+  .langtog button{background:none;border:0;color:var(--muted);font:600 11px/1 var(--display);padding:7px 10px;cursor:pointer}
+  .langtog button.on{background:var(--txt);color:#000}
+
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border-radius:999px;
+       padding:12px 24px;font-weight:600;font-size:16px;border:1px solid transparent;transition:filter .15s,border-color .15s,color .15s}
+  .btn-primary{background:var(--quota);color:var(--on-accent)}
+  .btn-primary:hover{filter:brightness(1.1)}
   .btn-ghost{border-color:var(--line);color:var(--txt)}
-  .btn-ghost:hover{border-color:var(--accent);color:var(--accent)}
-  .btn-sm{padding:8px 14px;font-size:13px}
+  .btn-ghost:hover{border-color:var(--txt)}
+  .btn-sm{min-height:34px;padding:6px 14px;font-size:13px}
 
-  header{padding:60px 0 34px;border-bottom:1px solid var(--line-soft);background:var(--glow)}
-  .hero{display:grid;grid-template-columns:1.1fr .9fr;gap:46px;align-items:center}
-  .heroicon{width:84px;height:84px;border-radius:20px;display:block;margin:0 0 20px;
-            box-shadow:var(--shadow)}
-  .pill{display:inline-flex;align-items:center;gap:7px;font:600 12px/1 var(--font-mono);
-        color:var(--accent);background:var(--accent-soft);border:1px solid var(--accent-line);
-        border-radius:999px;padding:7px 13px;margin-bottom:18px}
-  h1{font-size:clamp(32px,4.6vw,50px);line-height:1.08;letter-spacing:-.025em;margin:0 0 16px}
-  .grad{background:linear-gradient(100deg,var(--accent),var(--hi));-webkit-background-clip:text;
-        background-clip:text;color:transparent}
-  .sub{color:var(--muted);font-size:17px;line-height:1.6;margin:0 0 24px;max-width:56ch}
-  .cta{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:18px}
-  .badges{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;list-style:none}
-  .badges li{font:600 11px/1 var(--font-mono);color:var(--muted);background:var(--surface);
-             border:1px solid var(--line);border-radius:999px;padding:7px 11px}
-  .meta{color:var(--faint);font-size:13px;font-family:var(--font-mono);line-height:1.7}
+  /* Hero */
+  header{padding:96px 0 40px;text-align:center;position:relative;overflow:hidden}
+  header::before{content:"";position:absolute;left:50%;top:-180px;width:900px;height:620px;transform:translateX(-50%);
+                 background:radial-gradient(closest-side,rgba(217,119,87,.30),transparent);pointer-events:none}
+  .heroicon{width:112px;height:112px;margin:0 auto 34px;display:block;position:relative;
+            filter:drop-shadow(0 24px 50px rgba(217,119,87,.35))}
+  h1{font-size:clamp(52px,9.4vw,124px);position:relative}
+  h1 .l2{display:block;background:linear-gradient(180deg,#fff 10%,#9a9aa0);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.06em}
+  .sub{color:var(--muted);font-size:clamp(19px,2.2vw,24px);line-height:1.45;max-width:36ch;margin:26px auto 34px;letter-spacing:-.01em;position:relative}
+  .cta{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;position:relative}
+  .fineprint{color:var(--faint);font-size:14px;margin-top:22px;position:relative}
 
-  .shot{margin:0;text-align:center}
-  .shot img{display:block;width:100%;height:auto;border-radius:var(--radius);
-            border:1px solid var(--line);background:var(--surface);box-shadow:var(--shadow)}
-  .shot figcaption{color:var(--faint);font-size:12px;font-family:var(--font-mono);
-                   margin-top:12px;line-height:1.6}
-  .shot-panel img{max-width:340px;margin:0 auto}
-  .shot-wide{margin-top:30px}
+  /* La scène vidéo — l'élément qu'on retient */
+  .stage{padding:34px 0 40px}
+  .film{position:relative;max-width:1120px;margin:0 auto;border-radius:28px;overflow:hidden;
+        box-shadow:0 0 0 1px rgba(255,255,255,.09),0 60px 160px rgba(217,119,87,.16),0 40px 120px rgba(0,0,0,.9);background:#000}
+  .film video{display:block;width:100%;height:auto;aspect-ratio:16/9;background:#000}
+  .sound{position:absolute;right:18px;bottom:18px;display:flex;align-items:center;gap:8px;
+         background:rgba(20,20,22,.72);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+         border:1px solid rgba(255,255,255,.14);color:var(--txt);border-radius:999px;padding:9px 16px;
+         font:600 13px/1 var(--display);cursor:pointer;min-height:40px}
+  .sound:hover{background:rgba(40,40,44,.85)}
+  .sound svg{width:16px;height:16px}
+  .film-note{color:var(--faint);font-size:14px;text-align:center;margin-top:16px}
 
-  section{padding:62px 0;border-bottom:1px solid var(--line-soft)}
-  h2{font-size:clamp(24px,3vw,33px);letter-spacing:-.02em;margin:0 0 10px}
-  h3{font-size:16px;letter-spacing:-.01em}
-  .lead{color:var(--muted);font-size:16px;line-height:1.65;max-width:68ch;margin:0 0 4px}
-  .eyebrow{font:600 11px/1 var(--font-mono);letter-spacing:.14em;text-transform:uppercase;
-           color:var(--accent);margin:0 0 12px}
+  section{padding:120px 0}
+  .statement{font-size:clamp(40px,6.6vw,88px);text-align:center}
+  .statement .dim{color:var(--faint)}
+  .lead{color:var(--muted);font-size:clamp(18px,1.9vw,22px);line-height:1.5;max-width:44ch;margin:24px auto 0;text-align:center;letter-spacing:-.01em}
+  .lead a{color:var(--txt);text-decoration:underline;text-underline-offset:4px}
 
-  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:var(--gap);margin-top:30px}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
-  .card h3{margin:0 0 8px}
-  .card p{color:var(--muted);font-size:14px;line-height:1.6;margin:0}
-  .ico{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);
-       display:grid;place-items:center;margin-bottom:14px;font-size:17px;font-weight:700}
+  /* Quatre outils → un cockpit */
+  .merge{display:flex;flex-direction:column;align-items:center;gap:22px;margin-top:56px}
+  .tools{display:flex;justify-content:center;gap:16px;flex-wrap:wrap}
+  .tool{display:inline-flex;align-items:center;gap:12px;font-size:clamp(17px,1.9vw,22px);font-weight:600;
+        padding:16px 26px;border-radius:999px;background:var(--surface);border:1px solid var(--line);
+        transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .5s}
+  .tool i{width:12px;height:12px;border-radius:50%;display:block}
+  .eq{font-size:40px;line-height:1;color:var(--faint);font-weight:300}
+  .result{display:inline-flex;align-items:center;gap:14px;font-size:clamp(20px,2.2vw,26px);font-weight:700;
+          padding:12px 26px 12px 12px;border-radius:999px;background:rgba(217,119,87,.14);border:1px solid rgba(217,119,87,.4)}
+  .result img{width:44px;height:44px;border-radius:11px}
+  .merge.pre .tool{opacity:0;transform:translateY(24px)}
+  .merge.pre .eq,.merge.pre .result{opacity:0;transform:scale(.8)}
+  .merge .eq,.merge .result{transition:transform .6s cubic-bezier(.2,1.4,.4,1) .55s,opacity .4s .55s}
 
-  .bul{list-style:none;margin:20px 0 0;display:grid;gap:11px;max-width:72ch}
-  .bul li{position:relative;padding-left:22px;color:var(--muted);font-size:14.5px;line-height:1.6}
-  .bul li::before{content:"";position:absolute;left:2px;top:.62em;width:7px;height:7px;
-                  border-radius:2px;background:var(--accent)}
-  .bul b{color:var(--txt);font-weight:600}
+  /* Chiffres */
+  .numbers{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:70px;text-align:center}
+  .big{font-family:var(--rounded);font-weight:700;font-size:clamp(54px,7.4vw,104px);letter-spacing:-.045em;line-height:1;
+       font-variant-numeric:tabular-nums;background:linear-gradient(180deg,var(--hi),var(--c));-webkit-background-clip:text;background-clip:text;color:transparent;
+       padding-bottom:.08em;white-space:nowrap}
+  .big .u{font-size:.5em;letter-spacing:-.02em;margin-left:.08em}
+  .big .u.pre{margin:0 .04em 0 0}
+  .numbers p{color:var(--muted);font-size:18px;line-height:1.4;max-width:22ch;margin:14px auto 0}
+  .n-quota{--c:var(--quota);--hi:#ffc2a8} .n-usage{--c:var(--usage);--hi:#b5d2ff} .n-rtk{--c:var(--rtk);--hi:#a6ffdd}
+  .numbers-note{color:var(--faint);font-size:14px;text-align:center;margin-top:46px}
 
-  .readout{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-           padding:22px 24px;font-family:var(--font-mono);font-size:13.5px;line-height:1.85;
-           color:var(--muted);overflow-x:auto;margin-top:28px}
-  .readout b{color:var(--accent);font-size:26px;font-weight:700;display:block;line-height:1.2;margin-bottom:6px}
-  .readout .dim{color:var(--faint)}
+  /* Diapositives d'instruments */
+  .slide{padding:110px 0 40px}
+  .slide h2{font-size:clamp(40px,6.4vw,84px);text-align:center}
+  .slide h2 .dim{color:var(--faint)}
+  .tag{display:flex;align-items:center;justify-content:center;gap:10px;color:var(--c);font-weight:600;font-size:19px;margin-bottom:22px;letter-spacing:-.01em}
+  .tag i{width:10px;height:10px;border-radius:50%;background:var(--c)}
+  #quotas{--c:var(--quota)} #usage{--c:var(--usage)} #rtk{--c:var(--rtk)} #sessions{--c:var(--sessions)} #skills{--c:var(--skills)}
+  .shot{margin:60px auto 0;max-width:1120px}
+  .shot img{display:block;width:100%;height:auto;border-radius:18px;
+            box-shadow:0 0 0 1px rgba(255,255,255,.1),0 50px 120px rgba(0,0,0,.8)}
+  .details{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;max-width:1080px;margin:60px auto 0}
+  .details div{border-top:2px solid var(--c);padding-top:18px}
+  .details h3{font-size:20px;letter-spacing:-.02em;margin-bottom:8px}
+  .details p{color:var(--muted);font-size:16px;line-height:1.55}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;color:var(--txt);
+       background:var(--surface);border:1px solid var(--line);border-radius:6px;padding:1px 6px}
 
-  table{width:100%;border-collapse:collapse;font-size:14px;margin-top:28px}
-  th,td{text-align:left;padding:12px 14px;border-bottom:1px solid var(--line-soft);vertical-align:top}
-  th{color:var(--faint);font:600 11px/1 var(--font-mono);letter-spacing:.1em;text-transform:uppercase}
-  td:first-child{color:var(--txt);font-weight:600;white-space:nowrap}
-  td{color:var(--muted);line-height:1.6}
+  /* Barre de menus + panneau */
+  .desk{position:relative;max-width:1120px;margin:60px auto 0;border-radius:22px;overflow:hidden;
+        background:radial-gradient(900px 520px at 78% 0%,#3a2318,#0d0b0a 62%,#050505);
+        box-shadow:0 0 0 1px rgba(255,255,255,.08);aspect-ratio:16/9.4;min-height:420px}
+  .menubar{height:34px;background:rgba(48,48,52,.7);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+           display:flex;align-items:center;justify-content:flex-end;gap:22px;padding:0 18px;font-size:14px;font-weight:500;color:#eee}
+  .mb-item{display:flex;align-items:center;gap:7px;padding:3px 10px;border-radius:6px;background:rgba(255,255,255,.18)}
+  .mb-item b{font-family:var(--rounded);font-weight:600}
+  .desk .panel{position:absolute;right:7%;top:46px;width:min(28%,300px);border-radius:16px;
+               box-shadow:0 0 0 1px rgba(255,255,255,.14),0 40px 100px rgba(0,0,0,.8)}
+  .desk-copy{position:absolute;left:7%;top:50%;transform:translateY(-40%);max-width:46%}
+  .desk-copy strong{display:block;font-size:clamp(28px,4.2vw,58px);letter-spacing:-.035em;line-height:1.05}
+  .desk-copy span.s{display:block;color:var(--muted);font-size:clamp(16px,1.8vw,22px);margin-top:14px;line-height:1.4}
 
-  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--gap);margin-top:30px;counter-reset:s}
-  .step{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
-        padding:24px 22px 22px;position:relative}
-  .step::before{counter-increment:s;content:counter(s);position:absolute;top:-13px;left:22px;
-                width:28px;height:28px;border-radius:9px;background:var(--accent);color:var(--on-accent);
-                font:800 14px/1 var(--font-mono);display:grid;place-items:center}
-  .step h3{margin:4px 0 6px}
-  .step p{color:var(--muted);font-size:14px;line-height:1.6;margin:0}
+  /* Encore une chose… */
+  #privacy{padding-top:160px}
+  .omt{color:var(--faint);font-size:clamp(26px,3.4vw,44px);font-weight:600;letter-spacing:-.02em;text-align:center}
+  .local{font-family:var(--rounded);font-weight:700;font-size:clamp(68px,13vw,180px);letter-spacing:-.05em;line-height:1;text-align:center;margin-top:40px;
+         background:linear-gradient(180deg,#fff 20%,#8e8e93);-webkit-background-clip:text;background-clip:text;color:transparent;padding-bottom:.06em}
+  .sources{max-width:980px;margin:70px auto 0;border-top:1px solid var(--line)}
+  .src{display:grid;grid-template-columns:220px 1fr;gap:28px;padding:22px 0;border-bottom:1px solid var(--line-soft)}
+  .src h3{font-size:18px;letter-spacing:-.015em}
+  .src p{color:var(--muted);font-size:16px;line-height:1.55}
 
-  .note{display:flex;gap:12px;background:var(--surface-2);border:1px solid var(--line);
-        border-left:3px solid var(--accent);border-radius:var(--radius-sm);padding:16px 18px;
-        color:var(--muted);font-size:14px;line-height:1.6;margin-top:26px}
-  .note b{color:var(--txt)}
+  /* Installation — une vraie séquence, donc numérotée */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:70px;counter-reset:s}
+  .step::before{counter-increment:s;content:counter(s);display:block;font-family:var(--rounded);font-weight:700;
+                font-size:84px;line-height:1;letter-spacing:-.04em;color:#2c2d31;margin-bottom:14px}
+  .step h3{font-size:22px;margin-bottom:8px}
+  .step p{color:var(--muted);font-size:16px}
+  .req{max-width:760px;margin:60px auto 0;color:var(--muted);font-size:16px;text-align:center;line-height:1.6}
+  .req b{color:var(--txt)}
+  .final{margin-top:56px;display:flex;justify-content:center;gap:14px;flex-wrap:wrap}
 
-  code{background:var(--surface-2);border:1px solid var(--line-soft);border-radius:6px;
-       padding:2px 6px;font-size:12.5px;color:var(--accent)}
+  /* Filiation */
+  .lineage{display:grid;grid-template-columns:repeat(4,1fr);gap:28px;margin-top:60px}
+  .anc h3{font-size:18px;display:flex;align-items:center;gap:10px}
+  .anc h3 i{width:10px;height:10px;border-radius:50%}
+  .anc p{color:var(--muted);font-size:15px;margin:8px 0 10px;line-height:1.5}
+  .anc a{color:var(--txt);font-size:14px;text-decoration:underline;text-underline-offset:3px;word-break:break-all}
 
-  .lineage{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:var(--gap);margin-top:30px}
-  .anc{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
-  .anc h3{margin:0 0 6px;font-size:15px}
-  .anc p{color:var(--muted);font-size:13.5px;line-height:1.6;margin:0 0 12px}
-  .anc a{color:var(--accent);font-size:13px;font-family:var(--font-mono);
-         text-decoration:underline;text-underline-offset:3px}
-
-  /* Chaque domaine garde la teinte qu'il a dans l'app : l'accent est redéfini
-     localement, donc eyebrow, puces, icônes et bordures suivent sans duplication. */
-  #rtk{--accent:var(--rtk);--accent-soft:var(--rtk-soft);--accent-line:var(--rtk-line)}
-  #skills{--accent:var(--skills);--accent-soft:var(--skills-soft);--accent-line:var(--skills-line)}
-
-  footer{padding:36px 0 56px;color:var(--faint);font-size:13px;text-align:center;line-height:1.9}
+  footer{padding:60px 0 70px;color:var(--faint);font-size:13px;text-align:center;line-height:1.9;border-top:1px solid var(--line-soft)}
   footer a{color:var(--muted);text-decoration:underline;text-underline-offset:3px}
-  footer a:hover{color:var(--accent)}
+  footer a:hover{color:var(--txt)}
 
-  @media (max-width:860px){
-    .hero{grid-template-columns:1fr;gap:32px}
+  @media (max-width:900px){
+    .numbers,.details,.steps{grid-template-columns:1fr;gap:40px}
+    .lineage{grid-template-columns:1fr 1fr}
+    .src{grid-template-columns:1fr;gap:6px}
     .nav-links a:not(.btn){display:none}
-    .steps{grid-template-columns:1fr}
-    header{padding:42px 0 26px}
-    section{padding:46px 0}
+    section{padding:84px 0} .slide{padding:84px 0 20px}
+    header{padding:64px 0 30px}
+    .desk{aspect-ratio:auto;min-height:0;padding:56px 22px 28px}
+    .desk .menubar{position:absolute;left:0;right:0;top:0}
+    .desk-copy{position:static;transform:none;max-width:none;margin-bottom:28px}
+    .desk .panel{position:static;width:min(100%,330px);margin:0 auto;display:block}
   }
-  @media (max-width:430px){
+  @media (max-width:520px){
     .wrap{padding:0 16px}
-    .badges li{font-size:10.5px}
+    .lineage{grid-template-columns:1fr}
+    .langtog button{padding:7px 8px}
+    .menubar .opt{display:none}
+    .sound span{display:none}
+    .bname{display:none}
+  }
+  @media (prefers-reduced-motion: reduce){
+    .merge.pre .tool,.merge.pre .eq,.merge.pre .result{opacity:1;transform:none}
   }
 </style>
 </head>
@@ -191,9 +217,10 @@
 <a class="skip" href="#top"><span class="en">Skip to content</span><span class="fr">Aller au contenu</span><span class="zh">跳至內容</span></a>
 
 <nav><div class="wrap">
-  <a class="brand" href="#top"><span class="logo">CC</span>Claude Cockpit</a>
+  <a class="brand" href="#top"><img src="assets/icon-256.png" alt=""><span class="bname">Claude Cockpit</span></a>
   <div class="nav-links">
-    <a href="#instruments"><span class="en">Instruments</span><span class="fr">Instruments</span><span class="zh">儀表</span></a>
+    <a href="#film"><span class="en">Film</span><span class="fr">Film</span><span class="zh">影片</span></a>
+    <a href="#quotas"><span class="en">Features</span><span class="fr">Fonctions</span><span class="zh">功能</span></a>
     <a href="#privacy"><span class="en">Privacy</span><span class="fr">Confidentialité</span><span class="zh">隱私</span></a>
     <a href="#install"><span class="en">Install</span><span class="fr">Installer</span><span class="zh">安裝</span></a>
     <div class="langtog" role="group" aria-label="Language / Langue / 語言">
@@ -201,400 +228,277 @@
       <button type="button" data-lang="fr" aria-pressed="false" onclick="setLang('fr')">FR</button>
       <button type="button" data-lang="zh" aria-pressed="false" onclick="setLang('zh')">中文</button>
     </div>
-    <a class="btn btn-primary btn-sm" href="https://github.com/vincentlauriat/ClaudeCockpit">GitHub</a>
+    <a class="btn btn-primary btn-sm" href="https://github.com/vincentlauriat/ClaudeCockpit/releases/latest"><span class="en">Download</span><span class="fr">Télécharger</span><span class="zh">下載</span></a>
   </div>
 </div></nav>
 
 <header id="top"><div class="wrap">
-  <div class="hero">
-    <div>
-      <img class="heroicon" src="assets/icon-256.png" alt="The Claude Cockpit app icon: a warm gauge arc with its needle on a dark rounded square" onerror="this.style.display='none'">
-      <span class="pill">◉ <span class="en">macOS menu bar + window · MIT</span><span class="fr">Barre de menus + fenêtre macOS · MIT</span><span class="zh">macOS 選單列 ＋ 視窗 · MIT</span></span>
-      <h1>
-        <span class="en">Everything Claude Code<br><span class="grad">costs you, in one cockpit.</span></span>
-        <span class="fr">Tout ce que Claude Code<br><span class="grad">vous coûte, dans un seul cockpit.</span></span>
-        <span class="zh">Claude Code 花掉的一切，<br><span class="grad">盡收於一個座艙。</span></span>
-      </h1>
-      <p class="sub">
-        <span class="en">The cockpit for Claude Code on macOS: Anthropic quotas and pace, local usage and cost, RTK token savings, and skills, agents and commands management — in one native app, as a menu bar panel and a full window.</span>
-        <span class="fr">Le cockpit de Claude Code sur macOS : quotas et rythme Anthropic, usage et coût locaux, tokens économisés par RTK, et gestion des skills, agents et commandes — dans une seule app native, panneau de barre de menus et fenêtre complète.</span>
-        <span class="zh">macOS 上的 Claude Code 座艙：Anthropic 配額與節奏、本機用量與成本、RTK 省下的 token，以及技能、代理與指令的管理——全在一個原生應用程式裡，選單列面板加上完整視窗。</span>
-      </p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/vincentlauriat/ClaudeCockpit/releases/latest"><span class="en">Download for macOS</span><span class="fr">Télécharger pour macOS</span><span class="zh">下載 macOS 版</span></a>
-        <a class="btn btn-ghost" href="https://github.com/vincentlauriat/ClaudeCockpit"><span class="en">View on GitHub</span><span class="fr">Voir sur GitHub</span><span class="zh">在 GitHub 上檢視</span></a>
-      </div>
-      <ul class="badges">
-        <li>macOS 14+</li>
-        <li><span class="en">Notarised by Apple</span><span class="fr">Notarisée par Apple</span><span class="zh">經 Apple 公證</span></li>
-        <li><span class="en">Sparkle auto-update</span><span class="fr">Mise à jour Sparkle</span><span class="zh">Sparkle 自動更新</span></li>
-        <li>MIT</li>
-        <li><span class="en">Apple Silicon &amp; Intel</span><span class="fr">Apple Silicon et Intel</span><span class="zh">Apple Silicon 與 Intel</span></li>
-      </ul>
-      <p class="meta">
-        <span class="en">Free &amp; open source · reads your Mac, sends nothing · French interface</span>
-        <span class="fr">Gratuit et open source · lit votre Mac, n'envoie rien · interface en français</span>
-        <span class="zh">免費開源 · 只讀取你的 Mac，不送出任何資料 · 法文介面</span>
-      </p>
-    </div>
-    <figure class="shot shot-panel">
-      <img src="screenshots/panel.png" alt="The Claude Cockpit menu bar panel: weekly quota with its reset countdown, the pace sentence, the daily budget, and today's local cost, tokens and RTK savings" onerror="this.style.display='none';var f=this.closest('figure');if(f)f.style.display='none'">
-      <figcaption>
-        <span class="en">The menu bar panel — the whole day in one glance.</span>
-        <span class="fr">Le panneau de la barre de menus — la journée entière d'un coup d'œil.</span>
-        <span class="zh">選單列面板——一眼看完一整天。</span>
-      </figcaption>
-    </figure>
+  <img class="heroicon" src="assets/icon-256.png" alt="The Claude Cockpit app icon: a warm gauge arc with its needle on a dark rounded square">
+  <h1>
+    <span class="en">Four tools.<span class="l2">One cockpit.</span></span>
+    <span class="fr">Quatre outils.<span class="l2">Un cockpit.</span></span>
+    <span class="zh">四個工具。<span class="l2">一個座艙。</span></span>
+  </h1>
+  <p class="sub">
+    <span class="en">Your Anthropic quotas, what Claude Code cost you today, what RTK saved, every session and every skill — in one native macOS app.</span>
+    <span class="fr">Vos quotas Anthropic, ce que Claude Code vous a coûté aujourd'hui, ce que RTK a économisé, chaque session et chaque skill — dans une seule app macOS native.</span>
+    <span class="zh">你的 Anthropic 配額、Claude Code 今天花了多少、RTK 省下多少、每一次工作階段與每一個技能——全在一個原生 macOS 應用程式裡。</span>
+  </p>
+  <div class="cta">
+    <a class="btn btn-primary" href="https://github.com/vincentlauriat/ClaudeCockpit/releases/latest"><span class="en">Download for macOS</span><span class="fr">Télécharger pour macOS</span><span class="zh">下載 macOS 版</span></a>
+    <a class="btn btn-ghost" href="https://github.com/vincentlauriat/ClaudeCockpit"><span class="en">View on GitHub</span><span class="fr">Voir sur GitHub</span><span class="zh">在 GitHub 上檢視</span></a>
   </div>
+  <p class="fineprint">
+    <span class="en">Free and open source (MIT). macOS 14 or later, Apple Silicon and Intel. Signed and notarised by Apple.</span>
+    <span class="fr">Gratuit et open source (MIT). macOS 14 ou ultérieur, Apple Silicon et Intel. Signée et notarisée par Apple.</span>
+    <span class="zh">免費開源（MIT）。macOS 14 以上，支援 Apple Silicon 與 Intel。已簽署並通過 Apple 公證。</span>
+  </p>
 </div></header>
 
-<section id="instruments"><div class="wrap">
-  <p class="eyebrow"><span class="en">The cockpit</span><span class="fr">Le cockpit</span><span class="zh">座艙</span></p>
-  <h2><span class="en">Five instruments, one window</span><span class="fr">Cinq instruments, une fenêtre</span><span class="zh">五項儀表，一個視窗</span></h2>
-  <p class="lead">
-    <span class="en">Four separate apps used to answer four halves of the same question. Claude Cockpit puts them on one dashboard: how much quota is left, what today actually cost, what your tooling saved, and what Claude Code is working with.</span>
-    <span class="fr">Quatre apps distinctes répondaient jusqu'ici à quatre moitiés de la même question. Claude Cockpit les réunit sur un seul tableau de bord : combien de quota reste-t-il, ce que la journée a réellement coûté, ce que l'outillage a économisé, et avec quoi Claude Code travaille.</span>
-    <span class="zh">過去要四個獨立應用程式，才能回答同一個問題的四個面向。Claude Cockpit 把它們放進同一個儀表板：還剩多少配額、今天實際花了多少、工具省下了多少，以及 Claude Code 手上有哪些資源。</span>
+<div class="stage" id="film"><div class="wrap">
+  <div class="film">
+    <video id="film-video" src="assets/claude-cockpit-keynote.mp4" poster="assets/claude-cockpit-keynote.jpg"
+           muted loop playsinline preload="metadata"
+           aria-label="Claude Cockpit launch film, 23 seconds: four tools become one cockpit, the menu bar quota, today's cost, RTK savings, the overview, session search, and 100 % local."></video>
+    <button class="sound" id="sound" type="button" aria-pressed="false">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M2 6h2.5L8 3v10L4.5 10H2z"/><path id="wave" d="M10.5 5.5a3.5 3.5 0 0 1 0 5M12.3 3.7a6 6 0 0 1 0 8.6" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round" opacity=".35"/></svg>
+      <span class="lab-on"><span class="en">Turn sound on</span><span class="fr">Activer le son</span><span class="zh">開啟聲音</span></span>
+      <span class="lab-off" hidden><span class="en">Mute</span><span class="fr">Couper le son</span><span class="zh">靜音</span></span>
+    </button>
+  </div>
+  <p class="film-note">
+    <span class="en">The launch film, 23 seconds. Every screen in it is the real app.</span>
+    <span class="fr">Le film de lancement, 23 secondes. Chaque écran est la vraie app.</span>
+    <span class="zh">23 秒的發表影片。片中每個畫面都是真實的應用程式。</span>
   </p>
+</div></div>
 
-  <div class="grid">
-    <div class="card">
-      <div class="ico">◷</div>
-      <h3><span class="en">Quotas &amp; pace</span><span class="fr">Quotas et rythme</span><span class="zh">配額與節奏</span></h3>
-      <p><span class="en">Anthropic's own 5-hour and weekly meters, plus where the week lands at the current pace.</span>
-      <span class="fr">Les jauges de 5 h et hebdomadaires d'Anthropic, et où la semaine atterrit au rythme actuel.</span>
-      <span class="zh">Anthropic 自家的 5 小時與每週計量，加上依目前節奏本週將落在哪裡。</span></p>
+<section id="merge"><div class="wrap">
+  <h2 class="statement">
+    <span class="en">Four apps answered four halves of one question. <span class="dim">Now one does.</span></span>
+    <span class="fr">Quatre apps répondaient à quatre moitiés d'une même question. <span class="dim">Une seule suffit.</span></span>
+    <span class="zh">四個應用程式各答一半的同一個問題。<span class="dim">現在一個就夠了。</span></span>
+  </h2>
+  <div class="merge pre" id="mergeRow" aria-label="ClaudeCodeUsage, ClaudeMenu, RTKInfos and SkillManager merged into Claude Cockpit">
+    <div class="tools">
+    <span class="tool" style="transition-delay:0s"><i style="background:var(--usage)"></i>ClaudeCodeUsage</span>
+    <span class="tool" style="transition-delay:.1s"><i style="background:var(--quota)"></i>ClaudeMenu</span>
+    <span class="tool" style="transition-delay:.2s"><i style="background:var(--rtk)"></i>RTKInfos</span>
+    <span class="tool" style="transition-delay:.3s"><i style="background:var(--skills)"></i>SkillManager</span>
     </div>
-    <div class="card">
-      <div class="ico">Σ</div>
-      <h3><span class="en">Local usage &amp; cost</span><span class="fr">Usage et coût locaux</span><span class="zh">本機用量與成本</span></h3>
-      <p><span class="en">Tokens and euros counted from your own transcripts, by model, project, agent and skill.</span>
-      <span class="fr">Tokens et euros comptés sur vos propres transcripts, par modèle, projet, agent et skill.</span>
-      <span class="zh">直接從你自己的記錄計算 token 與金額，並依模型、專案、代理與技能分列。</span></p>
+    <span class="eq" aria-hidden="true">=</span>
+    <span class="result"><img src="assets/icon-256.png" alt="">Claude Cockpit</span>
+  </div>
+</div></section>
+
+<section id="numbers" style="padding-top:40px"><div class="wrap">
+  <h2 class="statement">
+    <span class="en">The numbers that matter. <span class="dim">At a glance.</span></span>
+    <span class="fr">Les chiffres qui comptent. <span class="dim">D'un coup d'œil.</span></span>
+    <span class="zh">重要的數字。<span class="dim">一眼看清。</span></span>
+  </h2>
+  <div class="numbers">
+    <div class="n-quota">
+      <div class="big" data-to="23" data-dec="0" data-unit="%">23<span class="u">%</span></div>
+      <p><span class="en">of the weekly quota, always visible in the menu bar.</span><span class="fr">du quota hebdomadaire, toujours visible dans la barre de menus.</span><span class="zh">的每週配額，始終顯示在選單列。</span></p>
     </div>
-    <div class="card">
-      <div class="ico">✂</div>
-      <h3><span class="en">RTK savings</span><span class="fr">Économies RTK</span><span class="zh">RTK 節省</span></h3>
-      <p><span class="en">The tokens rtk avoided today, over seven days and since install, command by command.</span>
-      <span class="fr">Les tokens évités par rtk aujourd'hui, sur sept jours et depuis l'installation, commande par commande.</span>
-      <span class="zh">rtk 今日、七日與自安裝以來省下的 token，逐一指令列出。</span></p>
+    <div class="n-usage">
+      <div class="big" data-to="68.41" data-dec="2" data-cur="1"><span class="u pre">$</span>68.41</div>
+      <p><span class="en">spent today, counted from your own transcripts.</span><span class="fr">dépensés aujourd'hui, comptés sur vos propres transcripts.</span><span class="zh">今日花費，直接從你自己的記錄計算。</span></p>
     </div>
-    <div class="card">
-      <div class="ico">◫</div>
-      <h3><span class="en">Skills, agents &amp; commands</span><span class="fr">Skills, agents et commandes</span><span class="zh">技能、代理與指令</span></h3>
-      <p><span class="en">Three levels — Library, Global, Project — with copy, move, plugin import and automatic backups.</span>
-      <span class="fr">Trois niveaux — Bibliothèque, Global, Projet — avec copie, déplacement, import de plugin et sauvegardes automatiques.</span>
-      <span class="zh">三個層級——資料庫、全域、專案——支援複製、移動、外掛匯入與自動備份。</span></p>
-    </div>
-    <div class="card">
-      <div class="ico">▦</div>
-      <h3><span class="en">Sessions</span><span class="fr">Sessions</span><span class="zh">工作階段</span></h3>
-      <p><span class="en">Every Claude Code session, transcript and all — searchable, exportable, and resumable in one click.</span>
-      <span class="fr">Chaque session Claude Code, transcript compris — recherchable, exportable, et reprise en un clic.</span>
-      <span class="zh">每一次 Claude Code 工作階段，連同完整記錄——可搜尋、可匯出，一鍵即可繼續。</span></p>
+    <div class="n-rtk">
+      <div class="big" data-to="17.5" data-dec="1" data-unit="M">17.5<span class="u">M</span></div>
+      <p><span class="en">tokens saved by RTK since it was installed.</span><span class="fr">jetons économisés par RTK depuis son installation.</span><span class="zh">RTK 自安裝以來省下的 token。</span></p>
     </div>
   </div>
-
-  <figure class="shot shot-wide">
-    <img src="screenshots/overview.png" alt="The Claude Cockpit overview: four hero tiles for weekly quota, today's cost, RTK tokens saved over seven days and active skills, above an insights list and a usage chart" loading="lazy" onerror="this.style.display='none';var f=this.closest('figure');if(f)f.style.display='none'">
-    <figcaption>
-      <span class="en">The overview: four hero tiles, the insights list, and the week at a glance.</span>
-      <span class="fr">La vue d'ensemble : quatre tuiles principales, la liste d'insights, et la semaine d'un coup d'œil.</span>
-      <span class="zh">總覽頁：四塊主要磚塊、洞察清單，以及一眼看完的本週。</span>
-    </figcaption>
-  </figure>
+  <p class="numbers-note">
+    <span class="en">Real figures, read on the developer's Mac on one ordinary day.</span>
+    <span class="fr">Chiffres réels, relevés sur le Mac du développeur un jour ordinaire.</span>
+    <span class="zh">真實數字，取自開發者的 Mac 上某個平常的一天。</span>
+  </p>
 </div></section>
 
-<section id="quotas"><div class="wrap">
-  <p class="eyebrow"><span class="en">01 · Quotas &amp; pace</span><span class="fr">01 · Quotas et rythme</span><span class="zh">01 · 配額與節奏</span></p>
-  <h2><span class="en">Not just how much is gone — where it lands</span><span class="fr">Pas seulement ce qui est consommé — où ça atterrit</span><span class="zh">不只是用掉多少，而是會落在哪裡</span></h2>
-  <p class="lead">
-    <span class="en">Claude Cockpit reads the same usage endpoint Claude Code itself reads, so the percentages match <code>/usage</code> exactly. It then adds the one number Anthropic never gives you: whether today's pace makes it to the reset.</span>
-    <span class="fr">Claude Cockpit lit l'endpoint d'usage que Claude Code lit lui-même : les pourcentages correspondent exactement à <code>/usage</code>. Il y ajoute le chiffre qu'Anthropic ne donne jamais : si le rythme du jour tiendra jusqu'à la réinitialisation.</span>
-    <span class="zh">Claude Cockpit 讀取的，正是 Claude Code 自己讀取的用量端點，因此百分比與 <code>/usage</code> 完全一致。它再補上 Anthropic 從不提供的那個數字：今天的節奏能不能撐到重置。</span>
-  </p>
-
-  <div class="readout">
-    <b>17 %</b>
-    <span class="en">Weekly quota consumed · resets in 4 d 2 h<br>
-    <span class="dim">At this rate the week ends at 41 % — there is enough room. Today's fair share: 3.4 %.</span></span>
-    <span class="fr">Quota hebdomadaire consommé · réinitialisation dans 4 j 2 h<br>
-    <span class="dim">À ce rythme, la semaine finira à 41 % — la marge est suffisante. Part du jour : 3,4 %.</span></span>
-    <span class="zh">本週配額已使用 · 4 天 2 小時後重置<br>
-    <span class="dim">依此節奏，本週將結束於 41 %——餘裕充足。今日應分配額：3.4 %。</span></span>
+<section class="slide" id="quotas"><div class="wrap">
+  <p class="tag"><i></i><span class="en">Quotas &amp; pace</span><span class="fr">Quotas et rythme</span><span class="zh">配額與節奏</span></p>
+  <h2>
+    <span class="en">Your quota. <span class="dim">Always in sight.</span></span>
+    <span class="fr">Votre quota. <span class="dim">Toujours sous les yeux.</span></span>
+    <span class="zh">你的配額。<span class="dim">始終在眼前。</span></span>
+  </h2>
+  <div class="desk" role="img" aria-label="The macOS menu bar showing Claude Cockpit's weekly quota at 23 %, with its panel open below: weekly quota, daily budget and shortcuts">
+    <div class="menubar">
+      <span class="mb-item"><svg width="16" height="16" viewBox="0 0 26 26" aria-hidden="true"><circle cx="13" cy="13" r="10" fill="none" stroke="#777" stroke-width="3.4"/><circle cx="13" cy="13" r="10" fill="none" stroke="#5DD47A" stroke-width="3.4" stroke-dasharray="62.8" stroke-dashoffset="48.4" transform="rotate(-90 13 13)" stroke-linecap="round"/></svg><b>23 %</b></span>
+      <span class="opt">Wi‑Fi</span><span class="opt">09:41</span>
+    </div>
+    <div class="desk-copy">
+      <strong><span class="en">Where the week lands.</span><span class="fr">Où la semaine atterrit.</span><span class="zh">本週會落在哪裡。</span></strong>
+      <span class="s"><span class="en">Not just how much is gone: whether today's pace makes it to the reset.</span><span class="fr">Pas seulement ce qui est consommé : si le rythme du jour tiendra jusqu'à la réinitialisation.</span><span class="zh">不只是用掉多少，而是今天的節奏能否撐到重置。</span></span>
+    </div>
+    <img class="panel" src="screenshots/panel.png" alt="" loading="lazy">
   </div>
-
-  <ul class="bul">
-    <li><span class="en"><b>Both Anthropic windows.</b> The 5-hour session and the 7-day quota, each with its reset countdown, its current rate in %/h and the sustainable rate that would land exactly on the limit.</span>
-    <span class="fr"><b>Les deux fenêtres Anthropic.</b> La session de 5 h et le quota de 7 jours, chacun avec son compte à rebours, son rythme actuel en %/h et le rythme tenable qui atterrirait pile sur la limite.</span>
-    <span class="zh"><b>兩個 Anthropic 視窗。</b>5 小時工作階段與 7 天配額，各自標示重置倒數、目前每小時百分比，以及剛好落在上限的可持續速率。</span></li>
-    <li><span class="en"><b>Projection to the reset, and a daily budget.</b> Where the week ends if nothing changes, and how much you can spend today to keep an even pace. A window that just opened says so instead of extrapolating a three-minute burst into a habit.</span>
-    <span class="fr"><b>Projection jusqu'à la réinitialisation, et budget quotidien.</b> Où la semaine finit si rien ne change, et ce que vous pouvez dépenser aujourd'hui pour tenir un rythme régulier. Une fenêtre à peine ouverte le dit, au lieu d'extrapoler trois minutes d'activité en habitude.</span>
-    <span class="zh"><b>推算至重置，並給出每日預算。</b>若一切不變本週會停在哪裡，以及今天可以用多少才能維持穩定節奏。剛開啟的視窗會直說，而不會把三分鐘的爆量外推成長期習慣。</span></li>
-    <li><span class="en"><b>One meter per model.</b> Each model-specific weekly limit gets its own row, so a limit you are about to hit never hides behind a comfortable overall percentage.</span>
-    <span class="fr"><b>Une jauge par modèle.</b> Chaque limite hebdomadaire propre à un modèle a sa ligne : une limite sur le point d'être atteinte ne se cache jamais derrière un pourcentage global confortable.</span>
-    <span class="zh"><b>每個模型一條計量。</b>每項模型專屬的每週上限都有自己的一列，即將觸頂的限制不會被看似寬裕的整體百分比掩蓋。</span></li>
-  </ul>
+  <div class="details">
+    <div><h3><span class="en">Both Anthropic windows</span><span class="fr">Les deux fenêtres Anthropic</span><span class="zh">兩個 Anthropic 視窗</span></h3>
+      <p><span class="en">The 5-hour session and the 7-day quota, read from the same endpoint as <code>/usage</code>, each with its reset countdown.</span><span class="fr">La session de 5 h et le quota de 7 jours, lus au même endpoint que <code>/usage</code>, chacun avec son compte à rebours.</span><span class="zh">5 小時工作階段與 7 天配額，讀自與 <code>/usage</code> 相同的端點，各附重置倒數。</span></p></div>
+    <div><h3><span class="en">Projection and daily budget</span><span class="fr">Projection et budget du jour</span><span class="zh">推算與每日預算</span></h3>
+      <p><span class="en">Where the week ends if nothing changes, and how much you can spend today to keep an even pace.</span><span class="fr">Où la semaine finit si rien ne change, et ce que vous pouvez dépenser aujourd'hui pour tenir un rythme régulier.</span><span class="zh">若一切不變本週會停在哪裡，以及今天可以用多少才能維持穩定節奏。</span></p></div>
+    <div><h3><span class="en">One meter per model</span><span class="fr">Une jauge par modèle</span><span class="zh">每個模型一條計量</span></h3>
+      <p><span class="en">A model-specific limit never hides behind a comfortable overall percentage.</span><span class="fr">Une limite propre à un modèle ne se cache jamais derrière un pourcentage global confortable.</span><span class="zh">模型專屬的上限，不會被看似寬裕的整體百分比掩蓋。</span></p></div>
+  </div>
 </div></section>
 
-<section id="usage"><div class="wrap">
-  <p class="eyebrow"><span class="en">02 · Local usage &amp; cost</span><span class="fr">02 · Usage et coût locaux</span><span class="zh">02 · 本機用量與成本</span></p>
-  <h2><span class="en">Percentages hide what you actually spent</span><span class="fr">Les pourcentages masquent la dépense réelle</span><span class="zh">百分比掩蓋了實際的花費</span></h2>
-  <p class="lead">
-    <span class="en">Every Claude Code answer is written to a transcript in <code>~/.claude/projects</code>. Claude Cockpit scans them incrementally and turns them into exact token counts and a priced cost — nothing estimated, nothing reconstructed.</span>
-    <span class="fr">Chaque réponse de Claude Code est écrite dans un transcript sous <code>~/.claude/projects</code>. Claude Cockpit les parcourt de façon incrémentale et les transforme en comptage exact de tokens et en coût valorisé — rien d'estimé, rien de reconstruit.</span>
-    <span class="zh">Claude Code 的每則回覆都會寫入 <code>~/.claude/projects</code> 下的記錄檔。Claude Cockpit 以增量方式掃描它們，轉換成精確的 token 計數與計價後的成本——不估算，也不重建。</span>
-  </p>
-
-  <ul class="bul">
-    <li><span class="en"><b>Four ways to slice it.</b> Tokens and cost by model, by project, by agent and by skill — so you can see which sub-agent or which repository is quietly carrying the bill.</span>
-    <span class="fr"><b>Quatre découpages.</b> Tokens et coût par modèle, par projet, par agent et par skill — de quoi voir quel sous-agent ou quel dépôt porte discrètement la facture.</span>
-    <span class="zh"><b>四種切分方式。</b>依模型、專案、代理與技能分列 token 與成本——一眼看出是哪個子代理或哪個儲存庫悄悄扛下了帳單。</span></li>
-    <li><span class="en"><b>A daily chart, and the sessions behind it.</b> The day-by-day series over any range, with filters on models and projects, and a session list you can open to see the turns one by one.</span>
-    <span class="fr"><b>Un graphique quotidien, et les sessions derrière.</b> La série jour par jour sur n'importe quelle période, avec des filtres par modèle et par projet, et une liste de sessions que l'on ouvre pour voir les tours un à un.</span>
-    <span class="zh"><b>每日圖表，以及背後的工作階段。</b>任意期間的逐日數列，可依模型與專案篩選，並附可展開的工作階段清單，逐輪檢視。</span></li>
-    <li><span class="en"><b>Pricing you control.</b> The rate table for each model family is editable and stored locally, so the cost stays right when Anthropic's prices move or when your own accounting differs.</span>
-    <span class="fr"><b>Une tarification que vous maîtrisez.</b> La table de tarifs de chaque famille de modèles est modifiable et stockée en local : le coût reste juste quand les prix d'Anthropic bougent ou quand votre comptabilité diffère.</span>
-    <span class="zh"><b>由你掌控的計價。</b>各模型家族的費率表可編輯並存於本機，因此當 Anthropic 調價、或你的帳務口徑不同時，成本依然正確。</span></li>
-  </ul>
-
-  <figure class="shot shot-wide">
-    <img src="screenshots/usage.png" alt="The local usage section: stat cards, a daily token chart, a per-model cost bar and a breakdown table by project, agent and skill" loading="lazy" onerror="this.style.display='none';var f=this.closest('figure');if(f)f.style.display='none'">
-    <figcaption>
-      <span class="en">Local usage: filters, stat grid, daily chart and breakdown table.</span>
-      <span class="fr">Usage local : filtres, grille de statistiques, graphique quotidien et table de répartition.</span>
-      <span class="zh">本機用量：篩選器、統計格、每日圖表與分項表格。</span>
-    </figcaption>
-  </figure>
+<section class="slide" id="overview" style="--c:var(--txt)"><div class="wrap">
+  <h2>
+    <span class="en">Everything. <span class="dim">On one screen.</span></span>
+    <span class="fr">Tout. <span class="dim">Sur un seul écran.</span></span>
+    <span class="zh">一切。<span class="dim">盡在一個畫面。</span></span>
+  </h2>
+  <figure class="shot"><img src="screenshots/overview.png" alt="The Claude Cockpit overview: tiles for weekly quota, today's cost, RTK tokens saved and active skills, above the weekly quota, insights and a seven-day chart" loading="lazy"></figure>
 </div></section>
 
-<section id="rtk"><div class="wrap">
-  <p class="eyebrow"><span class="en">03 · RTK savings</span><span class="fr">03 · Économies RTK</span><span class="zh">03 · RTK 節省</span></p>
-  <h2><span class="en">What your tooling gave back</span><span class="fr">Ce que votre outillage a rendu</span><span class="zh">你的工具還回了多少</span></h2>
-  <p class="lead">
-    <span class="en">If rtk is installed, Claude Cockpit opens its <code>history.db</code> read-only and turns it into a savings dashboard. If it is not, the section simply explains how to install it — nothing is invented.</span>
-    <span class="fr">Si rtk est installé, Claude Cockpit ouvre son <code>history.db</code> en lecture seule et en fait un tableau de bord d'économies. Sinon, la section explique simplement comment l'installer — rien n'est inventé.</span>
-    <span class="zh">若已安裝 rtk，Claude Cockpit 會以唯讀方式開啟它的 <code>history.db</code>，並化為節省儀表板。若未安裝，該區塊只會說明如何安裝——絕不虛構數字。</span>
-  </p>
-
-  <ul class="bul">
-    <li><span class="en"><b>Three horizons.</b> Tokens saved today, the seven-day series as a chart, and the all-time total since rtk was installed — with the compression ratio that produced them.</span>
-    <span class="fr"><b>Trois horizons.</b> Tokens économisés aujourd'hui, la série des sept jours en graphique, et le total depuis l'installation de rtk — avec le taux de compression qui les a produits.</span>
-    <span class="zh"><b>三種時間尺度。</b>今日省下的 token、七日數列圖表，以及自安裝 rtk 以來的累計總量——並附上達成這些數字的壓縮比。</span></li>
-    <li><span class="en"><b>Command by command.</b> A ranked bar list showing which filters actually earn their keep — <code>git diff</code>, <code>vitest</code>, <code>grep</code> — and which ones barely move the needle.</span>
-    <span class="fr"><b>Commande par commande.</b> Une liste classée en barres montrant quels filtres valent vraiment leur place — <code>git diff</code>, <code>vitest</code>, <code>grep</code> — et lesquels ne changent presque rien.</span>
-    <span class="zh"><b>逐一指令檢視。</b>以排序長條列出哪些過濾器真正發揮作用——<code>git diff</code>、<code>vitest</code>、<code>grep</code>——以及哪些幾乎沒有差別。</span></li>
-    <li><span class="en"><b>A live trace.</b> The most recent commands as they land in the database, so you can watch a filter work while you run it in another window.</span>
-    <span class="fr"><b>Une trace en direct.</b> Les commandes les plus récentes au fil de leur arrivée dans la base, pour voir un filtre travailler pendant que vous le lancez dans une autre fenêtre.</span>
-    <span class="zh"><b>即時軌跡。</b>指令一進入資料庫便即時顯示，讓你在另一個視窗執行時，同步看著過濾器運作。</span></li>
-  </ul>
-
-  <figure class="shot shot-wide">
-    <img src="screenshots/rtk.png" alt="The RTK section: a compression gauge, today's savings strip, a seven-day chart, all-time tiles and a ranked list of savings per command" loading="lazy" onerror="this.style.display='none';var f=this.closest('figure');if(f)f.style.display='none'">
-    <figcaption>
-      <span class="en">RTK: compression gauge, seven-day chart, savings per command and live trace.</span>
-      <span class="fr">RTK : jauge de compression, graphique sur sept jours, économies par commande et trace en direct.</span>
-      <span class="zh">RTK：壓縮計量、七日圖表、各指令節省量與即時軌跡。</span>
-    </figcaption>
-  </figure>
+<section class="slide" id="usage"><div class="wrap">
+  <p class="tag"><i></i><span class="en">Local usage &amp; cost</span><span class="fr">Usage et coût locaux</span><span class="zh">本機用量與成本</span></p>
+  <h2>
+    <span class="en">Every token. <span class="dim">Every cent.</span></span>
+    <span class="fr">Chaque jeton. <span class="dim">Chaque centime.</span></span>
+    <span class="zh">每個 token。<span class="dim">每一分錢。</span></span>
+  </h2>
+  <figure class="shot"><img src="screenshots/usage.png" alt="The local usage section: stat cards, a daily token chart and a breakdown table by project, agent and skill" loading="lazy"></figure>
+  <div class="details">
+    <div><h3><span class="en">Read from your transcripts</span><span class="fr">Lu dans vos transcripts</span><span class="zh">讀自你的記錄檔</span></h3>
+      <p><span class="en">Exact token counts and a priced cost from <code>~/.claude/projects</code>, scanned incrementally.</span><span class="fr">Comptage exact des jetons et coût valorisé depuis <code>~/.claude/projects</code>, parcouru de façon incrémentale.</span><span class="zh">從 <code>~/.claude/projects</code> 增量掃描，得出精確的 token 數與計價成本。</span></p></div>
+    <div><h3><span class="en">Four ways to slice it</span><span class="fr">Quatre découpages</span><span class="zh">四種切分方式</span></h3>
+      <p><span class="en">By model, project, agent and skill — see which sub-agent quietly carries the bill.</span><span class="fr">Par modèle, projet, agent et skill — voyez quel sous-agent porte discrètement la facture.</span><span class="zh">依模型、專案、代理與技能——看出是哪個子代理悄悄扛下帳單。</span></p></div>
+    <div><h3><span class="en">Pricing you control</span><span class="fr">Des tarifs que vous maîtrisez</span><span class="zh">由你掌控的計價</span></h3>
+      <p><span class="en">The rate table is editable and stored locally, so the cost stays right when prices move.</span><span class="fr">La table de tarifs est modifiable et stockée en local : le coût reste juste quand les prix bougent.</span><span class="zh">費率表可編輯並存於本機，價格變動時成本依然正確。</span></p></div>
+  </div>
 </div></section>
 
-<section id="skills"><div class="wrap">
-  <p class="eyebrow"><span class="en">04 · Skills, agents &amp; commands</span><span class="fr">04 · Skills, agents et commandes</span><span class="zh">04 · 技能、代理與指令</span></p>
-  <h2><span class="en">Three levels, one place to move things between them</span><span class="fr">Trois niveaux, un seul endroit pour circuler entre eux</span><span class="zh">三個層級，一處即可搬移</span></h2>
-  <p class="lead">
-    <span class="en">Skills, agents and commands live in a Library, in your global <code>~/.claude</code>, and inside each project. Claude Cockpit shows the three levels side by side, renders the markdown, and moves files between them without a terminal. Skills linked in from elsewhere are listed too, marked as links and left untouched.</span>
-    <span class="fr">Les skills, agents et commandes vivent dans une bibliothèque, dans votre <code>~/.claude</code> global, et au sein de chaque projet. Claude Cockpit affiche les trois niveaux côte à côte, rend le markdown, et déplace les fichiers entre eux sans terminal. Les skills liés depuis un autre dossier apparaissent aussi, signalés comme liens et jamais modifiés.</span>
-    <span class="zh">技能、代理與指令分別存在資料庫、全域的 <code>~/.claude</code>，以及各個專案之中。Claude Cockpit 並排顯示這三個層級、渲染 markdown，並在不開終端機的情況下搬移檔案。從其他位置以符號連結引入的技能也會列出，標示為連結且不會被更動。</span>
-  </p>
-
-  <ul class="bul">
-    <li><span class="en"><b>Library, Global, Project.</b> One searchable list per level, with the rendered description and frontmatter of every resource in a detail pane next to it.</span>
-    <span class="fr"><b>Bibliothèque, Global, Projet.</b> Une liste consultable par niveau, avec la description et le frontmatter de chaque ressource rendus dans un volet de détail à côté.</span>
-    <span class="zh"><b>資料庫、全域、專案。</b>每個層級各有一份可搜尋的清單，旁邊的詳細窗格會渲染每項資源的描述與 frontmatter。</span></li>
-    <li><span class="en"><b>Copy or move between levels.</b> Promote a project skill to your global set, or push a Library agent down into the repository you are working in — one action, either direction.</span>
-    <span class="fr"><b>Copier ou déplacer entre niveaux.</b> Promouvoir un skill de projet vers votre jeu global, ou pousser un agent de la bibliothèque dans le dépôt en cours — une action, dans les deux sens.</span>
-    <span class="zh"><b>在層級間複製或移動。</b>把專案裡的技能升級到全域，或把資料庫裡的代理推進目前的儲存庫——一個動作，雙向皆可。</span></li>
-    <li><span class="en"><b>Plugin import, and a backup before every change.</b> Pull a skill straight out of the plugin cache, and know that every mutation copies the affected files to a timestamped backup first.</span>
-    <span class="fr"><b>Import depuis un plugin, et sauvegarde avant chaque changement.</b> Récupérer un skill directement dans le cache des plugins, en sachant que chaque modification copie d'abord les fichiers concernés dans une sauvegarde horodatée.</span>
-    <span class="zh"><b>從外掛匯入，且每次變更前先備份。</b>可直接從外掛快取取出技能；每一次變更都會先把受影響的檔案複製到帶時間戳記的備份中。</span></li>
-  </ul>
-
-  <figure class="shot shot-wide">
-    <img src="screenshots/skills.png" alt="The skills section: a level picker for Library, Global and Project, a searchable resource list, and a detail pane with the rendered markdown and transfer actions" loading="lazy" onerror="this.style.display='none';var f=this.closest('figure');if(f)f.style.display='none'">
-    <figcaption>
-      <span class="en">Skills: level picker, searchable list, rendered detail and transfer actions.</span>
-      <span class="fr">Skills : sélecteur de niveau, liste consultable, détail rendu et actions de transfert.</span>
-      <span class="zh">技能：層級選擇器、可搜尋清單、渲染後的詳細內容與搬移動作。</span>
-    </figcaption>
-  </figure>
+<section class="slide" id="rtk"><div class="wrap">
+  <p class="tag"><i></i><span class="en">RTK savings</span><span class="fr">Économies RTK</span><span class="zh">RTK 節省</span></p>
+  <h2>
+    <span class="en">What your tooling <span class="dim">gave back.</span></span>
+    <span class="fr">Ce que votre outillage <span class="dim">vous a rendu.</span></span>
+    <span class="zh">你的工具<span class="dim">還回了多少。</span></span>
+  </h2>
+  <figure class="shot"><img src="screenshots/rtk.png" alt="The RTK section: a compression gauge, today's savings, a seven-day chart and the live trace of filtered commands" loading="lazy"></figure>
+  <div class="details">
+    <div><h3><span class="en">Three horizons</span><span class="fr">Trois horizons</span><span class="zh">三種時間尺度</span></h3>
+      <p><span class="en">Today, the last seven days and all time, with the compression ratio behind them.</span><span class="fr">Aujourd'hui, les sept derniers jours et depuis toujours, avec le taux de compression derrière.</span><span class="zh">今日、最近七日與累計，並附背後的壓縮比。</span></p></div>
+    <div><h3><span class="en">Command by command</span><span class="fr">Commande par commande</span><span class="zh">逐一指令</span></h3>
+      <p><span class="en">Which filters earn their keep — <code>git diff</code>, <code>vitest</code>, <code>grep</code> — and which barely move the needle.</span><span class="fr">Quels filtres valent leur place — <code>git diff</code>, <code>vitest</code>, <code>grep</code> — et lesquels ne changent presque rien.</span><span class="zh">哪些過濾器真正發揮作用——<code>git diff</code>、<code>vitest</code>、<code>grep</code>——哪些幾乎沒差。</span></p></div>
+    <div><h3><span class="en">A live trace</span><span class="fr">Une trace en direct</span><span class="zh">即時軌跡</span></h3>
+      <p><span class="en">rtk's database is opened read-only and watched, so the figures move as you work.</span><span class="fr">La base de rtk est ouverte en lecture seule et surveillée : les chiffres bougent pendant que vous travaillez.</span><span class="zh">以唯讀方式開啟並監看 rtk 資料庫，數字隨你的工作即時變動。</span></p></div>
+  </div>
 </div></section>
 
-<section id="sessions"><div class="wrap">
-  <p class="eyebrow"><span class="en">05 · Sessions</span><span class="fr">05 · Sessions</span><span class="zh">05 · 工作階段</span></p>
-  <h2><span class="en">Every transcript, searchable and explorable</span><span class="fr">Chaque transcript, recherchable et explorable</span><span class="zh">每一份記錄，皆可搜尋與瀏覽</span></h2>
-  <p class="lead">
-    <span class="en">Claude Cockpit indexes every Claude Code transcript under <code>~/.claude/projects</code> into a local, full-text searchable database — the same tool calls, diffs, thinking and sub-agent runs you would see live, still there long after the terminal closed.</span>
-    <span class="fr">Claude Cockpit indexe chaque transcript Claude Code sous <code>~/.claude/projects</code> dans une base locale, recherchable en texte intégral — les mêmes appels d'outils, diffs, thinking et sous-agents que vous verriez en direct, toujours là longtemps après que le terminal s'est fermé.</span>
-    <span class="zh">Claude Cockpit 會把 <code>~/.claude/projects</code> 下的每一份 Claude Code 記錄，索引進一個可全文搜尋的本機資料庫——與即時畫面相同的工具呼叫、差異比對、思考過程與子代理執行，終端機關閉許久之後依然都在。</span>
-  </p>
+<section class="slide" id="sessions"><div class="wrap">
+  <p class="tag"><i></i><span class="en">Sessions</span><span class="fr">Sessions</span><span class="zh">工作階段</span></p>
+  <h2>
+    <span class="en">Every session. <span class="dim">Searchable.</span></span>
+    <span class="fr">Chaque session. <span class="dim">Fouillable.</span></span>
+    <span class="zh">每一次工作階段。<span class="dim">皆可搜尋。</span></span>
+  </h2>
+  <figure class="shot"><img src="screenshots/sessions.png" alt="The Sessions section: a searchable list of every Claude Code transcript next to a detail pane with the full conversation" loading="lazy"></figure>
+  <div class="details">
+    <div><h3><span class="en">Full-text search</span><span class="fr">Recherche plein texte</span><span class="zh">全文搜尋</span></h3>
+      <p><span class="en">Across message text and tool input and output, filtered by project, date, stars and errors.</span><span class="fr">Sur le texte des messages et les entrées et sorties d'outils, filtrée par projet, date, favoris et erreurs.</span><span class="zh">涵蓋訊息文字與工具輸入輸出，可依專案、日期、星號與錯誤篩選。</span></p></div>
+    <div><h3><span class="en">The whole transcript</span><span class="fr">Le transcript complet</span><span class="zh">完整記錄</span></h3>
+      <p><span class="en">Tool calls, coloured diffs, thinking, sub-agents inline, and a health grade per session.</span><span class="fr">Appels d'outils, diffs colorés, thinking, sous-agents en ligne, et une note de santé par session.</span><span class="zh">工具呼叫、彩色差異比對、思考過程、內嵌子代理，以及每次工作階段的健康分數。</span></p></div>
+    <div><h3><span class="en">Pick up where you left</span><span class="fr">Reprenez où vous en étiez</span><span class="zh">從中斷處繼續</span></h3>
+      <p><span class="en">Star, rename, export to Markdown or HTML, or resume in Terminal with <code>claude --resume</code>.</span><span class="fr">Étoile, renommage, export Markdown ou HTML, ou reprise dans Terminal avec <code>claude --resume</code>.</span><span class="zh">加星號、重新命名、匯出 Markdown 或 HTML，或以 <code>claude --resume</code> 在終端機中繼續。</span></p></div>
+  </div>
+</div></section>
 
-  <ul class="bul">
-    <li><span class="en"><b>Full transcripts, exactly as they happened.</b> User and assistant turns, collapsible tool calls with their input and output, coloured diffs for file edits, thinking blocks, sub-agent transcripts expanded inline, and a health grade for how the session actually went.</span>
-    <span class="fr"><b>Le transcript complet, tel qu'il s'est déroulé.</b> Tours utilisateur et assistant, appels d'outils repliables avec leur entrée et leur sortie, diffs colorés pour les éditions de fichiers, blocs de thinking, transcripts de sous-agents dépliés en ligne, et une note de santé sur le déroulement réel de la session.</span>
-    <span class="zh"><b>完整記錄，如實重現。</b>使用者與助理的每一輪對話、可展開的工具呼叫（含輸入與輸出）、檔案編輯的彩色差異比對、思考區塊、內嵌展開的子代理記錄，以及反映該次工作階段實際狀況的健康分數。</span></li>
-    <li><span class="en"><b>Find anything, across every session.</b> Full-text search over message text and tool input and output, with filters by project, date range, starred and errors, grouped by day or by project.</span>
-    <span class="fr"><b>Retrouvez n'importe quoi, dans toutes les sessions.</b> Recherche en texte intégral sur le texte des messages et les entrées/sorties d'outils, avec des filtres par projet, période, favoris et erreurs, regroupés par jour ou par projet.</span>
-    <span class="zh"><b>跨所有工作階段搜尋任何內容。</b>對訊息文字與工具輸入輸出進行全文搜尋，並可依專案、期間、已加星號與含錯誤篩選，依日或依專案分組。</span></li>
-    <li><span class="en"><b>Act on a session without leaving the app.</b> Star it, rename it, export it to Markdown or HTML, reveal the transcript in the Finder, or resume it in Terminal with <code>claude --resume</code>.</span>
-    <span class="fr"><b>Agissez sur une session sans quitter l'application.</b> Mettez-lui une étoile, renommez-la, exportez-la en Markdown ou en HTML, révélez le transcript dans le Finder, ou reprenez-la dans Terminal avec <code>claude --resume</code>.</span>
-    <span class="zh"><b>不必離開應用程式即可操作工作階段。</b>加上星號、重新命名、匯出為 Markdown 或 HTML、在 Finder 中顯示記錄檔，或以 <code>claude --resume</code> 在終端機中繼續。</span></li>
-  </ul>
-
-  <figure class="shot shot-wide">
-    <img src="screenshots/sessions.png" alt="The Sessions section: a searchable, filterable list of every Claude Code transcript next to a detail pane with collapsible tool calls, diffs and thinking blocks" loading="lazy" onerror="this.style.display='none';var f=this.closest('figure');if(f)f.style.display='none'">
-    <figcaption>
-      <span class="en">Sessions: transcript browser, full-text search and detail view.</span>
-      <span class="fr">Sessions : navigateur de transcripts, recherche plein texte et vue de détail.</span>
-      <span class="zh">工作階段：記錄瀏覽器、全文搜尋與詳細檢視。</span>
-    </figcaption>
-  </figure>
+<section class="slide" id="skills"><div class="wrap">
+  <p class="tag"><i></i><span class="en">Skills, agents &amp; commands</span><span class="fr">Skills, agents et commandes</span><span class="zh">技能、代理與指令</span></p>
+  <h2>
+    <span class="en">Three levels. <span class="dim">One place.</span></span>
+    <span class="fr">Trois niveaux. <span class="dim">Un seul endroit.</span></span>
+    <span class="zh">三個層級。<span class="dim">一個地方。</span></span>
+  </h2>
+  <figure class="shot"><img src="screenshots/skills.png" alt="The skills section: a level picker for Library, Global and Project, a searchable list, and the rendered detail with transfer actions" loading="lazy"></figure>
+  <div class="details">
+    <div><h3><span class="en">Library, Global, Project</span><span class="fr">Bibliothèque, Global, Projet</span><span class="zh">資料庫、全域、專案</span></h3>
+      <p><span class="en">One searchable list per level, with each resource's markdown rendered beside it.</span><span class="fr">Une liste consultable par niveau, avec le markdown de chaque ressource rendu à côté.</span><span class="zh">每個層級一份可搜尋清單，旁邊渲染每項資源的 markdown。</span></p></div>
+    <div><h3><span class="en">Copy or move</span><span class="fr">Copier ou déplacer</span><span class="zh">複製或移動</span></h3>
+      <p><span class="en">Promote a project skill to global, or push a Library agent into the repository you're in.</span><span class="fr">Promouvoir un skill de projet en global, ou pousser un agent de la bibliothèque dans le dépôt en cours.</span><span class="zh">把專案技能升級到全域，或把資料庫裡的代理推進目前的儲存庫。</span></p></div>
+    <div><h3><span class="en">A backup first, always</span><span class="fr">Toujours une sauvegarde d'abord</span><span class="zh">永遠先備份</span></h3>
+      <p><span class="en">Every change copies the affected files to a timestamped backup. Symlinked skills are never touched.</span><span class="fr">Chaque changement copie d'abord les fichiers dans une sauvegarde horodatée. Les skills en lien symbolique ne sont jamais touchés.</span><span class="zh">每次變更都先複製到帶時間戳記的備份。以符號連結引入的技能絕不更動。</span></p></div>
+  </div>
 </div></section>
 
 <section id="privacy"><div class="wrap">
-  <p class="eyebrow"><span class="en">How it works</span><span class="fr">Comment ça marche</span><span class="zh">運作方式</span></p>
-  <h2><span class="en">Everything is read locally</span><span class="fr">Tout est lu en local</span><span class="zh">一切都在本機讀取</span></h2>
+  <p class="omt"><span class="en">One more thing…</span><span class="fr">Encore une chose…</span><span class="zh">還有一件事……</span></p>
+  <p class="local"><span class="en">100 % local.</span><span class="fr">100 % local.</span><span class="zh">100 % 本機。</span></p>
   <p class="lead">
-    <span class="en">Claude Cockpit reads files that are already on your Mac. It makes exactly two kinds of network call, both of which you can name, and neither of which sends your data anywhere.</span>
-    <span class="fr">Claude Cockpit lit des fichiers déjà présents sur votre Mac. Il ne fait que deux types d'appels réseau, tous deux nommables, et aucun n'envoie vos données où que ce soit.</span>
-    <span class="zh">Claude Cockpit 讀取的，都是你 Mac 上已有的檔案。它只發出兩種網路請求，兩者都說得出名字，而且都不會把你的資料送往任何地方。</span>
+    <span class="en">Nothing leaves your Mac. Claude Cockpit reads files that are already there and makes two network calls you can name — neither sends your data anywhere.</span>
+    <span class="fr">Rien ne quitte votre Mac. Claude Cockpit lit des fichiers déjà présents et ne fait que deux appels réseau nommables — aucun n'envoie vos données.</span>
+    <span class="zh">沒有任何資料離開你的 Mac。Claude Cockpit 只讀取已在本機的檔案，並且只發出兩種說得出名字的網路請求——兩者都不會傳送你的資料。</span>
   </p>
-
-  <table>
-    <tr>
-      <th><span class="en">Source</span><span class="fr">Source</span><span class="zh">來源</span></th>
-      <th><span class="en">What happens</span><span class="fr">Ce qui se passe</span><span class="zh">實際作為</span></th>
-    </tr>
-    <tr>
-      <td><span class="en">Transcripts</span><span class="fr">Transcripts</span><span class="zh">記錄檔</span></td>
-      <td><span class="en">Read incrementally from <code>~/.claude/projects</code>, from the byte offset reached last time. They are read, counted, and never sent anywhere.</span>
-      <span class="fr">Lus de façon incrémentale depuis <code>~/.claude/projects</code>, à partir de l'offset atteint la fois précédente. Ils sont lus, comptés, et jamais envoyés nulle part.</span>
-      <span class="zh">從 <code>~/.claude/projects</code> 依上次讀取的位移增量讀取。只被讀取與計數，絕不外傳。</span></td>
-    </tr>
-    <tr>
-      <td><span class="en">Session index</span><span class="fr">Index des sessions</span><span class="zh">工作階段索引</span></td>
-      <td><span class="en">Built by reading the same transcripts into a local SQLite database, so the Sessions section can search and browse without re-scanning the whole archive on every open. It never writes to <code>~/.claude</code>, and building or querying it makes no network call.</span>
-      <span class="fr">Construit en lisant les mêmes transcripts dans une base SQLite locale, pour que la section Sessions puisse rechercher et naviguer sans rescanner toute l'archive à chaque ouverture. Il n'écrit jamais dans <code>~/.claude</code>, et sa construction ou son interrogation ne fait aucun appel réseau.</span>
-      <span class="zh">透過讀取相同的記錄檔並寫入本機 SQLite 資料庫來建立，讓「工作階段」區塊能夠搜尋與瀏覽，而不必每次開啟都重新掃描整個檔案庫。它絕不寫入 <code>~/.claude</code>，建立或查詢時也不會發出任何網路請求。</span></td>
-    </tr>
-    <tr>
-      <td><span class="en">Anthropic quotas</span><span class="fr">Quotas Anthropic</span><span class="zh">Anthropic 配額</span></td>
-      <td><span class="en">One call to Anthropic's usage endpoint, with the Claude Code OAuth token already on your Mac. The token is kept in memory for the request, never written anywhere, never refreshed. The endpoint is called at most every three minutes.</span>
-      <span class="fr">Un appel à l'endpoint d'usage d'Anthropic, avec le jeton OAuth de Claude Code déjà présent sur votre Mac. Le jeton est gardé en mémoire le temps de la requête, jamais écrit nulle part, jamais renouvelé. L'endpoint est appelé au plus toutes les trois minutes.</span>
-      <span class="zh">向 Anthropic 的用量端點發出一次請求，使用你 Mac 上既有的 Claude Code OAuth 權杖。權杖僅在請求期間存於記憶體，不寫入任何位置，也不更新。該端點最多每三分鐘呼叫一次。</span></td>
-    </tr>
-    <tr>
-      <td><span class="en">rtk database</span><span class="fr">Base rtk</span><span class="zh">rtk 資料庫</span></td>
-      <td><span class="en">Opened read-only. Claude Cockpit never writes to rtk's <code>history.db</code>, and the section disappears cleanly if rtk is not installed.</span>
-      <span class="fr">Ouverte en lecture seule. Claude Cockpit n'écrit jamais dans le <code>history.db</code> de rtk, et la section disparaît proprement si rtk n'est pas installé.</span>
-      <span class="zh">以唯讀方式開啟。Claude Cockpit 絕不寫入 rtk 的 <code>history.db</code>；若未安裝 rtk，該區塊會乾淨地隱藏。</span></td>
-    </tr>
-    <tr>
-      <td><span class="en">Skills files</span><span class="fr">Fichiers de skills</span><span class="zh">技能檔案</span></td>
-      <td><span class="en">The one place the app writes. Copies and moves stay inside your home directory, and every change copies the affected files to a timestamped backup first.</span>
-      <span class="fr">Le seul endroit où l'app écrit. Les copies et déplacements restent dans votre dossier personnel, et chaque changement copie d'abord les fichiers concernés dans une sauvegarde horodatée.</span>
-      <span class="zh">這是應用程式唯一會寫入的地方。複製與移動都限制在你的家目錄內，且每次變更都會先建立帶時間戳記的備份。</span></td>
-    </tr>
-    <tr>
-      <td><span class="en">Updates</span><span class="fr">Mises à jour</span><span class="zh">更新</span></td>
-      <td><span class="en">The second and last network call: the Sparkle appcast hosted on GitHub. No telemetry, no analytics, no third-party service, ever.</span>
-      <span class="fr">Le second et dernier appel réseau : l'appcast Sparkle hébergé sur GitHub. Aucune télémétrie, aucune analytique, aucun service tiers, jamais.</span>
-      <span class="zh">第二個、也是最後一個網路請求：託管於 GitHub 的 Sparkle appcast。永遠沒有遙測、沒有分析、沒有第三方服務。</span></td>
-    </tr>
-  </table>
+  <div class="sources">
+    <div class="src"><h3><span class="en">Transcripts</span><span class="fr">Transcripts</span><span class="zh">記錄檔</span></h3>
+      <p><span class="en">Read incrementally from <code>~/.claude/projects</code>. Read, counted, never sent anywhere.</span><span class="fr">Lus de façon incrémentale dans <code>~/.claude/projects</code>. Lus, comptés, jamais envoyés.</span><span class="zh">從 <code>~/.claude/projects</code> 增量讀取。只被讀取與計數，絕不外傳。</span></p></div>
+    <div class="src"><h3><span class="en">Session index</span><span class="fr">Index des sessions</span><span class="zh">工作階段索引</span></h3>
+      <p><span class="en">A local SQLite database built from the same transcripts. It never writes to <code>~/.claude</code> and makes no network call.</span><span class="fr">Une base SQLite locale construite à partir des mêmes transcripts. Elle n'écrit jamais dans <code>~/.claude</code> et ne fait aucun appel réseau.</span><span class="zh">以相同記錄檔建立的本機 SQLite 資料庫。絕不寫入 <code>~/.claude</code>，也不發出任何網路請求。</span></p></div>
+    <div class="src"><h3><span class="en">Anthropic quotas</span><span class="fr">Quotas Anthropic</span><span class="zh">Anthropic 配額</span></h3>
+      <p><span class="en">One call to Anthropic's usage endpoint with the token Claude Code already stored — kept in memory, never written, at most every three minutes.</span><span class="fr">Un appel à l'endpoint d'usage d'Anthropic avec le jeton déjà stocké par Claude Code — gardé en mémoire, jamais écrit, au plus toutes les trois minutes.</span><span class="zh">以 Claude Code 既有的權杖呼叫 Anthropic 用量端點——僅存於記憶體、絕不寫入，最多每三分鐘一次。</span></p></div>
+    <div class="src"><h3><span class="en">rtk database</span><span class="fr">Base rtk</span><span class="zh">rtk 資料庫</span></h3>
+      <p><span class="en">Opened read-only. If rtk isn't installed, the section explains how to install it.</span><span class="fr">Ouverte en lecture seule. Si rtk n'est pas installé, la section explique comment l'installer.</span><span class="zh">以唯讀方式開啟。若未安裝 rtk，該區塊會說明如何安裝。</span></p></div>
+    <div class="src"><h3><span class="en">Skills files</span><span class="fr">Fichiers de skills</span><span class="zh">技能檔案</span></h3>
+      <p><span class="en">The one place the app writes, inside your home folder, always after a timestamped backup.</span><span class="fr">Le seul endroit où l'app écrit, dans votre dossier personnel, toujours après une sauvegarde horodatée.</span><span class="zh">應用程式唯一會寫入之處，限於你的家目錄，且一律先建立帶時間戳記的備份。</span></p></div>
+    <div class="src"><h3><span class="en">Updates</span><span class="fr">Mises à jour</span><span class="zh">更新</span></h3>
+      <p><span class="en">The second and last network call: the Sparkle appcast on GitHub. No telemetry, no analytics, ever.</span><span class="fr">Le second et dernier appel réseau : l'appcast Sparkle sur GitHub. Aucune télémétrie, aucune analytique, jamais.</span><span class="zh">第二個、也是最後一個網路請求：GitHub 上的 Sparkle appcast。永遠沒有遙測與分析。</span></p></div>
+  </div>
   <p class="lead">
-    <span class="en">Curious how the pieces fit? <a href="diagrams/claude-cockpit-architecture.html">Explore the interactive architecture diagram</a>: surfaces, store, the four modules and every data source, with guided views.</span>
-    <span class="fr">Envie de voir comment les pièces s'assemblent ? <a href="diagrams/claude-cockpit-architecture.html">Explorez le diagramme d'architecture interactif</a> : surfaces, store, les quatre modules et chaque source de données, avec des vues guidées.</span>
-    <span class="zh">想知道各部分如何組合？<a href="diagrams/claude-cockpit-architecture.html">探索互動式架構圖</a>：介面、store、四個模組與每個資料來源，並附導覽視圖。</span>
+    <span class="en">Curious how the pieces fit? <a href="diagrams/claude-cockpit-architecture.html">Explore the interactive architecture diagram</a>.</span>
+    <span class="fr">Envie de voir comment les pièces s'assemblent ? <a href="diagrams/claude-cockpit-architecture.html">Explorez le diagramme d'architecture interactif</a>.</span>
+    <span class="zh">想知道各部分如何組合？<a href="diagrams/claude-cockpit-architecture.html">探索互動式架構圖</a>。</span>
   </p>
 </div></section>
 
 <section id="install"><div class="wrap">
-  <p class="eyebrow"><span class="en">Install</span><span class="fr">Installation</span><span class="zh">安裝</span></p>
-  <h2><span class="en">Three steps, no terminal</span><span class="fr">Trois étapes, sans terminal</span><span class="zh">三個步驟，不用終端機</span></h2>
-  <p class="lead">
-    <span class="en">The disk image is signed with a Developer ID and notarised by Apple, so it opens without a Gatekeeper warning. From there the app keeps itself up to date.</span>
-    <span class="fr">L'image disque est signée avec un Developer ID et notarisée par Apple : elle s'ouvre sans avertissement Gatekeeper. Ensuite, l'app se tient à jour toute seule.</span>
-    <span class="zh">磁碟映像檔已使用 Developer ID 簽署並通過 Apple 公證，開啟時不會出現 Gatekeeper 警告。之後應用程式會自行保持更新。</span>
-  </p>
-
+  <h2 class="statement">
+    <span class="en">Three steps. <span class="dim">No terminal.</span></span>
+    <span class="fr">Trois étapes. <span class="dim">Sans terminal.</span></span>
+    <span class="zh">三個步驟。<span class="dim">不用終端機。</span></span>
+  </h2>
   <div class="steps">
-    <div class="step">
-      <h3><span class="en">Download the DMG</span><span class="fr">Téléchargez le DMG</span><span class="zh">下載 DMG</span></h3>
-      <p><span class="en">Take the latest disk image from the GitHub releases page and open it.</span>
-      <span class="fr">Prenez la dernière image disque sur la page des releases GitHub et ouvrez-la.</span>
-      <span class="zh">到 GitHub releases 頁面取得最新的磁碟映像檔並開啟。</span></p>
-    </div>
-    <div class="step">
-      <h3><span class="en">Drag to Applications</span><span class="fr">Glissez vers Applications</span><span class="zh">拖到「應用程式」</span></h3>
-      <p><span class="en">The window shows the app and an Applications alias side by side — drag one onto the other.</span>
-      <span class="fr">La fenêtre montre l'app et un alias Applications côte à côte — glissez l'un sur l'autre.</span>
-      <span class="zh">視窗中並排顯示應用程式與「應用程式」替身——把前者拖到後者上。</span></p>
-    </div>
-    <div class="step">
-      <h3><span class="en">Launch it</span><span class="fr">Lancez-la</span><span class="zh">啟動它</span></h3>
-      <p><span class="en">It opens straight away, with no Gatekeeper warning, and the quota percentage appears in the menu bar.</span>
-      <span class="fr">Elle s'ouvre immédiatement, sans avertissement Gatekeeper, et le pourcentage de quota apparaît dans la barre de menus.</span>
-      <span class="zh">它會直接開啟，不會出現 Gatekeeper 警告，配額百分比隨即出現在選單列。</span></p>
-    </div>
+    <div class="step"><h3><span class="en">Download the DMG</span><span class="fr">Téléchargez le DMG</span><span class="zh">下載 DMG</span></h3>
+      <p><span class="en">Take the latest disk image from the GitHub releases page and open it.</span><span class="fr">Prenez la dernière image disque sur la page des releases GitHub et ouvrez-la.</span><span class="zh">到 GitHub releases 頁面取得最新的磁碟映像檔並開啟。</span></p></div>
+    <div class="step"><h3><span class="en">Drag to Applications</span><span class="fr">Glissez vers Applications</span><span class="zh">拖到「應用程式」</span></h3>
+      <p><span class="en">The window shows the app and an Applications alias side by side — drag one onto the other.</span><span class="fr">La fenêtre montre l'app et un alias Applications côte à côte — glissez l'un sur l'autre.</span><span class="zh">視窗中並排顯示應用程式與「應用程式」替身——把前者拖到後者上。</span></p></div>
+    <div class="step"><h3><span class="en">Launch it</span><span class="fr">Lancez-la</span><span class="zh">啟動它</span></h3>
+      <p><span class="en">It opens with no Gatekeeper warning, the quota appears in the menu bar, and Sparkle keeps it up to date.</span><span class="fr">Elle s'ouvre sans avertissement Gatekeeper, le quota apparaît dans la barre de menus, et Sparkle la tient à jour.</span><span class="zh">開啟時不會出現 Gatekeeper 警告，配額隨即出現在選單列，Sparkle 會讓它保持最新。</span></p></div>
   </div>
-
-  <div class="note">
-    <span>
-      <span class="en"><b>Requirements and options.</b> macOS 14 or later, Apple Silicon or Intel, and Claude Code signed in. The quota meters need a Pro or Max subscription; without one, local usage, RTK savings and skills management all still work. A <b>menu bar only</b> mode drops the Dock icon and leaves just the panel — the full window stays one click away.</span>
-      <span class="fr"><b>Prérequis et options.</b> macOS 14 ou ultérieur, Apple Silicon ou Intel, et Claude Code connecté. Les jauges de quota demandent un abonnement Pro ou Max ; sans lui, l'usage local, les économies RTK et la gestion des skills fonctionnent quand même. Un mode <b>barre de menus uniquement</b> retire l'icône du Dock et ne laisse que le panneau — la fenêtre complète reste à un clic.</span>
-      <span class="zh"><b>需求與選項。</b>macOS 14 以上、Apple Silicon 或 Intel，並已登入 Claude Code。配額計量需要 Pro 或 Max 訂閱；沒有訂閱時，本機用量、RTK 節省與技能管理仍可正常運作。<b>僅選單列</b>模式會移除 Dock 圖示、只保留面板——完整視窗仍然一鍵可達。</span>
-    </span>
+  <p class="req">
+    <span class="en"><b>Requirements.</b> macOS 14 or later, and Claude Code signed in. The quota meters need a Pro or Max subscription; without one, usage, RTK savings, sessions and skills all still work. A <b>menu bar only</b> mode drops the Dock icon.</span>
+    <span class="fr"><b>Prérequis.</b> macOS 14 ou ultérieur, et Claude Code connecté. Les jauges de quota demandent un abonnement Pro ou Max ; sans lui, l'usage, les économies RTK, les sessions et les skills fonctionnent quand même. Un mode <b>barre de menus uniquement</b> retire l'icône du Dock.</span>
+    <span class="zh"><b>需求。</b>macOS 14 以上，並已登入 Claude Code。配額計量需要 Pro 或 Max 訂閱；沒有訂閱時，用量、RTK 節省、工作階段與技能仍可正常運作。<b>僅選單列</b>模式會移除 Dock 圖示。</span>
+  </p>
+  <div class="final">
+    <a class="btn btn-primary" href="https://github.com/vincentlauriat/ClaudeCockpit/releases/latest"><span class="en">Download for macOS</span><span class="fr">Télécharger pour macOS</span><span class="zh">下載 macOS 版</span></a>
+    <a class="btn btn-ghost" href="https://github.com/vincentlauriat/ClaudeCockpit"><span class="en">View on GitHub</span><span class="fr">Voir sur GitHub</span><span class="zh">在 GitHub 上檢視</span></a>
   </div>
 </div></section>
 
-<section id="lineage"><div class="wrap">
-  <p class="eyebrow"><span class="en">Lineage</span><span class="fr">Filiation</span><span class="zh">淵源</span></p>
-  <h2><span class="en">Merges ClaudeCodeUsage, ClaudeMenu, RTKInfos and SkillManager</span><span class="fr">Fusionne ClaudeCodeUsage, ClaudeMenu, RTKInfos et SkillManager</span><span class="zh">整合 ClaudeCodeUsage、ClaudeMenu、RTKInfos 與 SkillManager</span></h2>
-  <p class="lead">
-    <span class="en">Claude Cockpit is not a new idea — it is four proven ones under a single roof, rewritten as native Swift modules so the numbers finally sit next to each other.</span>
-    <span class="fr">Claude Cockpit n'est pas une idée neuve — ce sont quatre idées éprouvées sous un même toit, réécrites en modules Swift natifs pour que les chiffres se retrouvent enfin côte à côte.</span>
-    <span class="zh">Claude Cockpit 不是全新的構想——而是四個已驗證的構想住進同一個屋簷，改寫為原生 Swift 模組，讓這些數字終於並排在一起。</span>
-  </p>
-
+<section id="lineage" style="padding-top:40px"><div class="wrap">
+  <h2 class="statement" style="font-size:clamp(32px,4.4vw,56px)">
+    <span class="en">Four proven tools, <span class="dim">rewritten as one native app.</span></span>
+    <span class="fr">Quatre outils éprouvés, <span class="dim">réécrits en une app native.</span></span>
+    <span class="zh">四個經過驗證的工具，<span class="dim">改寫成一個原生應用程式。</span></span>
+  </h2>
   <div class="lineage">
-    <div class="anc">
-      <h3>ClaudeCodeUsage</h3>
-      <p><span class="en">The local usage dashboard: transcripts, tokens, cost and the daily chart.</span>
-      <span class="fr">Le tableau de bord d'usage local : transcripts, tokens, coût et graphique quotidien.</span>
-      <span class="zh">本機用量儀表板：記錄檔、token、成本與每日圖表。</span></p>
-      <a href="https://vincentlauriat.github.io/ClaudeCodeUsage/">vincentlauriat.github.io/ClaudeCodeUsage</a>
-    </div>
-    <div class="anc">
-      <h3>ClaudeMenu</h3>
-      <p><span class="en">The menu bar panel: Anthropic quotas, pace projection and daily budget.</span>
-      <span class="fr">Le panneau de barre de menus : quotas Anthropic, projection de rythme et budget quotidien.</span>
-      <span class="zh">選單列面板：Anthropic 配額、節奏推算與每日預算。</span></p>
-      <a href="https://vincentlauriat.github.io/ClaudeMenu/">vincentlauriat.github.io/ClaudeMenu</a>
-    </div>
-    <div class="anc">
-      <h3>RTKInfos</h3>
-      <p><span class="en">The savings dashboard read from rtk's own history database.</span>
-      <span class="fr">Le tableau de bord d'économies lu dans la base d'historique de rtk.</span>
-      <span class="zh">直接讀取 rtk 歷史資料庫的節省儀表板。</span></p>
-      <a href="https://vincentlauriat.github.io/RTKInfos/">vincentlauriat.github.io/RTKInfos</a>
-    </div>
-    <div class="anc">
-      <h3>SkillManager</h3>
-      <p><span class="en">The three-level skills, agents and commands manager — rewritten natively in Swift.</span>
-      <span class="fr">Le gestionnaire de skills, agents et commandes sur trois niveaux — réécrit nativement en Swift.</span>
-      <span class="zh">三層級的技能、代理與指令管理器——以 Swift 原生重寫。</span></p>
-    </div>
+    <div class="anc"><h3><i style="background:var(--usage)"></i>ClaudeCodeUsage</h3>
+      <p><span class="en">Local usage: transcripts, tokens, cost and the daily chart.</span><span class="fr">Usage local : transcripts, jetons, coût et graphique quotidien.</span><span class="zh">本機用量：記錄檔、token、成本與每日圖表。</span></p>
+      <a href="https://vincentlauriat.github.io/ClaudeCodeUsage/">vincentlauriat.github.io/ClaudeCodeUsage</a></div>
+    <div class="anc"><h3><i style="background:var(--quota)"></i>ClaudeMenu</h3>
+      <p><span class="en">The menu bar panel: quotas, pace projection and daily budget.</span><span class="fr">Le panneau de barre de menus : quotas, projection de rythme et budget du jour.</span><span class="zh">選單列面板：配額、節奏推算與每日預算。</span></p>
+      <a href="https://vincentlauriat.github.io/ClaudeMenu/">vincentlauriat.github.io/ClaudeMenu</a></div>
+    <div class="anc"><h3><i style="background:var(--rtk)"></i>RTKInfos</h3>
+      <p><span class="en">The savings dashboard read from rtk's history database.</span><span class="fr">Le tableau d'économies lu dans la base d'historique de rtk.</span><span class="zh">讀取 rtk 歷史資料庫的節省儀表板。</span></p>
+      <a href="https://vincentlauriat.github.io/RTKInfos/">vincentlauriat.github.io/RTKInfos</a></div>
+    <div class="anc"><h3><i style="background:var(--skills)"></i>SkillManager</h3>
+      <p><span class="en">The three-level skills, agents and commands manager.</span><span class="fr">Le gestionnaire de skills, agents et commandes sur trois niveaux.</span><span class="zh">三層級的技能、代理與指令管理器。</span></p></div>
   </div>
 </div></section>
 
@@ -607,8 +511,10 @@
 
 <script>
   var LANG_TAG={en:'en',fr:'fr',zh:'zh-Hant'};
+  var curLang='en';
   function setLang(l){
     if(!LANG_TAG[l]) l='en';
+    curLang=l;
     document.body.classList.remove('lang-en','lang-fr','lang-zh');
     document.body.classList.add('lang-'+l);
     document.documentElement.lang=LANG_TAG[l];
@@ -617,13 +523,55 @@
       b.classList.toggle('on',on);
       b.setAttribute('aria-pressed',on?'true':'false');
     });
+    document.querySelectorAll('.big').forEach(function(el){ if(el.dataset.done) el.innerHTML=fmt(el,+el.dataset.to); });
     try{localStorage.setItem('vl-lang',l)}catch(e){}
+  }
+  // Number format follows the language: 68.41 in English, 68,41 in French.
+  function fmt(el,v){
+    var n=v.toFixed(+el.dataset.dec);
+    if(curLang==='fr') n=n.replace('.',',');
+    if(el.dataset.cur) return curLang==='fr' ? n+'<span class="u">$US</span>' : '<span class="u pre">$</span>'+n;
+    return n+'<span class="u">'+el.dataset.unit+'</span>';
   }
   (function(){
     var saved;try{saved=localStorage.getItem('vl-lang')}catch(e){}
     var n=(navigator.language||'en').slice(0,2).toLowerCase();
     setLang(saved||(n==='zh'?'zh':(n==='fr'?'fr':'en')));
   })();
+
+  var still=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // The film: plays muted inline once it is on screen, unless motion is reduced.
+  var v=document.getElementById('film-video'), snd=document.getElementById('sound');
+  if(!still){
+    new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ v.play().catch(function(){}); } else { v.pause(); } }); },{threshold:.35}).observe(v);
+  } else { v.setAttribute('controls',''); }
+  snd.addEventListener('click',function(){
+    v.muted=!v.muted;
+    if(!v.muted){ if(v.ended||v.currentTime>22) v.currentTime=0; v.play().catch(function(){}); }
+    snd.setAttribute('aria-pressed',v.muted?'false':'true');
+    snd.querySelector('.lab-on').hidden=!v.muted;
+    snd.querySelector('.lab-off').hidden=v.muted;
+    document.getElementById('wave').setAttribute('opacity',v.muted?'.35':'1');
+  });
+
+  // The one orchestrated reveal: four tools merge into one, and the numbers count up.
+  document.querySelectorAll('.big').forEach(function(el){ el.dataset.done='1'; el.innerHTML=fmt(el,+el.dataset.to); });
+  if(!still && 'IntersectionObserver' in window){
+    var row=document.getElementById('mergeRow');
+    new IntersectionObserver(function(es,o){ es.forEach(function(e){ if(e.isIntersecting){ row.classList.remove('pre'); o.disconnect(); } }); },{threshold:.5}).observe(row);
+    document.querySelectorAll('.big').forEach(function(el){
+      el.innerHTML=fmt(el,0);
+      new IntersectionObserver(function(es,o){ es.forEach(function(e){
+        if(!e.isIntersecting) return; o.disconnect();
+        var t0=performance.now(), to=+el.dataset.to;
+        (function step(now){ var k=Math.min(1,(now-t0)/900), ease=1-Math.pow(1-k,3);
+          el.innerHTML=fmt(el,to*ease); if(k<1) requestAnimationFrame(step); })(t0);
+      }); },{threshold:.6}).observe(el);
+    });
+  } else {
+    document.getElementById('mergeRow').classList.remove('pre');
+  }
 </script>
 </body>
 </html>

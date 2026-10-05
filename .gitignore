@@ -28,3 +28,6 @@ PLAN.md
 .build-*/
 build-*/
 .dmgbuild-venv/
+
+# Launch film workspace (/brag)
+brag-output*/
