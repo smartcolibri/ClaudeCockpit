@@ -197,36 +197,26 @@ extension CockpitStore {
     // MARK: Actions
 
     /// True when `claude --resume` can be offered: the working directory the session
-    /// ran in must still exist, or the command would open a shell nowhere useful.
+    /// ran in must still exist, or the copied `cd` would fail.
     func canResume(_ session: SessionRef) -> Bool {
         var isDir: ObjCBool = false
         return FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDir) && isDir.boolValue
     }
 
-    /// Opens Terminal on `claude --resume <id>` in the session's own directory.
-    ///
-    /// Goes through a temporary `.command` script rather than an AppleScript: no
-    /// automation permission prompt, and the quoting stays under our control. The
-    /// flag was checked against the installed binary before being wired here.
+    /// Copies `cd <cwd> && claude --resume <id>` to the pasteboard for the user to
+    /// paste into a terminal. App Review forbids launching a script on the user's
+    /// behalf, so the app hands over the command instead of running it. The flag
+    /// was checked against the installed binary before being wired here.
     func resumeSession(_ session: SessionRef) {
         guard canResume(session) else {
             notice = "Le dossier de cette session n'existe plus : \(session.cwd)"
             return
         }
-        let script = """
-        #!/bin/zsh
-        cd \(shellQuoted(session.cwd)) || exit 1
-        exec claude --resume \(shellQuoted(session.id))
-        """
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("reprendre-session-\(session.id.prefix(8)).command")
-        do {
-            try script.write(to: url, atomically: true, encoding: .utf8)
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
-            NSWorkspace.shared.open(url)
-        } catch {
-            notice = "Impossible de lancer la reprise : \(error.localizedDescription)"
-        }
+        let command = "cd \(shellQuoted(session.cwd)) && claude --resume \(shellQuoted(session.id))"
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(command, forType: .string)
+        notice = "Commande copiée : collez-la dans un terminal."
     }
 
     /// Single-quote for `zsh`, closing and reopening around any embedded quote.
