@@ -1,4 +1,4 @@
-# CLAUDE.md — Claude Cockpit
+# CLAUDE.md — Cockpit for Claude
 
 Native macOS app (Swift 5.9, SwiftUI + AppKit shell, macOS 14+) merging ClaudeCodeUsage, ClaudeMenu, RTKInfos and SkillManager. Spec: `docs/superpowers/specs/2026-09-21-claude-cockpit-design.md`. Architecture source of truth: `ARCHITECTURE_EN.md` (FR mirror `ARCHITECTURE.md`).
 

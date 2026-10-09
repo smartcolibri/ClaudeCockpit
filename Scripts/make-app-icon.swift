@@ -1,6 +1,6 @@
 #!/usr/bin/env swift
 //
-//  make-app-icon.swift — Claude Cockpit app icon generator
+//  make-app-icon.swift — Cockpit for Claude app icon generator
 //
 //  Draws the whole icon programmatically (AppKit / NSBezierPath, no bitmap
 //  assets) and writes icon_16/32/64/128/256/512/1024.png into
@@ -328,4 +328,4 @@ for size in [16, 32, 64, 128, 256, 512, 1024] {
     try! render(size).write(to: url)
     print("wrote \(url.lastPathComponent)")
 }
-print("✅ Claude Cockpit icon set generated")
+print("✅ Cockpit for Claude icon set generated")

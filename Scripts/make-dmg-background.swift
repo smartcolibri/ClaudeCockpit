@@ -12,7 +12,7 @@ guard args.count >= 2 else {
 let outPath = args[1]
 
 let W = 540.0, H = 380.0
-let accent = NSColor(calibratedRed: 0.85, green: 0.47, blue: 0.34, alpha: 1.0) // Claude Cockpit warm accent
+let accent = NSColor(calibratedRed: 0.85, green: 0.47, blue: 0.34, alpha: 1.0) // Cockpit for Claude warm accent
 
 let image = NSImage(size: NSSize(width: W, height: H))
 image.lockFocus()

@@ -18,7 +18,7 @@ public final class DirectoryWatcher: @unchecked Sendable {
     public let changes: AsyncStream<Void>
     private let continuation: AsyncStream<Void>.Continuation
     private let directories: [URL]
-    private let queue = DispatchQueue(label: "fr.vincentlauriat.claudecockpit.watcher")
+    private let queue = DispatchQueue(label: "fr.smartcolibri.cockpitforclaude.watcher")
     private let debounce: TimeInterval
     private let pollingInterval: TimeInterval
 

@@ -2,10 +2,10 @@
   "schema_version": 1,
   "diagram_type": "architecture",
   "meta": {
-    "title": "Claude Cockpit — architecture",
+    "title": "Cockpit for Claude — architecture",
     "quality_profile": "showcase",
     "repository": {
-      "url": "https://github.com/vincentlauriat/ClaudeCockpit",
+      "url": "https://github.com/smartcolibri/ClaudeCockpit",
       "revision": "da94fafb911a8b0a9e9fade3b44afd62cd126e24"
     },
     "views": [

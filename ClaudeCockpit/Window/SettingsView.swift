@@ -306,19 +306,19 @@ private struct UpdatesSettingsTab: View {
             }
 
             Section("À propos") {
-                Text("Claude Cockpit — tableau de bord local pour Claude Code.")
+                Text("Cockpit for Claude — tableau de bord local pour Claude Code.")
                     .font(.system(size: 12))
-                Text("© 2026 Vincent Lauriat — licence MIT")
+                Text("© 2026 Smart Colibri. Tous droits réservés.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                 Link("lauriat.fr", destination: URL(string: "https://lauriat.fr")!)
-                Link("Site du projet", destination: URL(string: "https://vincentlauriat.github.io/ClaudeCockpit/")!)
+                Link("Site du projet", destination: URL(string: "https://smartcolibri.github.io/ClaudeCockpit/")!)
             }
         }
         .formStyle(.grouped)
     }
 
     private var releasesURL: URL {
-        URL(string: "https://github.com/vincentlauriat/ClaudeCockpit/releases")!
+        URL(string: "https://github.com/smartcolibri/ClaudeCockpit/releases")!
     }
 }

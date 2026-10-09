@@ -9,7 +9,7 @@ struct CockpitApp: App {
     var body: some Scene {
         // The main window comes first so SwiftUI opens it at launch (unless the
         // user chose the menu-bar-only mode, handled in AppDelegate).
-        Window("Claude Cockpit", id: MainWindowView.windowID) {
+        Window(MainWindowView.windowTitle, id: MainWindowView.windowID) {
             MainWindowView()
                 .environment(store)
                 .environmentObject(updater)

@@ -1,4 +1,4 @@
-# ARCHITECTURE — Claude Cockpit
+# ARCHITECTURE — Cockpit for Claude
 
 Source of truth for how the app is put together. The French mirror is
 [`ARCHITECTURE.md`](ARCHITECTURE.md); both are edited in the same pass. The design decisions
@@ -7,7 +7,7 @@ behind these choices live in
 
 ## Overview
 
-Claude Cockpit is a native macOS app (Swift 5.9, SwiftUI over an AppKit shell, macOS 14+) that
+Cockpit for Claude is a native macOS app (Swift 5.9, SwiftUI over an AppKit shell, macOS 14+) that
 reads five independent sources and presents them in one place: Anthropic's quota gauges, Claude
 Code's local transcripts — read live for local usage and indexed into a local database for the
 Sessions section — rtk's savings database, and the skills / agents / commands tree.
@@ -24,7 +24,7 @@ a state, and the corresponding section renders a banner while the rest keeps wor
 
 ## Component diagram
 
-An interactive version of this diagram (pan, zoom, search, guided views, source references verified against the repository) is published at [https://vincentlauriat.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html](https://vincentlauriat.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html). Its source is `docs/diagrams/claude-cockpit.architecture.json`.
+An interactive version of this diagram (pan, zoom, search, guided views, source references verified against the repository) is published at [https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html](https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html). Its source is `docs/diagrams/claude-cockpit.architecture.json`.
 
 ```mermaid
 flowchart TD
@@ -372,7 +372,7 @@ protocol (`TokenProviding`, `QuotaFetching`) or takes an injected clock.
 7. Print the `gh release create` command.
 
 The feed is served from
-`https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml`, declared as
+`https://raw.githubusercontent.com/smartcolibri/ClaudeCockpit/main/appcast.xml`, declared as
 `SUFeedURL` in `project.yml` alongside `SUPublicEDKey`. Publish the GitHub release before
 pushing the feed: the enclosure URL points at the release asset, and a feed that goes live first
 hands every client a 404.

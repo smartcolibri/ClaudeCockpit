@@ -2,6 +2,8 @@ import SwiftUI
 
 struct MainWindowView: View {
     static let windowID = "main"
+    /// Also how the AppKit side finds this window (`NSWindow.title`).
+    static let windowTitle = "Cockpit for Claude"
     @Environment(CockpitStore.self) private var store
     @EnvironmentObject private var updater: UpdaterController
     @AppStorage(SettingsKey.mainSection) private var sectionRaw: String = CockpitSection.overview.rawValue
@@ -32,7 +34,7 @@ struct MainWindowView: View {
                 .frame(minWidth: 860, minHeight: 640)
                 .background(Theme.background)
         }
-        .navigationTitle("Claude Cockpit")
+        .navigationTitle(Self.windowTitle)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
