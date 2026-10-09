@@ -5,7 +5,6 @@ struct MainWindowView: View {
     /// Also how the AppKit side finds this window (`NSWindow.title`).
     static let windowTitle = "Cockpit for Claude"
     @Environment(CockpitStore.self) private var store
-    @EnvironmentObject private var updater: UpdaterController
     @AppStorage(SettingsKey.mainSection) private var sectionRaw: String = CockpitSection.overview.rawValue
 
     private var selection: Binding<CockpitSection?> {
@@ -47,7 +46,7 @@ struct MainWindowView: View {
         }
         .overlay(alignment: .bottom) { NoticeToast() }
         .task {
-            await SnapshotRunner.runIfRequested(store: store, updater: updater) { sectionRaw = $0.rawValue }
+            await SnapshotRunner.runIfRequested(store: store) { sectionRaw = $0.rawValue }
         }
     }
 

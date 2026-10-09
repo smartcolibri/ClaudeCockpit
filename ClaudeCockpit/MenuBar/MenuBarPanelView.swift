@@ -12,7 +12,6 @@ struct MenuBarPanelView: View {
     var scrolls = true
 
     @Environment(CockpitStore.self) private var store
-    @EnvironmentObject private var updater: UpdaterController
     @Environment(\.openWindow) private var openWindow
 
     @AppStorage(SettingsKey.panelSectionLimits) private var showLimits = true
@@ -51,13 +50,11 @@ struct MenuBarPanelView: View {
     }
     private static let fallbackHeight: CGFloat = 560
 
-    /// Re-measures a non-scrolling copy. Both environments have to be re-injected:
-    /// the copy is built from scratch and reads the store and the updater.
+    /// Re-measures a non-scrolling copy. The store has to be re-injected: the copy
+    /// is built from scratch.
     private func remeasure() {
         contentHeight = PanelSizer.naturalHeight(
-            of: MenuBarPanelView(scrolls: false)
-                .environment(store)
-                .environmentObject(updater))
+            of: MenuBarPanelView(scrolls: false).environment(store))
     }
 
     /// Everything that changes how tall the panel wants to be. Text that merely gets
@@ -78,7 +75,6 @@ struct MenuBarPanelView: View {
             showsSavingsSection.description,
             (store.usage != nil).description,
             (store.usageState.errorMessage != nil).description,
-            (updater.pendingVersion != nil).description,
         ].joined(separator: "|")
     }
 
@@ -250,31 +246,6 @@ struct MenuBarPanelView: View {
             }
             .buttonStyle(.plain)
             .disabled(isRefreshing)
-
-            Divider().opacity(0.4).padding(.leading, 46)
-
-            Button {
-                updater.checkForUpdates()
-            } label: {
-                ActionRow(
-                    icon: updater.pendingVersion == nil ? "arrow.down.circle" : "arrow.down.circle.fill",
-                    iconColor: Theme.violet,
-                    title: updater.pendingVersion.map { "Installer la version \($0)" }
-                        ?? "Rechercher des mises à jour",
-                    subtitle: "Version \(updater.currentVersion)"
-                ) {
-                    if let pending = updater.pendingVersion {
-                        Text(pending)
-                            .font(.system(size: 11, weight: .semibold))
-                            .padding(.horizontal, 7).padding(.vertical, 2)
-                            .background(Theme.violet.opacity(0.18), in: Capsule())
-                            .foregroundStyle(Theme.violet)
-                    }
-                }
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-            .disabled(!updater.canCheck)
 
             Divider().opacity(0.4).padding(.leading, 46)
 

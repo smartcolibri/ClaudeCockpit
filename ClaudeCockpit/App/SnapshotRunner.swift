@@ -13,7 +13,7 @@ enum SnapshotRunner {
         return URL(fileURLWithPath: raw, isDirectory: true)
     }
 
-    static func runIfRequested(store: CockpitStore, updater: UpdaterController, select: @escaping (CockpitSection) -> Void) async {
+    static func runIfRequested(store: CockpitStore, select: @escaping (CockpitSection) -> Void) async {
         guard let dir = requestedDirectory else { return }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         // Let the data sources settle (transcripts, rtk, skills, quota).
@@ -74,7 +74,7 @@ enum SnapshotRunner {
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
         panel.contentView = NSHostingView(rootView:
-            MenuBarPanelView().environment(store).environmentObject(updater))
+            MenuBarPanelView().environment(store))
         panel.center()
         panel.orderFront(nil)
         try? await Task.sleep(for: .seconds(2))

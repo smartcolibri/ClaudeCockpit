@@ -6,7 +6,7 @@ import CockpitShared
 /// main window's detail area — hence flexible sizing rather than a fixed frame.
 struct SettingsView: View {
     private enum Tab: String, Hashable {
-        case general, pricing, rtk, projects, updates
+        case general, pricing, rtk, projects, about
     }
 
     @State private var selection: Tab = .general
@@ -25,9 +25,9 @@ struct SettingsView: View {
             ProjectsSettingsTab()
                 .tabItem { Label("Projets", systemImage: "folder") }
                 .tag(Tab.projects)
-            UpdatesSettingsTab()
-                .tabItem { Label("Mises à jour", systemImage: "arrow.triangle.2.circlepath") }
-                .tag(Tab.updates)
+            AboutSettingsTab()
+                .tabItem { Label("À propos", systemImage: "info.circle") }
+                .tag(Tab.about)
         }
         .frame(
             minWidth: 560, idealWidth: 560, maxWidth: .infinity,
@@ -282,30 +282,19 @@ private struct ProjectsSettingsTab: View {
     }
 }
 
-// MARK: - Mises à jour
+// MARK: - À propos
 
-private struct UpdatesSettingsTab: View {
-    @EnvironmentObject private var updater: UpdaterController
+private struct AboutSettingsTab: View {
+    private var currentVersion: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "—"
+    }
 
     var body: some View {
         Form {
-            Section("Mises à jour") {
-                LabeledContent("Version installée") {
-                    Text(updater.currentVersion).monospacedDigit().foregroundStyle(Theme.slate)
-                }
-                if let pending = updater.pendingVersion {
-                    Label("Version \(pending) disponible", systemImage: "arrow.down.circle.fill")
-                        .foregroundStyle(Theme.accent)
-                }
-                HStack {
-                    Button("Rechercher des mises à jour") { updater.checkForUpdates() }
-                        .disabled(!updater.canCheck)
-                    Spacer()
-                    Link("Toutes les versions", destination: releasesURL)
-                }
-            }
-
             Section("À propos") {
+                LabeledContent("Version installée") {
+                    Text(currentVersion).monospacedDigit().foregroundStyle(Theme.slate)
+                }
                 Text("Cockpit for Claude — tableau de bord local pour Claude Code.")
                     .font(.system(size: 12))
                 Text("© 2026 Smart Colibri. Tous droits réservés.")
@@ -316,9 +305,5 @@ private struct UpdatesSettingsTab: View {
             }
         }
         .formStyle(.grouped)
-    }
-
-    private var releasesURL: URL {
-        URL(string: "https://github.com/smartcolibri/ClaudeCockpit/releases")!
     }
 }

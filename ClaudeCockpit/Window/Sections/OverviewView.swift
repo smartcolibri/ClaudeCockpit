@@ -12,7 +12,6 @@ import UsageKit
 struct OverviewView: View {
     @Environment(CockpitStore.self) private var store
     @State private var now = Date()
-    @AppStorage(SettingsKey.appStoreNoticeDismissed) private var appStoreNoticeDismissed = false
 
     /// Today's sessions, from the store's own dedicated query rather than from
     /// `store.sessions`, which is the browser's filtered page.
@@ -30,13 +29,6 @@ struct OverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
-                if !appStoreNoticeDismissed {
-                    SourceBanner(
-                        kind: .info,
-                        message: "Claude Cockpit devient « Cockpit for Claude » et rejoindra bientôt le Mac App Store. Cette version est la dernière distribuée hors App Store : elle continue de fonctionner, et vous serez prévenu ici dès que la nouvelle app sera disponible.",
-                        action: { appStoreNoticeDismissed = true },
-                        actionTitle: "Masquer")
-                }
                 tiles
                 HStack(alignment: .top, spacing: 16) {
                     quotaColumn.frame(maxWidth: .infinity, alignment: .leading)

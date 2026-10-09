@@ -26,15 +26,5 @@
 	<string>14.0</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>© 2026 Smart Colibri. All rights reserved.</string>
-	<key>SUAutomaticallyUpdate</key>
-	<false/>
-	<key>SUEnableAutomaticChecks</key>
-	<true/>
-	<key>SUFeedURL</key>
-	<string>https://smartcolibri.github.io/ClaudeCockpit/appcast.xml</string>
-	<key>SUPublicEDKey</key>
-	<string>qDOgZMTMhl2U8KFaFds14R7tSskZhU0zZPLQmF3WDgQ=</string>
-	<key>SUScheduledCheckInterval</key>
-	<integer>86400</integer>
 </dict>
 </plist>

@@ -5,9 +5,6 @@ options:
     macOS: "14.0"
 
 packages:
-  Sparkle:
-    url: https://github.com/sparkle-project/Sparkle
-    exactVersion: "2.10.0"
   CockpitCore:
     path: CockpitCore
 
@@ -25,7 +22,6 @@ targets:
     platform: macOS
     deploymentTarget: "14.0"
     dependencies:
-      - package: Sparkle
       - package: CockpitCore
         products: [CockpitShared, UsageKit, QuotaKit, RTKKit, SkillsKit, SessionsKit]
     sources:
@@ -60,13 +56,3 @@ targets:
         LSMinimumSystemVersion: "14.0"
         LSApplicationCategoryType: public.app-category.developer-tools
         NSHumanReadableCopyright: "© 2026 Smart Colibri. All rights reserved."
-        # Sparkle 2 auto-update. SUPublicEDKey is the public half of the EdDSA key
-        # held in the login keychain under the account "ClaudeCockpit". Never change
-        # it and never regenerate the key: every installed copy would reject updates.
-        # Private half backed up at ~/Documents/SparkleKeys/ClaudeCockpit-sparkle-private-key.txt
-        # Served by GitHub Pages from docs/: stays public when the repository goes private.
-        SUFeedURL: "https://smartcolibri.github.io/ClaudeCockpit/appcast.xml"
-        SUPublicEDKey: "qDOgZMTMhl2U8KFaFds14R7tSskZhU0zZPLQmF3WDgQ="
-        SUEnableAutomaticChecks: true
-        SUScheduledCheckInterval: 86400
-        SUAutomaticallyUpdate: false
