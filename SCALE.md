@@ -19,7 +19,7 @@ Context: the app is becoming **Cockpit for Claude**, a free Mac App Store produc
 | Tests / build | 320 tests (`swift test` in `CockpitCore`) + `xcodebuild`, run only on Vincent's Mac. No `.github/` folder, no CI |
 | Releases | `Scripts/release.sh` run locally: Developer ID signing, notarization, DMG, Sparkle EdDSA signature, appcast. Tags `v1.0.0`…`v1.1.5` + GitHub Releases. The DMG line ends with 1.2.0; the App Store pipeline does not exist yet (`PLAN.md` phase 12) |
 | Landing page | GitHub Pages from `docs/` in the same repo (published on merge to `main`). Copies on `lauriat.fr` (manual FTP upload) and `vincentlauriat.github.io` (manual PR) |
-| Apple | **Individual** Apple Developer account, team `KFLACS69T9`. Two identical "Developer ID Application" certificates in Vincent's keychain (Jan 2026 and Oct 7 2026) make `codesign` ambiguous; `release.sh` now needs `SIGNING_IDENTITY=<SHA-1>` |
+| Apple | **Individual** Apple Developer account, team `KFLACS69T9`. One "Developer ID Application" certificate in Vincent's keychain (`F9222A…`, valid to 2027-02-01); a duplicate created on 2026-10-07 made `codesign` ambiguous and was removed on 2026-10-10 |
 | Secrets | All on Vincent's Mac: Sparkle EdDSA private key (keychain + backup), notarytool profile `AppliMacVincentGithub`, signing certificates |
 
 ## 2. Decisions needed first
@@ -75,7 +75,7 @@ macOS minutes on a private repo are billed at a multiplier over Linux minutes an
 1. **Build + tests on every PR** — `xcodegen generate`, `xcodebuild` Debug with `CODE_SIGNING_ALLOWED=NO`, `swift test` in `CockpitCore`. Pin the Xcode version explicitly and use a stable (non-beta) Xcode: the same rule as for releases. Required status check in the ruleset (2.1).
 2. **Landing page** — nothing to automate in the repo: Pages already publishes `docs/` on merge. Automate the two copies instead (lauriat.fr FTP upload, `vincentlauriat.github.io` row), or retire them in favour of a single Smart Colibri site.
 3. **App Store / TestFlight upload (phase 12)** — a `v*` tag archives, exports and uploads with an **App Store Connect API key** stored as an organization secret. No Developer ID, notarization or Sparkle steps: the App Store build doesn't use them.
-4. **Secrets hygiene** — the Sparkle EdDSA private key is needed only until the final informational appcast item is published (phase 13); never put it in CI. The Developer ID certificates stay on Vincent's Mac. Remove the duplicate certificate from the keychain (Vincent's call) so `release.sh` works again without `SIGNING_IDENTITY`.
+4. **Secrets hygiene** — the Sparkle EdDSA private key is needed only until the final informational appcast item is published (phase 13); never put it in CI. The Developer ID certificates stay on Vincent's Mac.
 
 ## 6. Repository settings
 
