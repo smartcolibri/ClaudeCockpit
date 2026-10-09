@@ -28,7 +28,7 @@ public final class DBWatcher: @unchecked Sendable {
     private let directory: URL
     private let debounce: TimeInterval
     private let pollingInterval: TimeInterval?
-    private let queue = DispatchQueue(label: "fr.vincentlauriat.claudecockpit.rtk.watcher")
+    private let queue = DispatchQueue(label: "fr.smartcolibri.cockpitforclaude.rtk.watcher")
     private let continuation: AsyncStream<Void>.Continuation
     /// Marks `queue`, so `synchronized` can tell "already there" from "elsewhere".
     private static let queueKey = DispatchSpecificKey<UInt8>()

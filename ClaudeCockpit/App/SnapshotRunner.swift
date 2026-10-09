@@ -26,7 +26,7 @@ enum SnapshotRunner {
         if store.sessionIndex.isRunning {
             select(.sessions)
             try? await Task.sleep(for: .seconds(1.5))
-            if let window = NSApp.windows.first(where: { $0.title == "Claude Cockpit" && $0.isVisible }) {
+            if let window = NSApp.windows.first(where: { $0.title == MainWindowView.windowTitle && $0.isVisible }) {
                 write(window, to: dir.appendingPathComponent("sessions-indexing.png"))
             }
         }
@@ -50,7 +50,7 @@ enum SnapshotRunner {
         for (section, name) in sections {
             select(section)
             try? await Task.sleep(for: .seconds(1.5))
-            if let window = NSApp.windows.first(where: { $0.title == "Claude Cockpit" && $0.isVisible }) {
+            if let window = NSApp.windows.first(where: { $0.title == MainWindowView.windowTitle && $0.isVisible }) {
                 write(window, to: dir.appendingPathComponent("\(name).png"))
             }
             // The sessions section has three tabs behind one sidebar item.
@@ -58,7 +58,7 @@ enum SnapshotRunner {
                 for (tab, tabName) in [("activity", "sessions-activity"), ("edits", "sessions-edits")] {
                     UserDefaults.standard.set(tab, forKey: "sessions.tab")
                     try? await Task.sleep(for: .seconds(1.5))
-                    if let window = NSApp.windows.first(where: { $0.title == "Claude Cockpit" && $0.isVisible }) {
+                    if let window = NSApp.windows.first(where: { $0.title == MainWindowView.windowTitle && $0.isVisible }) {
                         write(window, to: dir.appendingPathComponent("\(tabName).png"))
                     }
                 }

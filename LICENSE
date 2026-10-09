@@ -1,21 +1,17 @@
-MIT License
+Copyright © 2026 Smart Colibri. All rights reserved.
 
-Copyright (c) 2026 Vincent Lauriat
+Cockpit for Claude ("the Software") is proprietary software owned by Smart Colibri.
 
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
+No part of the Software, including its source code, may be copied, modified, merged,
+published, distributed, sublicensed, or sold, in whole or in part, without the prior
+written permission of Smart Colibri.
 
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
+Use of the Software distributed through the Mac App Store is governed by Apple's
+Licensed Application End User License Agreement (Standard EULA):
+https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-SOFTWARE.
+Versions published before 2026-10-10 (up to and including v1.1.5, commit 129f2fc)
+were released under the MIT License; that grant remains valid for those versions only.
+
+Third-party components are distributed under their own licenses, listed in
+THIRD_PARTY_NOTICES.md.

@@ -1,25 +1,25 @@
 <div align="center">
 
-<img src="docs/assets/icon-256.png" width="128" alt="Claude Cockpit">
+<img src="docs/assets/icon-256.png" width="128" alt="Cockpit for Claude">
 
-# Claude Cockpit
+# Cockpit for Claude
 
 **One native macOS app for everything around Claude Code: your Anthropic quotas and pace, your local usage and cost, your RTK token savings, and your skills, agents and commands.**
 
-[![Release](https://img.shields.io/github/v/release/vincentlauriat/ClaudeCockpit?label=release&color=D97757)](https://github.com/vincentlauriat/ClaudeCockpit/releases/latest)
+[![Release](https://img.shields.io/github/v/release/smartcolibri/ClaudeCockpit?label=release&color=D97757)](https://github.com/smartcolibri/ClaudeCockpit/releases/latest)
 [![macOS](https://img.shields.io/badge/macOS-14%2B-000000?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Swift](https://img.shields.io/badge/Swift-5.9-F05138?logo=swift&logoColor=white)](https://swift.org)
-[![License](https://img.shields.io/badge/license-MIT-2ea44f)](LICENSE)
+[![License](https://img.shields.io/badge/license-proprietary-555555)](LICENSE)
 [![Notarized](https://img.shields.io/badge/notarized-Apple-1fd79b)](#install)
 
-[Download the latest release](https://github.com/vincentlauriat/ClaudeCockpit/releases/latest) ·
-[Landing page](https://vincentlauriat.github.io/ClaudeCockpit/) ·
-[Launch film](https://vincentlauriat.github.io/ClaudeCockpit/#film) ·
+[Download the latest release](https://github.com/smartcolibri/ClaudeCockpit/releases/latest) ·
+[Landing page](https://smartcolibri.github.io/ClaudeCockpit/) ·
+[Launch film](https://smartcolibri.github.io/ClaudeCockpit/#film) ·
 [Architecture](ARCHITECTURE_EN.md) ·
-[Interactive diagram](https://vincentlauriat.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html) ·
+[Interactive diagram](https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html) ·
 [Contributing](CONTRIBUTING.md)
 
-![Claude Cockpit — main window, overview section](docs/screenshots/overview.png)
+![Cockpit for Claude — main window, overview section](docs/screenshots/overview.png)
 
 </div>
 
@@ -27,7 +27,7 @@
 
 ## What it is
 
-Claude Cockpit merges four separate tools into a single native app:
+Cockpit for Claude merges four separate tools into a single native app:
 
 | Merged tool | What it brought |
 |---|---|
@@ -123,14 +123,14 @@ is to Anthropic's own quota endpoint, with the token Claude Code already stored 
 ## Install
 
 1. Download the latest `.dmg` from
-   [Releases](https://github.com/vincentlauriat/ClaudeCockpit/releases/latest).
-2. Mount it and drag **ClaudeCockpit.app** into `/Applications`.
+   [Releases](https://github.com/smartcolibri/ClaudeCockpit/releases/latest).
+2. Mount it and drag **Cockpit for Claude.app** into `/Applications`.
 3. Launch it. The app is signed with a Developer ID certificate and notarized by Apple, so
    Gatekeeper opens it without a detour through System Settings.
 
 Once installed it keeps itself current: Sparkle checks the release feed daily and offers
 updates rather than installing them behind your back. You can also trigger a check from
-**Claude Cockpit ▸ Rechercher des mises à jour…**.
+**Cockpit for Claude ▸ Rechercher des mises à jour…**.
 
 Two things are worth setting on first launch, both in **Réglages**:
 
@@ -186,7 +186,7 @@ A few consequences worth stating plainly:
 
 ```bash
 brew install xcodegen          # if not already installed
-git clone https://github.com/vincentlauriat/ClaudeCockpit.git
+git clone https://github.com/smartcolibri/ClaudeCockpit.git
 cd ClaudeCockpit
 xcodegen generate
 xcodebuild -project ClaudeCockpit.xcodeproj -scheme ClaudeCockpit \
@@ -228,7 +228,7 @@ ClaudeCockpit/
 ├── Scripts/                    release.sh, dmg-settings.py, make-app-icon.swift, make-dmg-background.swift
 ├── docs/                       landing page, screenshots, design spec
 ├── appcast.xml                 Sparkle release feed
-└── README.md, ARCHITECTURE_EN.md, ARCHITECTURE.md, CONTRIBUTING.md, LICENSE
+└── README.md, ARCHITECTURE_EN.md, ARCHITECTURE.md, CONTRIBUTING.md, LICENSE, THIRD_PARTY_NOTICES.md
 ```
 
 ## Release
@@ -245,12 +245,12 @@ the ticket, EdDSA-signs the DMG for Sparkle and rewrites `appcast.xml`. It finis
 printing the `gh release create` command.
 
 The feed lives at
-`https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml`. Publish
+`https://raw.githubusercontent.com/smartcolibri/ClaudeCockpit/main/appcast.xml`. Publish
 the GitHub release before pushing the feed, or Sparkle clients follow a URL that 404s.
 
 ## Lineage
 
-Claude Cockpit is the successor to four apps, each of which keeps its own repository and
+Cockpit for Claude is the successor to four apps, each of which keeps its own repository and
 landing page:
 
 | App | Repository | Landing page |
@@ -276,7 +276,9 @@ landing page:
 
 ## License
 
-[MIT](LICENSE) — © 2026 Vincent Lauriat.
+Proprietary — © 2026 Smart Colibri. All rights reserved. See [LICENSE](LICENSE).
+Versions up to v1.1.5 were published under the MIT License, which still applies to those versions.
+Third-party components: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 Built by Vincent Lauriat · [lauriat.fr](https://lauriat.fr) ·
 [vincentlauriat.github.io](https://vincentlauriat.github.io)

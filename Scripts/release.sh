@@ -39,7 +39,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 # ── Project identity (bootstrap.sh rewrites these when you clone the template) ──
-APP_NAME="${APP_NAME:-ClaudeCockpit}"      # PRODUCT_NAME / .app bundle name
+APP_NAME="${APP_NAME:-Cockpit for Claude}"      # PRODUCT_NAME / .app bundle name
 SCHEME="${SCHEME:-ClaudeCockpit}"           # macOS scheme (see project.yml)
 PROJECT="${PROJECT:-ClaudeCockpit.xcodeproj}"
 

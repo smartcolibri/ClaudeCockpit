@@ -1,4 +1,4 @@
-# ARCHITECTURE — Claude Cockpit
+# ARCHITECTURE — Cockpit for Claude
 
 Version française de [`ARCHITECTURE_EN.md`](ARCHITECTURE_EN.md), qui reste la source de vérité ;
 les deux sont modifiés dans le même tour. Les décisions de conception derrière ces choix sont
@@ -7,7 +7,7 @@ dans
 
 ## Vue d'ensemble
 
-Claude Cockpit est une application macOS native (Swift 5.9, SwiftUI sur une coque AppKit,
+Cockpit for Claude est une application macOS native (Swift 5.9, SwiftUI sur une coque AppKit,
 macOS 14+) qui lit cinq sources indépendantes et les réunit en un seul endroit : les jauges de
 quota Anthropic, les transcriptions locales de Claude Code — lues en direct pour l'usage local et
 indexées dans une base locale pour la section Sessions —, la base de données d'économies de rtk,
@@ -27,7 +27,7 @@ une bannière pendant que le reste continue de fonctionner.
 
 ## Diagramme de composants
 
-Une version interactive de ce diagramme (déplacement, zoom, recherche, vues guidées, références de source vérifiées contre le dépôt) est publiée sur [https://vincentlauriat.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html](https://vincentlauriat.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html). Sa source est `docs/diagrams/claude-cockpit.architecture.json`.
+Une version interactive de ce diagramme (déplacement, zoom, recherche, vues guidées, références de source vérifiées contre le dépôt) est publiée sur [https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html](https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-architecture.html). Sa source est `docs/diagrams/claude-cockpit.architecture.json`.
 
 ```mermaid
 flowchart TD
@@ -404,7 +404,7 @@ protocole (`TokenProviding`, `QuotaFetching`) ou reçoit une horloge injectée.
 7. Affichage de la commande `gh release create`.
 
 Le flux est servi depuis
-`https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml`, déclaré comme
+`https://raw.githubusercontent.com/smartcolibri/ClaudeCockpit/main/appcast.xml`, déclaré comme
 `SUFeedURL` dans `project.yml` à côté de `SUPublicEDKey`. Publier la release GitHub avant de
 pousser le flux : l'URL de l'enclosure pointe vers l'asset de la release, et un flux mis en ligne
 en premier sert un 404 à tous les clients.

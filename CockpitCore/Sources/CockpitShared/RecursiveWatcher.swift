@@ -39,7 +39,7 @@ public final class RecursiveWatcher: @unchecked Sendable {
     private let filter: (@Sendable (String) -> Bool)?
     private let debounce: TimeInterval
     private let pollingInterval: TimeInterval?
-    private let queue = DispatchQueue(label: "fr.vincentlauriat.claudecockpit.recursive.watcher")
+    private let queue = DispatchQueue(label: "fr.smartcolibri.cockpitforclaude.recursive.watcher")
     private let continuation: AsyncStream<[String]>.Continuation
     /// Marks `queue`, so `synchronized` can tell "already there" from "elsewhere".
     private static let queueKey = DispatchSpecificKey<UInt8>()

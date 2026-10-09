@@ -515,7 +515,7 @@ final class CockpitStore {
         NSApp.activate(ignoringOtherApps: true)
         if let handler = openWindowHandler {
             handler()
-        } else if let window = NSApp.windows.first(where: { $0.title == "Claude Cockpit" }) {
+        } else if let window = NSApp.windows.first(where: { $0.title == MainWindowView.windowTitle }) {
             window.makeKeyAndOrderFront(nil)
         }
     }

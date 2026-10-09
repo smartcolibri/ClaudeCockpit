@@ -7,7 +7,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if menuBarOnly {
             // Menu-bar-only mode: the main window must not pop at launch.
             DispatchQueue.main.async {
-                NSApp.windows.filter { $0.title == "Claude Cockpit" }.forEach { $0.close() }
+                NSApp.windows.filter { $0.title == MainWindowView.windowTitle }.forEach { $0.close() }
             }
         }
         NotificationCenter.default.addObserver(
@@ -19,7 +19,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// Dock icon; nothing else drops it back. Filtered by title so the Settings
     /// window (a different title) never triggers this.
     @objc private func mainWindowWillClose(_ notification: Notification) {
-        guard let window = notification.object as? NSWindow, window.title == "Claude Cockpit" else { return }
+        guard let window = notification.object as? NSWindow, window.title == MainWindowView.windowTitle else { return }
         guard UserDefaults.standard.bool(forKey: SettingsKey.menuBarOnly) else { return }
         NSApp.setActivationPolicy(.accessory)
     }
@@ -34,5 +34,5 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 extension Notification.Name {
-    static let cockpitOpenMainWindow = Notification.Name("fr.vincentlauriat.claudecockpit.openMainWindow")
+    static let cockpitOpenMainWindow = Notification.Name("fr.smartcolibri.cockpitforclaude.openMainWindow")
 }
