@@ -4,7 +4,6 @@ import Observation
 import ServiceManagement
 import CockpitShared
 import UsageKit
-import QuotaKit
 import RTKKit
 import SkillsKit
 import SessionsKit
@@ -23,28 +22,8 @@ enum SourceState: Equatable {
 }
 
 /// Sidebar sections of the main window.
-/// Which Anthropic quota the menu bar shows.
-enum MenuBarMeter: String, CaseIterable, Identifiable, Sendable {
-    /// The 7-day window: does the week hold?
-    case week
-    /// The 5-hour session: can I keep working right now?
-    case session
-    /// Both, session first.
-    case both
-
-    var id: String { rawValue }
-
-    var label: String {
-        switch self {
-        case .week: return "Fenêtre de 7 jours"
-        case .session: return "Session de 5 h"
-        case .both: return "Les deux (5 h · 7 j)"
-        }
-    }
-}
-
 enum CockpitSection: String, CaseIterable, Identifiable {
-    case overview, usage, sessions, quotas, rtk, skills, agents, commands, settings
+    case overview, usage, sessions, rtk, skills, agents, commands, settings
     var id: String { rawValue }
 
     var title: String {
@@ -52,7 +31,6 @@ enum CockpitSection: String, CaseIterable, Identifiable {
         case .overview: "Vue d'ensemble"
         case .usage: "Usage local"
         case .sessions: "Sessions"
-        case .quotas: "Quotas"
         case .rtk: "RTK"
         case .skills: "Skills"
         case .agents: "Agents"
@@ -65,7 +43,6 @@ enum CockpitSection: String, CaseIterable, Identifiable {
         case .overview: "gauge.with.dots.needle.33percent"
         case .usage: "chart.bar.xaxis"
         case .sessions: "text.bubble.fill"
-        case .quotas: "speedometer"
         case .rtk: "leaf.fill"
         case .skills: "sparkles"
         case .agents: "person.2.fill"
@@ -91,7 +68,6 @@ final class CockpitStore {
     // MARK: Services
     let paths: ClaudePaths
     private let usageService: UsageService
-    private let quotaService: QuotaService
     private var rtkService: RTKService
     let sessionService: SessionService
     private let skillsStore: ResourceStore
@@ -101,10 +77,6 @@ final class CockpitStore {
     private(set) var usage: UsageSnapshot?
     private(set) var usageState: SourceState = .idle
     private(set) var usageLastScan: Date?
-
-    private(set) var quota: GaugeSnapshot?
-    private(set) var quotaState: SourceState = .idle
-    private(set) var quotaNextAllowed: Date = .distantPast
 
     private(set) var rtk: RTKSnapshot?
     private(set) var rtkState: SourceState = .idle
@@ -153,43 +125,11 @@ final class CockpitStore {
     }
 
     // MARK: Derived
-    /// Weekly "all models" pace projection, nil when the gauge is unknown.
-    var weekProjection: PaceProjection? {
-        guard let week = quota?.week else { return nil }
-        return UsageMath.projection(for: week, now: Date())
-    }
-    var sessionProjection: PaceProjection? {
-        guard let session = quota?.session else { return nil }
-        return UsageMath.projection(for: session, now: Date())
-    }
-    /// Menu-bar label. Which meter it shows is a setting, because the two
-    /// windows answer different questions: the 5-hour session says whether you
-    /// can keep working right now, the 7-day window says whether the week holds.
-    ///
-    /// A dash stands for "not fetched yet" and is never rendered as 0 %.
+    /// Menu-bar label: today's estimated cost, formatted like the overview's
+    /// "Coût du jour" tile. A dash stands for "not read yet" and is never
+    /// rendered as a zero amount.
     var menuBarTitle: String {
-        guard let quota else { return "–" }
-        func percent(_ meter: Meter?) -> String? {
-            guard let meter else { return nil }
-            return "\(Int(meter.utilization.rounded())) %"
-        }
-        switch menuBarMeter {
-        case .week: return percent(quota.week) ?? "–"
-        case .session: return percent(quota.session) ?? "–"
-        case .both:
-            // Session first, then week, matching the order named in Settings.
-            let parts = [percent(quota.session), percent(quota.week)].compactMap { $0 }
-            return parts.isEmpty ? "–" : parts.joined(separator: " · ")
-        }
-    }
-
-    /// Read once into observable state: a bare `UserDefaults` read would not
-    /// redraw the menu bar when the setting changes.
-    private(set) var menuBarMeter: MenuBarMeter = .week
-
-    func setMenuBarMeter(_ meter: MenuBarMeter) {
-        menuBarMeter = meter
-        defaults.set(meter.rawValue, forKey: SettingsKey.menuBarMeter)
+        usage.map { money($0.costTodayUSD) } ?? "–"
     }
     var currency: String { defaults.string(forKey: SettingsKey.currency) ?? "USD" }
     /// Converts a USD amount to the display currency.
@@ -206,7 +146,6 @@ final class CockpitStore {
         SettingsKey.registerDefaults()
         self.paths = paths
         usageService = UsageService(paths: paths)
-        quotaService = QuotaService(credentials: CredentialStore(paths: paths), api: QuotaAPI())
         let override = UserDefaults.standard.string(forKey: SettingsKey.rtkDBPath).flatMap {
             $0.isEmpty ? nil : URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath)
         }
@@ -225,7 +164,6 @@ final class CockpitStore {
     func start() {
         guard !loopsStarted else { return }
         loopsStarted = true
-        loadMenuBarMeter()
 
         // Housekeeping: drop skill backups older than 30 days (off the main thread).
         let paths = paths
@@ -236,12 +174,6 @@ final class CockpitStore {
                 await self?.refreshUsage()
                 let seconds = max(10, UserDefaults.standard.integer(forKey: SettingsKey.usageRefreshSeconds))
                 try? await Task.sleep(for: .seconds(seconds))
-            }
-        })
-        loopTasks.append(Task { [weak self] in
-            while !Task.isCancelled {
-                await self?.refreshQuota(force: false)
-                try? await Task.sleep(for: .seconds(180))
             }
         })
         startRTKWatch()
@@ -332,10 +264,9 @@ final class CockpitStore {
 
     func refreshAll() async {
         async let a: Void = refreshUsage()
-        async let b: Void = refreshQuota(force: true)
-        async let c: Void = refreshRTK()
-        async let d: Void = refreshSkills()
-        _ = await (a, b, c, d)
+        async let b: Void = refreshRTK()
+        async let c: Void = refreshSkills()
+        _ = await (a, b, c)
     }
 
     // MARK: Usage
@@ -356,25 +287,6 @@ final class CockpitStore {
         let pricing = pricing
         let snapshot = await usageService.snapshot(filters: filters, pricing: pricing, now: Date())
         self.usage = snapshot
-    }
-
-    // MARK: Quota
-    func refreshQuota(force: Bool) async {
-        if quota == nil { quotaState = .loading }
-        do {
-            let snapshot = try await quotaService.refresh(force: force)
-            quota = snapshot
-            quotaState = .ready(snapshot.fetchedAt)
-        } catch let error as QuotaError {
-            if case .throttled = error, quota != nil {
-                // Too early: keep the current snapshot, do not surface as failure.
-            } else {
-                quotaState = .failed(error.localizedDescription)
-            }
-        } catch {
-            quotaState = .failed(error.localizedDescription)
-        }
-        quotaNextAllowed = await quotaService.nextAllowedRefresh
     }
 
     // MARK: RTK
@@ -491,13 +403,6 @@ final class CockpitStore {
 
     func setLaunchAtLogin(_ enabled: Bool) throws {
         if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
-    }
-
-    /// Restores the saved choice; an unknown or absent value falls back to the
-    /// weekly window, which is what the app shipped with.
-    func loadMenuBarMeter() {
-        menuBarMeter = defaults.string(forKey: SettingsKey.menuBarMeter)
-            .flatMap(MenuBarMeter.init(rawValue:)) ?? .week
     }
 
     func setMenuBarOnly(_ enabled: Bool) {

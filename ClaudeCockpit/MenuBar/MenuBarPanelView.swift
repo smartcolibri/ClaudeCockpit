@@ -1,11 +1,9 @@
 import AppKit
 import SwiftUI
 import CockpitShared
-import QuotaKit
 
-/// The menu-bar panel: the weekly gauge, the day's budget, three collapsible
-/// sections and the action footer. Ported from ClaudeMenu's `UsagePanelView` onto
-/// the cockpit store.
+/// The menu-bar panel: two collapsible sections (today, RTK savings) and the
+/// action footer. Ported from ClaudeMenu's `UsagePanelView` onto the cockpit store.
 struct MenuBarPanelView: View {
     /// `false` renders the content without a scroll container. Used only by
     /// `PanelSizer`, which cannot lay out a `ScrollView`.
@@ -14,7 +12,6 @@ struct MenuBarPanelView: View {
     @Environment(CockpitStore.self) private var store
     @Environment(\.openWindow) private var openWindow
 
-    @AppStorage(SettingsKey.panelSectionLimits) private var showLimits = true
     @AppStorage(SettingsKey.panelSectionToday) private var showToday = true
     @AppStorage(SettingsKey.panelSectionSavings) private var showSavings = true
 
@@ -25,9 +22,6 @@ struct MenuBarPanelView: View {
 
     // MARK: Derived
 
-    private var week: Meter? { store.quota?.week }
-    private var weekProjection: PaceProjection? { store.weekProjection }
-    private var isFirstLoad: Bool { store.quota == nil && store.quotaState.isLoading }
     /// Hidden only when rtk has nothing to say and its source failed.
     private var showsSavingsSection: Bool {
         !(store.rtk == nil && store.rtkState.errorMessage != nil)
@@ -61,17 +55,9 @@ struct MenuBarPanelView: View {
     /// longer is not tracked: the scroll view absorbs a few points. Each entry flips
     /// at most a handful of times per run — a signature that churned on every refresh
     /// would re-host and re-lay out the whole panel behind the scenes each time.
-    ///
-    /// `isFirstLoad` is deliberately absent: the skeleton gives way either to a gauge
-    /// (the meter count leaves -1) or to the "Indisponible" card (the error message
-    /// appears), and both are already tracked.
     private var layoutSignature: String {
         [
-            showLimits.description, showToday.description, showSavings.description,
-            (store.quota?.weeklyMeters.count ?? -1).description,
-            (store.quota?.other.count ?? -1).description,
-            (store.quota?.session != nil).description,
-            (store.quotaState.errorMessage != nil).description,
+            showToday.description, showSavings.description,
             showsSavingsSection.description,
             (store.usage != nil).description,
             (store.usageState.errorMessage != nil).description,
@@ -99,19 +85,6 @@ struct MenuBarPanelView: View {
 
     private var content: some View {
         VStack(spacing: 8) {
-            if isFirstLoad {
-                QuotaSkeleton(rows: 2)
-            } else {
-                QuotaHeroCard(week: week, projection: weekProjection, isLoading: store.quotaState.isLoading)
-            }
-            if let message = store.quotaState.errorMessage {
-                SourceBanner(
-                    kind: .warning,
-                    message: QuotaFormat.bannerMessage(message),
-                    action: { Task { await store.refreshQuota(force: true) } })
-            }
-            QuotaBudgetCard(projection: weekProjection)
-            limitsSection
             todaySection
             if showsSavingsSection { savingsSection }
             footer
@@ -120,39 +93,6 @@ struct MenuBarPanelView: View {
     }
 
     // MARK: Sections
-
-    private var limitsSection: some View {
-        DisclosureCard(
-            title: "Limites Anthropic",
-            icon: "gauge.with.dots.needle.33percent",
-            iconColor: Theme.blue,
-            expanded: $showLimits
-        ) {
-            if let gauge = store.quota {
-                if let session = gauge.session {
-                    QuotaMeterRow(meter: session, now: now)
-                    Divider().opacity(0.4)
-                }
-                ForEach(Array(gauge.weeklyMeters.enumerated()), id: \.element.id) { index, meter in
-                    if index > 0 { Divider().opacity(0.4) }
-                    QuotaMeterRow(meter: meter, now: now)
-                }
-                if !gauge.other.isEmpty {
-                    Divider().opacity(0.4)
-                    InfoRow(
-                        label: "Autres compartiments",
-                        value: FRFormat.integer(gauge.other.count),
-                        note: gauge.other.map {
-                            "\(QuotaFormat.bucketName($0)) \(FRFormat.percent($0.utilization, fraction: false))"
-                        }.joined(separator: ", ") + " — détail dans la fenêtre.")
-                }
-            } else {
-                InfoRow(
-                    label: "Lecture des compteurs",
-                    value: store.quotaState.errorMessage == nil ? "en cours…" : "indisponible")
-            }
-        }
-    }
 
     private var todaySection: some View {
         DisclosureCard(
@@ -219,7 +159,7 @@ struct MenuBarPanelView: View {
                 ActionRow(
                     icon: "macwindow", iconColor: Theme.accent,
                     title: "Ouvrir le cockpit",
-                    subtitle: "Usage, quotas, RTK et skills")
+                    subtitle: "Usage, sessions, RTK et skills")
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -262,18 +202,9 @@ struct MenuBarPanelView: View {
         .card()
     }
 
-    /// Says when the gauge was last read, and when the next read becomes possible.
+    /// Says when the transcripts were last read.
     private var refreshSubtitle: String {
-        var parts: [String] = []
-        if let fetched = store.quota?.fetchedAt {
-            parts.append("Compteurs lus \(FRFormat.relative(fetched, now: now))")
-        } else {
-            parts.append("Compteurs jamais lus")
-        }
-        let wait = store.quotaNextAllowed.timeIntervalSince(now)
-        if wait > 0 {
-            parts.append("prochaine lecture dans \(FRFormat.duration(wait))")
-        }
-        return parts.joined(separator: " · ")
+        guard let scanned = store.usageLastScan else { return "Transcripts jamais lus" }
+        return "Transcripts lus \(FRFormat.relative(scanned, now: now))"
     }
 }

@@ -17,7 +17,7 @@ struct MainWindowView: View {
         NavigationSplitView {
             List(selection: selection) {
                 Section("Tableau de bord") {
-                    row(.overview); row(.usage); row(.sessions); row(.quotas); row(.rtk)
+                    row(.overview); row(.usage); row(.sessions); row(.rtk)
                 }
                 Section("Atelier") {
                     row(.skills); row(.agents); row(.commands)
@@ -62,7 +62,6 @@ struct MainWindowView: View {
         case .overview: OverviewView()
         case .usage: UsageView()
         case .sessions: SessionsView()
-        case .quotas: QuotasView()
         case .rtk: RTKView()
         case .skills: ResourcesView(kind: .skill)
         case .agents: ResourcesView(kind: .agent)

@@ -10,7 +10,7 @@ enum Theme {
     static let tileRadius: CGFloat = 12
 
     // MARK: Colours
-    /// Claude's warm terracotta — quotas, primary emphasis.
+    /// Claude's warm terracotta — primary emphasis.
     static let accent = adaptive(light: 0xC9603F, dark: 0xD97757)
     static let accentSoft = adaptive(light: 0xF0A080, dark: 0xF0A080)
     /// Emerald — RTK savings. Never paired with red/orange for RTK.
@@ -28,16 +28,6 @@ enum Theme {
     static let ink = adaptive(light: 0x16191D, dark: 0xECEFF2)
     static let slate = adaptive(light: 0x5B6470, dark: 0x9AA3AE)
     static let mist = adaptive(light: 0x9AA3AE, dark: 0x5B6470)
-
-    /// Green while comfortable, orange when it gets tight, red when over (quotas).
-    static func tone(used: Double) -> Color {
-        used >= 100 ? .red : (used >= 80 ? .orange : .green)
-    }
-    /// Only a meaningful projection may darken the tone; otherwise judge on usage alone.
-    static func tone(used: Double, landing: Double?) -> Color {
-        guard let landing, landing > 100 else { return tone(used: used) }
-        return used >= 80 ? .red : .orange
-    }
 
     /// Emerald intensity for an RTK savings percentage (0…100). Low-signal
     /// commands read as neutral mist, never judged.
@@ -142,31 +132,6 @@ struct StatTile: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(14)
         .card()
-    }
-}
-
-/// Segmented capsule bar with quarter ticks (quota gauges).
-struct SegmentedBar: View {
-    let fraction: Double
-    let color: Color
-
-    var body: some View {
-        GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule().fill(Theme.track)
-                Capsule().fill(color)
-                    .frame(width: max(0, min(1, fraction)) * geo.size.width)
-                HStack(spacing: 0) {
-                    ForEach(1..<4) { i in
-                        Spacer()
-                        Rectangle().fill(Color.black.opacity(0.25)).frame(width: 1)
-                            .opacity(Double(i) / 4 < fraction ? 1 : 0)
-                    }
-                    Spacer()
-                }
-            }
-        }
-        .frame(height: 8)
     }
 }
 

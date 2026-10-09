@@ -32,7 +32,7 @@ struct CockpitApp: App {
     }
 }
 
-/// Menu-bar label: gauge glyph + weekly percent. Also the launch-time bridge.
+/// Menu-bar label: gauge glyph + today's cost. Also the launch-time bridge.
 private struct MenuBarLabel: View {
     let store: CockpitStore
     @Environment(\.openWindow) private var openWindow

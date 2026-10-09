@@ -23,7 +23,7 @@ targets:
     deploymentTarget: "14.0"
     dependencies:
       - package: CockpitCore
-        products: [CockpitShared, UsageKit, QuotaKit, RTKKit, SkillsKit, SessionsKit]
+        products: [CockpitShared, UsageKit, RTKKit, SkillsKit, SessionsKit]
     sources:
       - path: ClaudeCockpit
         excludes:
