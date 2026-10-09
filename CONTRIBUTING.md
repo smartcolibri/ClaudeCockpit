@@ -1,5 +1,8 @@
 # Contributing
 
+Cockpit for Claude is proprietary software of Smart Colibri (see `LICENSE`); outside contributions
+are not accepted. This file documents the internal development rules.
+
 Thanks for taking a look. This is a small, focused macOS app; the bar is simply that a change
 builds, is covered where it can be, and reads like the code around it.
 

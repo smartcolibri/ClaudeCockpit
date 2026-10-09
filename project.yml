@@ -1,6 +1,6 @@
 name: ClaudeCockpit
 options:
-  bundleIdPrefix: fr.vincentlauriat
+  bundleIdPrefix: fr.smartcolibri
   deploymentTarget:
     macOS: "14.0"
 
@@ -35,8 +35,10 @@ targets:
           - "Info.plist"
     settings:
       base:
-        PRODUCT_NAME: ClaudeCockpit
-        PRODUCT_BUNDLE_IDENTIFIER: fr.vincentlauriat.claudecockpit
+        PRODUCT_NAME: Cockpit for Claude
+        # Module name kept stable: the Swift module is not part of the brand.
+        PRODUCT_MODULE_NAME: ClaudeCockpit
+        PRODUCT_BUNDLE_IDENTIFIER: fr.smartcolibri.cockpitforclaude
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         SWIFT_VERSION: "5.9"
         MARKETING_VERSION: "1.1.5"
@@ -50,19 +52,19 @@ targets:
     info:
       path: ClaudeCockpit/Resources/Info.plist
       properties:
-        CFBundleName: ClaudeCockpit
-        CFBundleDisplayName: Claude Cockpit
-        CFBundleIdentifier: fr.vincentlauriat.claudecockpit
+        CFBundleName: Cockpit for Claude
+        CFBundleDisplayName: Cockpit for Claude
+        CFBundleIdentifier: fr.smartcolibri.cockpitforclaude
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         LSMinimumSystemVersion: "14.0"
         LSApplicationCategoryType: public.app-category.developer-tools
-        NSHumanReadableCopyright: "© 2026 Vincent Lauriat"
+        NSHumanReadableCopyright: "© 2026 Smart Colibri. All rights reserved."
         # Sparkle 2 auto-update. SUPublicEDKey is the public half of the EdDSA key
         # held in the login keychain under the account "ClaudeCockpit". Never change
         # it and never regenerate the key: every installed copy would reject updates.
         # Private half backed up at ~/Documents/SparkleKeys/ClaudeCockpit-sparkle-private-key.txt
-        SUFeedURL: "https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml"
+        SUFeedURL: "https://raw.githubusercontent.com/smartcolibri/ClaudeCockpit/main/appcast.xml"
         SUPublicEDKey: "qDOgZMTMhl2U8KFaFds14R7tSskZhU0zZPLQmF3WDgQ="
         SUEnableAutomaticChecks: true
         SUScheduledCheckInterval: 86400

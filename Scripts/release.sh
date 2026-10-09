@@ -39,7 +39,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 # ── Project identity (bootstrap.sh rewrites these when you clone the template) ──
-APP_NAME="${APP_NAME:-ClaudeCockpit}"      # PRODUCT_NAME / .app bundle name
+APP_NAME="${APP_NAME:-Cockpit for Claude}"      # PRODUCT_NAME / .app bundle name
 SCHEME="${SCHEME:-ClaudeCockpit}"           # macOS scheme (see project.yml)
 PROJECT="${PROJECT:-ClaudeCockpit.xcodeproj}"
 
@@ -270,7 +270,7 @@ cat > "$ROOT/appcast.xml" <<APPCAST
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
     <title>ClaudeCockpit</title>
-    <link>https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml</link>
+    <link>https://raw.githubusercontent.com/smartcolibri/ClaudeCockpit/main/appcast.xml</link>
     <description>ClaudeCockpit release feed</description>
     <language>en</language>
     <item>
@@ -279,9 +279,9 @@ cat > "$ROOT/appcast.xml" <<APPCAST
       <sparkle:version>$BUILD_NUMBER</sparkle:version>
       <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>$MIN_OS</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/vincentlauriat/ClaudeCockpit/releases/tag/v$VERSION</sparkle:releaseNotesLink>
+      <sparkle:releaseNotesLink>https://github.com/smartcolibri/ClaudeCockpit/releases/tag/v$VERSION</sparkle:releaseNotesLink>
       <enclosure
-        url="https://github.com/vincentlauriat/ClaudeCockpit/releases/download/v$VERSION/$DMG_SLUG-$VERSION.dmg"
+        url="https://github.com/smartcolibri/ClaudeCockpit/releases/download/v$VERSION/$DMG_SLUG-$VERSION.dmg"
         type="application/octet-stream"
         $SPARKLE_SIG_LINE />
     </item>

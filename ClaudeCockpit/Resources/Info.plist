@@ -5,15 +5,15 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Claude Cockpit</string>
+	<string>Cockpit for Claude</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>fr.vincentlauriat.claudecockpit</string>
+	<string>fr.smartcolibri.cockpitforclaude</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>ClaudeCockpit</string>
+	<string>Cockpit for Claude</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -25,13 +25,13 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>14.0</string>
 	<key>NSHumanReadableCopyright</key>
-	<string>© 2026 Vincent Lauriat</string>
+	<string>© 2026 Smart Colibri. All rights reserved.</string>
 	<key>SUAutomaticallyUpdate</key>
 	<false/>
 	<key>SUEnableAutomaticChecks</key>
 	<true/>
 	<key>SUFeedURL</key>
-	<string>https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml</string>
+	<string>https://raw.githubusercontent.com/smartcolibri/ClaudeCockpit/main/appcast.xml</string>
 	<key>SUPublicEDKey</key>
 	<string>qDOgZMTMhl2U8KFaFds14R7tSskZhU0zZPLQmF3WDgQ=</string>
 	<key>SUScheduledCheckInterval</key>
