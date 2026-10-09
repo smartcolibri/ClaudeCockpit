@@ -264,13 +264,29 @@ BUILD_NUMBER="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleVersion' "$STAGING/Co
 MIN_OS="$(/usr/libexec/PlistBuddy -c 'Print :LSMinimumSystemVersion' "$STAGING/Contents/Info.plist")"
 PUB_DATE="$(LC_ALL=C date -R)"
 
-echo "▶︎ writing appcast.xml (sparkle:version=$BUILD_NUMBER, shortVersionString=$VERSION)"
+# Feeds and downloads live on GitHub Pages (docs/), which stays public when the
+# repository goes private; release assets of a private repository do not.
+PAGES_URL="https://smartcolibri.github.io/ClaudeCockpit"
+DOWNLOADS_DIR="$ROOT/docs/downloads"
+mkdir -p "$DOWNLOADS_DIR"
+cp "$DMG" "$DOWNLOADS_DIR/"
+
+# Release notes shown inline in Sparkle's update window: an HTML fragment in
+# release/sparkle-notes-<version>.html. Without it, fall back to the GitHub tag page.
+NOTES_HTML="$RELEASE_DIR/sparkle-notes-$VERSION.html"
+if [ -f "$NOTES_HTML" ]; then
+  NOTES_ELEMENT="<description><![CDATA[$(cat "$NOTES_HTML")]]></description>"
+else
+  NOTES_ELEMENT="<sparkle:releaseNotesLink>https://github.com/smartcolibri/ClaudeCockpit/releases/tag/v$VERSION</sparkle:releaseNotesLink>"
+fi
+
+echo "▶︎ writing appcast.xml + docs/appcast.xml (sparkle:version=$BUILD_NUMBER, shortVersionString=$VERSION)"
 cat > "$ROOT/appcast.xml" <<APPCAST
 <?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
     <title>ClaudeCockpit</title>
-    <link>https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml</link>
+    <link>$PAGES_URL/appcast.xml</link>
     <description>ClaudeCockpit release feed</description>
     <language>en</language>
     <item>
@@ -279,19 +295,22 @@ cat > "$ROOT/appcast.xml" <<APPCAST
       <sparkle:version>$BUILD_NUMBER</sparkle:version>
       <sparkle:shortVersionString>$VERSION</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>$MIN_OS</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/vincentlauriat/ClaudeCockpit/releases/tag/v$VERSION</sparkle:releaseNotesLink>
+      $NOTES_ELEMENT
       <enclosure
-        url="https://github.com/vincentlauriat/ClaudeCockpit/releases/download/v$VERSION/$DMG_SLUG-$VERSION.dmg"
+        url="$PAGES_URL/downloads/$DMG_SLUG-$VERSION.dmg"
         type="application/octet-stream"
         $SPARKLE_SIG_LINE />
     </item>
   </channel>
 </rss>
 APPCAST
+# Installed copies up to 1.1.5 poll the root file (raw URL); 1.2.0+ poll Pages.
+cp "$ROOT/appcast.xml" "$ROOT/docs/appcast.xml"
 
 SIZE="$(du -h "$DMG" | cut -f1 | tr -d ' ')"
 echo
 echo "✅ Built, signed, notarized & stapled: $(basename "$DMG") ($SIZE)"
 echo
 echo "Publish on GitHub:"
-echo "  gh release create v$VERSION \"$DMG\" --title \"v$VERSION\" --generate-notes"
+echo "  gh release create v$VERSION \"$DMG\" --title \"v$VERSION\" --notes-file release/release-notes-$VERSION.md"
+echo "Then commit appcast.xml, docs/appcast.xml and docs/downloads/ (git add -f: *.dmg is ignored)."
