@@ -2,20 +2,27 @@
 <rss version="2.0" xmlns:sparkle="http://www.andymatuschak.org/xml-namespaces/sparkle">
   <channel>
     <title>ClaudeCockpit</title>
-    <link>https://raw.githubusercontent.com/vincentlauriat/ClaudeCockpit/main/appcast.xml</link>
+    <link>https://smartcolibri.github.io/ClaudeCockpit/appcast.xml</link>
     <description>ClaudeCockpit release feed</description>
     <language>en</language>
     <item>
-      <title>v1.1.5</title>
-      <pubDate>Sat, 03 Oct 2026 20:26:44 +0200</pubDate>
-      <sparkle:version>49</sparkle:version>
-      <sparkle:shortVersionString>1.1.5</sparkle:shortVersionString>
+      <title>v1.2.0</title>
+      <pubDate>Sat, 10 Oct 2026 01:19:19 +0200</pubDate>
+      <sparkle:version>50</sparkle:version>
+      <sparkle:shortVersionString>1.2.0</sparkle:shortVersionString>
       <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
-      <sparkle:releaseNotesLink>https://github.com/vincentlauriat/ClaudeCockpit/releases/tag/v1.1.5</sparkle:releaseNotesLink>
+      <description><![CDATA[<h2>Claude Cockpit 1.2.0</h2>
+<p><strong>Claude Cockpit devient « Cockpit for Claude » et rejoindra bientôt le Mac App Store.</strong></p>
+<p>Cette version est la dernière distribuée hors App Store. Elle continue de fonctionner normalement, et vous serez prévenu par ce même canal dès que la nouvelle app sera disponible.</p>
+<ul>
+<li>Les mises à jour sont désormais vérifiées sur smartcolibri.github.io, la nouvelle adresse du projet.</li>
+<li>Un bandeau dans la Vue d'ensemble explique le changement (vous pouvez le masquer).</li>
+</ul>
+<p><em>Claude Cockpit is becoming “Cockpit for Claude” and moving to the Mac App Store. This is the last version distributed outside the App Store.</em></p>]]></description>
       <enclosure
-        url="https://github.com/vincentlauriat/ClaudeCockpit/releases/download/v1.1.5/ClaudeCockpit-1.1.5.dmg"
+        url="https://smartcolibri.github.io/ClaudeCockpit/downloads/ClaudeCockpit-1.2.0.dmg"
         type="application/octet-stream"
-        sparkle:edSignature="KdOED5+AnV0CVKG7WGvDTLPK1ylthXk3gCgiRfPpo/oF/OnGzxd2sYFaA8d2ASd3A4FjWmDLeqQmNItybUkwAA==" length="6856944" />
+        sparkle:edSignature="OvEm9X9YOHlFcnVZ0e3WtC39O+XJQwUn6d3cdtSEyDGzp8AHL0aPcLMx69u6HxxPE0H/cDcsRi+AmLUs9UcLBw==" length="6855649" />
     </item>
   </channel>
 </rss>
