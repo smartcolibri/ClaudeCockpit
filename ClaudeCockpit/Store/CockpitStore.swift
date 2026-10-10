@@ -93,6 +93,9 @@ final class CockpitStore {
 
     private(set) var rtk: RTKSnapshot?
     private(set) var rtkState: SourceState = .idle
+    /// The last read found no rtk database at all — rtk is not installed, as opposed to
+    /// unreadable — which the Overview turns into a suggestion.
+    private(set) var rtkIsMissing = false
 
     private(set) var skills: SkillsInventory?
     private(set) var skillsState: SourceState = .idle
@@ -635,10 +638,12 @@ final class CockpitStore {
             let snapshot = try await Task.detached(priority: .utility) { try service.snapshot() }.value
             guard generation == accessGeneration else { return }
             rtk = snapshot
+            rtkIsMissing = false
             rtkState = .ready(snapshot.generatedAt)
             if rtkWatchEnded { startRTKWatch() }
         } catch {
             guard generation == accessGeneration else { return }
+            rtkIsMissing = (error as? RTKError) == .databaseNotFound
             rtkState = .failed(error.localizedDescription)
         }
     }

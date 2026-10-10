@@ -8,7 +8,7 @@ import SessionsKit
 /// archive on its own.
 struct SessionsView: View {
     @Environment(CockpitStore.self) private var store
-    @AppStorage("sessions.tab") private var tabRaw: String = SessionsTab.browser.rawValue
+    @AppStorage(SettingsKey.sessionsTab) private var tabRaw: String = SessionsTab.browser.rawValue
 
     enum SessionsTab: String, CaseIterable, Identifiable {
         case browser, activity, edits
