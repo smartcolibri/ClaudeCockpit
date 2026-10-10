@@ -22,7 +22,7 @@ struct UsageFilterBar: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    SectionLabel(text: "Modèles")
+                    SectionLabel(text: String(localized: "Models"))
                     HStack(spacing: 6) {
                         ForEach(families) { family in
                             chip(family)
@@ -31,9 +31,9 @@ struct UsageFilterBar: View {
                 }
                 Divider().frame(height: 32)
                 VStack(alignment: .leading, spacing: 6) {
-                    SectionLabel(text: "Projet")
+                    SectionLabel(text: String(localized: "Project"))
                     Picker("", selection: projectBinding) {
-                        Text("Tous les projets").tag(String?.none)
+                        Text("All Projects").tag(String?.none)
                         ForEach(availableProjects, id: \.self) { project in
                             Text(UsagePath.shorten(project)).tag(String?.some(project))
                         }
@@ -44,10 +44,10 @@ struct UsageFilterBar: View {
                 Spacer(minLength: 0)
             }
             VStack(alignment: .leading, spacing: 6) {
-                SectionLabel(text: "Période")
+                SectionLabel(text: String(localized: "Period"))
                 Picker("", selection: rangeBinding) {
                     ForEach(DateRangeFilter.allCases) { range in
-                        Text(range.frenchLabel).tag(range)
+                        Text(range.displayName).tag(range)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -73,7 +73,7 @@ struct UsageFilterBar: View {
                     Capsule().stroke(isOn ? family.color.opacity(0.45) : Theme.cardStroke, lineWidth: 1))
         }
         .buttonStyle(.plain)
-        .help(isOn ? "Masquer \(family.label)" : "Afficher \(family.label)")
+        .help(isOn ? Text("Hide \(family.label)") : Text("Show \(family.label)"))
     }
 
     /// Deselecting the last family lands back on "every family" rather than on an empty

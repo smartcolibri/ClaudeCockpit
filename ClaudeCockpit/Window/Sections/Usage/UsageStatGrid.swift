@@ -11,49 +11,49 @@ struct UsageStatGrid: View {
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 260), spacing: 12)]
 
     private var rangeNote: String {
-        range == .all ? "sur tout l'historique" : "sur « \(range.frenchLabel.lowercased()) »"
+        range == .all ? String(localized: "over all history") : String(localized: "over “\(range.displayName.lowercased())”")
     }
 
     var body: some View {
         LazyVGrid(columns: columns, spacing: 12) {
             StatTile(
-                label: "Sessions",
+                label: String(localized: "Sessions"),
                 value: AppFormat.integer(totals.sessionCount),
                 note: rangeNote,
                 icon: "bubble.left.and.bubble.right")
             StatTile(
-                label: "Tours",
+                label: String(localized: "Turns"),
                 value: AppFormat.tokens(totals.turnCount),
                 note: rangeNote,
                 icon: "arrow.triangle.2.circlepath")
             StatTile(
-                label: "Entrée",
+                label: String(localized: "Input"),
                 value: AppFormat.tokens(totals.inputTokens),
-                note: "tokens envoyés",
+                note: String(localized: "tokens sent"),
                 tint: UsagePalette.input,
                 icon: "arrow.down.circle")
             StatTile(
-                label: "Sortie",
+                label: String(localized: "Output"),
                 value: AppFormat.tokens(totals.outputTokens),
-                note: "tokens générés",
+                note: String(localized: "tokens generated"),
                 tint: UsagePalette.output,
                 icon: "arrow.up.circle")
             StatTile(
-                label: "Cache lu",
+                label: String(localized: "Cache read"),
                 value: AppFormat.tokens(totals.cacheReadTokens),
-                note: "lectures du cache de prompt",
+                note: String(localized: "prompt cache reads"),
                 tint: UsagePalette.cacheRead,
                 icon: "arrow.clockwise.circle")
             StatTile(
-                label: "Cache créé",
+                label: String(localized: "Cache written"),
                 value: AppFormat.tokens(totals.cacheCreationTokens),
-                note: "écritures dans le cache",
+                note: String(localized: "cache writes"),
                 tint: UsagePalette.cacheCreation,
                 icon: "square.stack.3d.up")
             StatTile(
-                label: "Coût estimé",
+                label: String(localized: "Estimated cost"),
                 value: money(totals.estimatedCostUSD),
-                note: "tarifs API, approximatif",
+                note: String(localized: "API rates, approximate"),
                 tint: Theme.blue,
                 icon: "creditcard")
         }

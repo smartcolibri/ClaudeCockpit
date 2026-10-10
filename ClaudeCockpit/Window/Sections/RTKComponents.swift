@@ -27,7 +27,7 @@ struct CompressionGauge: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionLabel(text: "Compression")
+            SectionLabel(text: String(localized: "Compression"))
 
             GeometryReader { geo in
                 let width = geo.size.width
@@ -37,7 +37,7 @@ struct CompressionGauge: View {
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
                         .fill(Theme.emerald.opacity(0.14))
                     // The reclaimed span carries the count.
-                    Text("\(AppFormat.tokens(saved)) économisés")
+                    Text("\(AppFormat.tokens(saved)) saved")
                         .font(.data(11))
                         .foregroundStyle(Theme.emerald)
                         .frame(maxWidth: .infinity)
@@ -51,9 +51,9 @@ struct CompressionGauge: View {
             .frame(height: 30)
 
             HStack(spacing: 0) {
-                endLabel(value: AppFormat.tokens(input), caption: "Entrée", align: .leading)
+                endLabel(value: AppFormat.tokens(input), caption: String(localized: "Input"), align: .leading)
                 Spacer(minLength: 12)
-                endLabel(value: AppFormat.tokens(output), caption: "Sortie", align: .trailing)
+                endLabel(value: AppFormat.tokens(output), caption: String(localized: "Output"), align: .trailing)
             }
         }
         .onAppear {
@@ -66,7 +66,7 @@ struct CompressionGauge: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("Compression")
-        .accessibilityValue("\(AppFormat.tokens(input)) en entrée compressés en \(AppFormat.tokens(output)) en sortie, \(AppFormat.tokens(saved)) jetons économisés")
+        .accessibilityValue("\(AppFormat.tokens(input)) input compressed to \(AppFormat.tokens(output)) output, \(AppFormat.tokens(saved)) tokens saved")
     }
 
     private func endLabel(value: String, caption: String, align: HorizontalAlignment) -> some View {
@@ -99,15 +99,15 @@ struct WeekIntensityChart: View {
     var body: some View {
         Group {
             if days.isEmpty {
-                Text("Aucune activité sur les sept derniers jours.")
+                Text("No activity in the last seven days.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 120, alignment: .leading)
             } else {
                 Chart(days) { day in
                     BarMark(
-                        x: .value("Jour", day.date, unit: .day),
-                        y: .value("Jetons économisés", day.savedTokens),
+                        x: .value("Day", day.date, unit: .day),
+                        y: .value("Tokens saved", day.savedTokens),
                         width: .ratio(0.55)
                     )
                     .cornerRadius(4)
@@ -138,14 +138,14 @@ struct WeekIntensityChart: View {
                 }
                 .frame(height: 140)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Jetons économisés sur sept jours")
+                .accessibilityLabel("Tokens saved over seven days")
                 .accessibilityValue(summary)
             }
         }
     }
 
     private var summary: String {
-        days.map { "\(AppFormat.weekday($0.date)) : \(AppFormat.tokens($0.savedTokens))" }
+        days.map { String(localized: "\(AppFormat.weekday($0.date)): \(AppFormat.tokens($0.savedTokens))") }
             .joined(separator: ", ")
     }
 }
@@ -175,7 +175,7 @@ struct CommandImpactRow: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                     Spacer(minLength: 8)
-                    Text("\(AppFormat.integer(stat.count)) ×")
+                    Text(verbatim: "\(AppFormat.integer(stat.count)) ×")
                         .font(.data(11))
                         .foregroundStyle(Theme.slate)
                         .frame(width: 64, alignment: .trailing)
@@ -202,12 +202,12 @@ struct CommandImpactRow: View {
         .padding(.vertical, 7)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(stat.name)
-        .accessibilityValue("\(AppFormat.integer(stat.count)) exécutions, \(AppFormat.tokens(stat.savedTokens)) économisés, \(AppFormat.percent(stat.savingsPct, fraction: false))")
+        .accessibilityValue("\(AppFormat.integer(stat.count)) runs, \(AppFormat.tokens(stat.savedTokens)) saved, \(AppFormat.percent(stat.savingsPct, fraction: false))")
     }
 
     /// The top three get an emerald halo, the rest stay neutral mist.
     private var rankBadge: some View {
-        Text("\(rank)")
+        Text(verbatim: "\(rank)")
             .font(.data(10))
             .foregroundStyle(rank <= 3 ? Theme.emerald : Theme.mist)
             .frame(width: 20, height: 20)
@@ -230,7 +230,7 @@ struct RTKTracePanel: View {
             header
             Divider()
             if records.isEmpty {
-                Text("Aucune commande enregistrée.")
+                Text("No commands recorded.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -266,7 +266,7 @@ struct RTKTracePanel: View {
                 .scaleEffect(pulse ? 1.9 : 1)
                 .opacity(pulse ? 1 : 0.85)
                 .accessibilityHidden(true)
-            SectionLabel(text: "Trace live")
+            SectionLabel(text: String(localized: "Live trace"))
             Spacer()
             Text("\(records.count) cmd")
                 .font(.data(10))
@@ -325,6 +325,6 @@ private struct TraceRow: View {
         .background(Color.primary.opacity(0.02))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(record.originalCommand)
-        .accessibilityValue("\(AppFormat.percent(record.savingsPct, fraction: false)) économisés à \(Self.clock.string(from: record.timestamp))")
+        .accessibilityValue("\(AppFormat.percent(record.savingsPct, fraction: false)) saved at \(Self.clock.string(from: record.timestamp))")
     }
 }

@@ -69,7 +69,7 @@ struct RTKView: View {
                 .foregroundStyle(Theme.emerald)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
-                Text("Économies rtk")
+                Text("rtk Savings")
                     .font(.display(15))
                     .foregroundStyle(Theme.ink)
                 Text(subtitle)
@@ -83,8 +83,8 @@ struct RTKView: View {
                 Image(systemName: "arrow.clockwise")
             }
             .buttonStyle(.plain)
-            .help("Relire la base rtk")
-            .accessibilityLabel("Relire la base rtk")
+            .help("Reload the rtk database")
+            .accessibilityLabel("Reload the rtk database")
 
             Button {
                 withAnimation(reduceMotion ? nil : .easeInOut(duration: 0.2)) { showTrace.toggle() }
@@ -93,9 +93,9 @@ struct RTKView: View {
             }
             .buttonStyle(.plain)
             .opacity(showTrace ? 1 : 0.4)
-            .help(showTrace ? "Masquer la trace live" : "Afficher la trace live")
-            .accessibilityLabel("Panneau de trace live")
-            .accessibilityValue(showTrace ? "affiché" : "masqué")
+            .help(showTrace ? Text("Hide Live Trace") : Text("Show Live Trace"))
+            .accessibilityLabel("Live trace panel")
+            .accessibilityValue(showTrace ? Text("shown") : Text("hidden"))
         }
         .padding(.horizontal, 24)
         .padding(.vertical, 14)
@@ -103,10 +103,10 @@ struct RTKView: View {
     }
 
     private var subtitle: String {
-        if databaseMissing { return "rtk non détecté" }
-        if let date = store.rtkState.lastSuccess { return "Relu \(AppFormat.relative(date))" }
-        if store.rtkState.isLoading { return "Lecture de la base…" }
-        return "En attente"
+        if databaseMissing { return String(localized: "rtk not detected") }
+        if let date = store.rtkState.lastSuccess { return String(localized: "Read \(AppFormat.relative(date))") }
+        if store.rtkState.isLoading { return String(localized: "Reading the database…") }
+        return String(localized: "Waiting")
     }
 
     // MARK: - Banners
@@ -116,9 +116,9 @@ struct RTKView: View {
         if databaseMissing {
             SourceBanner(
                 kind: .info,
-                message: "rtk n'est pas installé ou n'a pas encore d'historique. Installez-le depuis https://github.com/rtk-ai/rtk, lancez quelques commandes, ou indiquez le chemin de history.db dans les réglages.",
+                message: String(localized: "rtk is not installed or has no history yet. Install it from https://github.com/rtk-ai/rtk, run a few commands, or set the path to history.db in Settings."),
                 action: { openRTKPage() },
-                actionTitle: "Ouvrir la page rtk")
+                actionTitle: String(localized: "Open the rtk Page"))
         } else if let otherFailure {
             SourceBanner(
                 kind: .error,
@@ -127,7 +127,7 @@ struct RTKView: View {
         } else if let snapshot, let last = snapshot.lastActivity, inactiveDays(since: last) >= 7 {
             SourceBanner(
                 kind: .warning,
-                message: "Aucune commande rtk depuis \(inactiveDays(since: last)) jours.")
+                message: String(localized: "No rtk commands for \(inactiveDays(since: last)) days."))
         }
     }
 
@@ -145,8 +145,8 @@ struct RTKView: View {
     private var databaseCard: some View {
         HStack(spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                SectionLabel(text: "Base de données")
-                Text(store.rtkDatabaseURL?.path ?? "Aucun chemin résolu")
+                SectionLabel(text: String(localized: "Database"))
+                Text(store.rtkDatabaseURL?.path ?? String(localized: "No path resolved"))
                     .font(.data(11))
                     .foregroundStyle(Theme.slate)
                     .lineLimit(2)
@@ -154,7 +154,7 @@ struct RTKView: View {
                     .textSelection(.enabled)
             }
             Spacer(minLength: 12)
-            Button("Révéler dans le Finder") { revealDatabase() }
+            Button("Show in Finder") { revealDatabase() }
                 .controlSize(.small)
                 .disabled(store.rtkDatabaseURL == nil)
         }
@@ -197,7 +197,7 @@ struct RTKView: View {
                         .padding(.vertical, 4)
                         .background(Theme.emerald.opacity(0.12), in: Capsule())
                 }
-                SectionLabel(text: "Jetons économisés · depuis toujours")
+                SectionLabel(text: String(localized: "Tokens saved · all time"))
             }
         }
         .panelStyle()
@@ -207,20 +207,20 @@ struct RTKView: View {
 
     private func todayStrip(_ snapshot: RTKSnapshot) -> some View {
         HStack(spacing: 10) {
-            SectionLabel(text: "Aujourd'hui")
+            SectionLabel(text: String(localized: "Today"))
             if snapshot.today.isEmpty {
-                Text("Aucune commande rtk aujourd'hui.")
+                Text("No rtk commands today.")
                     .font(.data(11))
                     .foregroundStyle(Theme.slate)
             } else {
-                Text(AppFormat.tokens(snapshot.today.savedTokens) + " économisés")
+                Text("\(AppFormat.tokens(snapshot.today.savedTokens)) saved")
                     .font(.data(12))
                     .foregroundStyle(Theme.emerald)
-                Text("·").foregroundStyle(Theme.mist)
+                Text(verbatim: "·").foregroundStyle(Theme.mist)
                 Text("\(AppFormat.integer(snapshot.today.count)) cmd")
                     .font(.data(12))
                     .foregroundStyle(Theme.slate)
-                Text("·").foregroundStyle(Theme.mist)
+                Text(verbatim: "·").foregroundStyle(Theme.mist)
                 Text(AppFormat.percent(snapshot.today.savingsPct, fraction: false))
                     .font(.data(12))
                     .foregroundStyle(Theme.savingsIntensity(snapshot.today.savingsPct))
@@ -237,9 +237,9 @@ struct RTKView: View {
     private func weekSection(_ snapshot: RTKSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                SectionLabel(text: "Sept derniers jours")
+                SectionLabel(text: String(localized: "Last seven days"))
                 Spacer()
-                Text(AppFormat.tokens(snapshot.last7Days.reduce(0) { $0 + $1.savedTokens }) + " économisés")
+                Text("\(AppFormat.tokens(snapshot.last7Days.reduce(0) { $0 + $1.savedTokens })) saved")
                     .font(.data(11))
                     .foregroundStyle(Theme.emerald)
             }
@@ -252,30 +252,30 @@ struct RTKView: View {
 
     private func allTimeSection(_ snapshot: RTKSnapshot) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "Depuis toujours")
+            SectionLabel(text: String(localized: "All time"))
             LazyVGrid(
                 columns: [GridItem(.adaptive(minimum: 170), spacing: 12)],
                 spacing: 12
             ) {
                 StatTile(
-                    label: "Commandes",
+                    label: String(localized: "Commands"),
                     value: AppFormat.integer(snapshot.allTime.count),
-                    note: "filtrées par rtk",
+                    note: String(localized: "filtered by rtk"),
                     icon: "number")
                 StatTile(
-                    label: "Entrée",
+                    label: String(localized: "Input"),
                     value: AppFormat.tokens(snapshot.allTime.inputTokens),
-                    note: "avant filtrage",
+                    note: String(localized: "before filtering"),
                     icon: "arrow.down.to.line.compact")
                 StatTile(
-                    label: "Sortie",
+                    label: String(localized: "Output"),
                     value: AppFormat.tokens(snapshot.allTime.outputTokens),
-                    note: "après filtrage",
+                    note: String(localized: "after filtering"),
                     icon: "arrow.up.right")
                 StatTile(
-                    label: "Économisé",
+                    label: String(localized: "Saved"),
                     value: AppFormat.tokens(snapshot.allTime.savedTokens),
-                    note: AppFormat.percent(snapshot.allTime.savingsPct, fraction: false) + " de l'entrée",
+                    note: String(localized: "\(AppFormat.percent(snapshot.allTime.savingsPct, fraction: false)) of input"),
                     tint: Theme.emerald,
                     icon: "leaf.fill")
             }
@@ -288,9 +288,9 @@ struct RTKView: View {
     private func byCommandSection(_ snapshot: RTKSnapshot) -> some View {
         let maxSaved = snapshot.byCommand.map(\.savedTokens).max() ?? 0
         return VStack(alignment: .leading, spacing: 8) {
-            SectionLabel(text: "Par commande")
+            SectionLabel(text: String(localized: "By command"))
             if snapshot.byCommand.isEmpty {
-                Text("Aucune commande enregistrée pour le moment.")
+                Text("No commands recorded yet.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .padding(.vertical, 8)

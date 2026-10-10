@@ -15,7 +15,7 @@ struct OverviewView: View {
     /// Today's sessions, from the store's own dedicated query rather than from
     /// `store.sessions`, which is the browser's filtered page.
     @State private var todaySessions: [SessionRef] = []
-    /// When `todaySessions` was read — what "depuis minuit" and the relative time
+    /// When `todaySessions` was read — what "since midnight" and the relative time
     /// of the latest session are measured against.
     @State private var sessionsAsOf = Date()
     @State private var sessionsLoaded = false
@@ -54,20 +54,20 @@ struct OverviewView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("Vue d'ensemble").font(.display(24, weight: .bold))
+                Text("Overview").font(.display(24, weight: .bold))
                 Text(updatedCaption).font(.system(size: 12)).foregroundStyle(Theme.slate)
             }
             Spacer()
         }
     }
 
-    /// The freshest of the sources — what "mis à jour" means at a glance.
+    /// The freshest of the sources — what "updated" means at a glance.
     private var updatedCaption: String {
         let dates = [
             store.usageState.lastSuccess, store.rtkState.lastSuccess, store.skillsState.lastSuccess,
         ].compactMap { $0 }
-        guard let latest = dates.max() else { return "Aucune source lue pour l'instant" }
-        return "Mis à jour \(AppFormat.relative(latest, now: now))"
+        guard let latest = dates.max() else { return String(localized: "No source read yet") }
+        return String(localized: "Updated \(AppFormat.relative(latest, now: now))")
     }
 
     // MARK: Tiles
@@ -75,27 +75,27 @@ struct OverviewView: View {
     private var tiles: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 14)], spacing: 14) {
             StatTile(
-                label: "Coût du jour",
+                label: String(localized: "Today's cost"),
                 value: store.usage.map { store.money($0.costTodayUnfilteredUSD) } ?? "—",
-                note: store.usage.map { "\(store.money($0.costThisWeekUnfilteredUSD)) depuis lundi" },
+                note: store.usage.map { String(localized: "\(store.money($0.costThisWeekUnfilteredUSD)) since Monday") },
                 tint: Theme.blue,
                 icon: "eurosign.circle")
             StatTile(
-                label: "Tokens du jour",
+                label: String(localized: "Tokens today"),
                 value: store.usage.map { AppFormat.tokens($0.tokensTodayUnfiltered) } ?? "—",
-                note: store.usage == nil ? nil : "depuis minuit, cache compris",
+                note: store.usage == nil ? nil : String(localized: "since midnight, cache included"),
                 tint: Theme.blue,
                 icon: "number.circle")
             StatTile(
-                label: "Tokens économisés RTK, 7 j",
+                label: String(localized: "RTK tokens saved, 7 days"),
                 value: store.rtk == nil ? "—" : AppFormat.tokens(rtkWeekSaved),
-                note: store.rtk.map { "\(AppFormat.tokens($0.today.savedTokens)) aujourd'hui" },
+                note: store.rtk.map { String(localized: "\(AppFormat.tokens($0.today.savedTokens)) today") },
                 tint: Theme.emerald,
                 icon: "scissors")
             StatTile(
-                label: "Skills actifs",
+                label: String(localized: "Active skills"),
                 value: store.skills.map { AppFormat.integer($0.count(kind: .skill, level: .global)) } ?? "—",
-                note: store.skills.map { "\(AppFormat.integer($0.count(kind: .skill))) au total, tous niveaux" },
+                note: store.skills.map { String(localized: "\(AppFormat.integer($0.count(kind: .skill))) in total, all levels") },
                 tint: Theme.violet,
                 icon: "sparkles")
         }
@@ -105,9 +105,9 @@ struct OverviewView: View {
 
     private var mainColumn: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "Insights")
+            SectionLabel(text: String(localized: "Insights"))
             insightsCard
-            SectionLabel(text: "Sessions aujourd'hui")
+            SectionLabel(text: String(localized: "Sessions today"))
             sessionsTodayCard
         }
     }
@@ -116,7 +116,7 @@ struct OverviewView: View {
 
     private var sideColumn: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "7 derniers jours")
+            SectionLabel(text: String(localized: "Last seven days"))
             rtkWeekCard
         }
     }
@@ -135,25 +135,25 @@ struct OverviewView: View {
     private var sessionsTodayCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             if store.sessionsState.isUnauthorized {
-                AccessRequiredBanner(message: "les transcripts ne sont pas lisibles.")
+                AccessRequiredBanner(message: String(localized: "the transcripts cannot be read."))
             } else if let message = store.sessionsState.errorMessage {
                 SourceBanner(
                     kind: .info,
-                    message: "Index des sessions indisponible : \(message)",
+                    message: String(localized: "Sessions index unavailable: \(message)"),
                     action: { Task { await store.indexSessions() } },
-                    actionTitle: "Réindexer")
+                    actionTitle: String(localized: "Reindex"))
             } else if !sessionsLoaded || (todaySessions.isEmpty && store.sessionIndex.isRunning) {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
                     Text(store.sessionIndex.isRunning
-                        ? "Indexation des transcripts en cours…"
-                        : "Lecture des sessions du jour…")
+                        ? String(localized: "Indexing transcripts…")
+                        : String(localized: "Reading today's sessions…"))
                         .font(.system(size: 12))
                         .foregroundStyle(.secondary)
                 }
                 .padding(.vertical, 6)
             } else if todaySessions.isEmpty {
-                Text("Aucune session depuis minuit.")
+                Text("No sessions since midnight.")
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -164,7 +164,8 @@ struct OverviewView: View {
                         .font(.display(26))
                         .monospacedDigit()
                         .foregroundStyle(Theme.violet)
-                    Text(todaySessions.count < 2 ? "session" : "sessions")
+                    // Never zero here: the empty case is handled above, so one/many is the whole rule.
+                    (todaySessions.count == 1 ? Text("session") : Text("sessions"))
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.slate)
                     Spacer()
@@ -179,7 +180,7 @@ struct OverviewView: View {
                         .foregroundStyle(Theme.ink)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("dernière activité \(AppFormat.relative(latest.lastTimestamp, now: sessionsAsOf))")
+                    Text("last activity \(AppFormat.relative(latest.lastTimestamp, now: sessionsAsOf))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -199,21 +200,21 @@ struct OverviewView: View {
     private var costLabel: String {
         let cost = todayCost
         // Every session lacking its cost line: a total would be a fabricated zero.
-        if cost.missing == todaySessions.count { return "coût inconnu" }
+        if cost.missing == todaySessions.count { return String(localized: "cost unknown") }
         return store.money(cost.total)
     }
 
     private var costCaveat: String {
         let missing = todayCost.missing
         return missing == todaySessions.count
-            ? "Aucune de ces sessions n'a enregistré son coût."
-            : "Coût partiel : \(AppFormat.plural(missing, "session")) sans coût enregistré."
+            ? String(localized: "None of these sessions recorded its cost.")
+            : String(localized: "Partial cost: \(missing) sessions without a recorded cost.")
     }
 
     private var insightsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
             if store.usageState.isUnauthorized {
-                AccessRequiredBanner(message: "les transcripts ne sont pas lisibles.")
+                AccessRequiredBanner(message: String(localized: "the transcripts cannot be read."))
             } else if let message = store.usageState.errorMessage {
                 SourceBanner(kind: .error, message: message, action: { Task { await store.refreshUsage() } })
             } else if let insights = store.usage?.insights, !notable(insights).isEmpty {
@@ -223,7 +224,7 @@ struct OverviewView: View {
                     insightRow(insight)
                 }
             } else {
-                Text(store.usage == nil ? "Lecture des transcripts…" : "Rien de notable sur la période analysée.")
+                Text(store.usage == nil ? String(localized: "Reading transcripts…") : String(localized: "Nothing notable in the period analyzed."))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -270,27 +271,27 @@ struct OverviewView: View {
         }
     }
 
-    /// The engine's sentence is English; `kind` carries the same information, so the
-    /// French wording is rebuilt here rather than translated.
+    /// The engine's sentence is fixed English; `kind` carries the same information, so the
+    /// wording is rebuilt here, where the String Catalog can translate it.
     private func sentence(_ insight: Insight) -> String {
         switch insight.kind {
         case .costUp(let fraction):
-            return "Le coût a augmenté de \(AppFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
+            return String(localized: "Cost is up \(AppFormat.percent(fraction)) compared with the same point last week.")
         case .costDown(let fraction):
-            return "Le coût a baissé de \(AppFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
+            return String(localized: "Cost is down \(AppFormat.percent(fraction)) compared with the same point last week.")
         case .unpricedModel(let model):
-            return "Le modèle \(model) n'a pas de tarif dédié : le tarif Sonnet lui est appliqué."
+            return String(localized: "The model \(model) has no dedicated pricing: the Sonnet rate is applied to it.")
         case .cacheHitRate(let rate):
-            return "Le cache est bien utilisé : \(AppFormat.percent(rate)) des tokens réutilisables sont relus."
+            return String(localized: "The cache is working well: \(AppFormat.percent(rate)) of reusable tokens are read back.")
         case .noNotableChange:
-            return "Rien de notable sur la période analysée."
+            return String(localized: "Nothing notable in the period analyzed.")
         }
     }
 
     private var rtkWeekCard: some View {
         VStack(alignment: .leading, spacing: 10) {
             if store.rtkState.isUnauthorized {
-                AccessRequiredBanner(message: "la base RTK est hors des dossiers autorisés.")
+                AccessRequiredBanner(message: String(localized: "the RTK database is outside the allowed folders."))
             } else if let message = store.rtkState.errorMessage {
                 SourceBanner(kind: .info, message: message, action: { Task { await store.refreshRTK() } })
             } else if let days = store.rtk?.last7Days, !days.isEmpty {
@@ -310,11 +311,11 @@ struct OverviewView: View {
                     }
                 }
                 .frame(height: 96, alignment: .bottom)
-                Text("\(AppFormat.tokens(rtkWeekSaved)) tokens évités sur sept jours")
+                Text("\(AppFormat.tokens(rtkWeekSaved)) tokens avoided over seven days")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
             } else {
-                Text(store.rtk == nil ? "Lecture de la base rtk…" : "Aucune commande filtrée ces sept derniers jours.")
+                Text(store.rtk == nil ? String(localized: "Reading the rtk database…") : String(localized: "No filtered commands in the last seven days."))
                     .font(.system(size: 12))
                     .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)

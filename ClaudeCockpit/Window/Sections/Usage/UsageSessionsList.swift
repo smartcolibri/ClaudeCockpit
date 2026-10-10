@@ -13,9 +13,9 @@ struct UsageSessionsList: View {
     var body: some View {
         let shown = Array(sessions.prefix(Self.maxRows))
         return VStack(alignment: .leading, spacing: 16) {
-            SectionLabel(text: "Sessions")
+            SectionLabel(text: String(localized: "Sessions"))
             if shown.isEmpty {
-                Text("Aucune session sur cette période.")
+                Text("No sessions in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
@@ -31,7 +31,7 @@ struct UsageSessionsList: View {
                     }
                 }
                 if sessions.count > Self.maxRows {
-                    Text("\(Self.maxRows) sessions affichées sur \(AppFormat.integer(sessions.count)) — affinez la période ou le projet pour voir les autres.")
+                    Text("\(Self.maxRows) of \(AppFormat.integer(sessions.count)) sessions shown — narrow the period or the project to see the others.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -46,13 +46,13 @@ struct UsageSessionsList: View {
 
     private var header: some View {
         HStack {
-            Text("TITRE")
+            Text(String(localized: "Title").uppercased())
             Spacer()
-            Text("PROJET").frame(width: 180, alignment: .leading)
-            Text("DERNIER TOUR").frame(width: 130, alignment: .leading)
-            Text("TOURS").frame(width: 60, alignment: .trailing)
-            Text("TOKENS").frame(width: 90, alignment: .trailing)
-            Text("COÛT").frame(width: 80, alignment: .trailing)
+            Text(String(localized: "Project").uppercased()).frame(width: 180, alignment: .leading)
+            Text(String(localized: "Last turn").uppercased()).frame(width: 130, alignment: .leading)
+            Text(String(localized: "Turns").uppercased()).frame(width: 60, alignment: .trailing)
+            Text(String(localized: "Tokens").uppercased()).frame(width: 90, alignment: .trailing)
+            Text(String(localized: "Cost").uppercased()).frame(width: 80, alignment: .trailing)
         }
         .font(.label(10))
         .tracking(1.2)
@@ -105,7 +105,7 @@ struct SessionDetailSheet: View {
                     .foregroundStyle(Theme.ink)
                     .lineLimit(2)
                 Spacer(minLength: 16)
-                Button("Fermer", action: dismiss.callAsFunction)
+                Button("Close", action: dismiss.callAsFunction)
                     .keyboardShortcut(.defaultAction)
             }
             Text(UsagePath.shorten(session.cwd))
@@ -113,39 +113,39 @@ struct SessionDetailSheet: View {
                 .foregroundStyle(Theme.slate)
                 .lineLimit(1)
                 .truncationMode(.head)
-            Text("\(AppFormat.dateTime(session.firstSeen)) → \(AppFormat.dateTime(session.lastSeen)) · \(AppFormat.duration(session.lastSeen.timeIntervalSince(session.firstSeen)))")
+            Text(verbatim: "\(AppFormat.dateTime(session.firstSeen)) → \(AppFormat.dateTime(session.lastSeen)) · \(AppFormat.duration(session.lastSeen.timeIntervalSince(session.firstSeen)))")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
             Divider().overlay(Theme.cardStroke)
             LazyVGrid(columns: columns, spacing: 12) {
                 StatTile(
-                    label: "Tours",
+                    label: String(localized: "Turns"),
                     value: AppFormat.integer(session.turnCount),
                     note: session.modelsUsed.joined(separator: ", "))
                 StatTile(
-                    label: "Entrée",
+                    label: String(localized: "Input"),
                     value: AppFormat.tokens(session.inputTokens),
-                    note: "tokens",
+                    note: String(localized: "tokens"),
                     tint: UsagePalette.input)
                 StatTile(
-                    label: "Sortie",
+                    label: String(localized: "Output"),
                     value: AppFormat.tokens(session.outputTokens),
-                    note: "tokens",
+                    note: String(localized: "tokens"),
                     tint: UsagePalette.output)
                 StatTile(
-                    label: "Cache lu",
+                    label: String(localized: "Cache read"),
                     value: AppFormat.tokens(session.cacheReadTokens),
-                    note: "tokens",
+                    note: String(localized: "tokens"),
                     tint: UsagePalette.cacheRead)
                 StatTile(
-                    label: "Cache créé",
+                    label: String(localized: "Cache written"),
                     value: AppFormat.tokens(session.cacheCreationTokens),
-                    note: "tokens",
+                    note: String(localized: "tokens"),
                     tint: UsagePalette.cacheCreation)
                 StatTile(
-                    label: "Coût estimé",
+                    label: String(localized: "Estimated cost"),
                     value: money(session.estimatedCostUSD),
-                    note: "approximatif",
+                    note: String(localized: "approximate"),
                     tint: Theme.blue)
             }
             Spacer(minLength: 0)

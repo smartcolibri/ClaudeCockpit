@@ -3,8 +3,8 @@ import CockpitShared
 import UsageKit
 
 /// App-layer presentation of the UsageKit value types: colours (UsageKit is Foundation-only)
-/// and French labels (its raw values stay English so persisted selections and grouping keys
-/// survive the port untouched).
+/// and localised labels (its raw values stay as they are so persisted selections and grouping
+/// keys survive untouched).
 enum UsagePalette {
     /// The four token series, in a blue/violet/teal family so the terracotta cost line
     /// overlaid on the same chart never reads as one more token bucket.
@@ -19,13 +19,28 @@ enum UsagePalette {
     static let context = Theme.mist
 }
 
-extension UsageSeries {
-    var frenchLabel: String {
+extension DateRangeFilter {
+    var displayName: String {
         switch self {
-        case .input: "Entrée"
-        case .output: "Sortie"
-        case .cacheRead: "Cache lu"
-        case .cacheCreation: "Cache créé"
+        case .today: String(localized: "Today")
+        case .thisWeek: String(localized: "This week")
+        case .thisMonth: String(localized: "This month")
+        case .prevMonth: String(localized: "Previous month")
+        case .last7Days: String(localized: "7 days")
+        case .last30Days: String(localized: "30 days")
+        case .last90Days: String(localized: "90 days")
+        case .all: String(localized: "All")
+        }
+    }
+}
+
+extension UsageSeries {
+    var displayName: String {
+        switch self {
+        case .input: String(localized: "Input")
+        case .output: String(localized: "Output")
+        case .cacheRead: String(localized: "Cache read")
+        case .cacheCreation: String(localized: "Cache written")
         }
     }
 
@@ -42,16 +57,16 @@ extension UsageSeries {
     /// `.value(_:_:)`, or Swift Charts silently falls back to its default palette.
     static var styleScale: KeyValuePairs<String, Color> {
         [
-            UsageSeries.input.frenchLabel: UsagePalette.input,
-            UsageSeries.output.frenchLabel: UsagePalette.output,
-            UsageSeries.cacheRead.frenchLabel: UsagePalette.cacheRead,
-            UsageSeries.cacheCreation.frenchLabel: UsagePalette.cacheCreation,
+            UsageSeries.input.displayName: UsagePalette.input,
+            UsageSeries.output.displayName: UsagePalette.output,
+            UsageSeries.cacheRead.displayName: UsagePalette.cacheRead,
+            UsageSeries.cacheCreation.displayName: UsagePalette.cacheCreation,
         ]
     }
 }
 
 extension ModelFamily {
-    /// Family names are proper nouns — identical in French.
+    /// Family names are proper nouns — identical in every language.
     var label: String { rawValue }
 
     var color: Color {
@@ -65,27 +80,27 @@ extension ModelFamily {
 }
 
 extension BreakdownDimension {
-    var frenchLabel: String {
+    var displayName: String {
         switch self {
-        case .project: "Projet"
-        case .agent: "Agent"
-        case .skill: "Skill"
+        case .project: String(localized: "Project")
+        case .agent: String(localized: "Agent")
+        case .skill: String(localized: "Skill")
         }
     }
 
-    /// Turns not run by a sub-agent are grouped under the module's English key.
-    func frenchRowLabel(_ label: String) -> String {
-        label == BreakdownDimension.directLabel ? "Direct (session principale)" : label
+    /// Turns not run by a sub-agent are grouped under the module's fixed key.
+    func displayRowLabel(_ label: String) -> String {
+        label == BreakdownDimension.directLabel ? String(localized: "Direct (main session)") : label
     }
 }
 
 extension Insight.Level {
-    var frenchLabel: String {
+    var displayName: String {
         switch self {
-        case .critical: "Critique"
-        case .warning: "Attention"
-        case .good: "Bon"
-        case .info: "Info"
+        case .critical: String(localized: "Critical")
+        case .warning: String(localized: "Warning")
+        case .good: String(localized: "Good")
+        case .info: String(localized: "Info")
         }
     }
 
@@ -100,20 +115,20 @@ extension Insight.Level {
 }
 
 extension Insight {
-    /// French sentence rebuilt from `kind`. `text` is the source app's English wording, kept
+    /// Sentence rebuilt from `kind`. `text` is the source app's fixed English wording, kept
     /// verbatim by UsageKit on purpose — it is never displayed here.
-    var frenchText: String {
+    var displayText: String {
         switch kind {
         case .costUp(let fraction):
-            "Coût en hausse de \(AppFormat.percent(fraction)) par rapport à la même période de la semaine dernière."
+            String(localized: "Cost up \(AppFormat.percent(fraction)) compared with the same point last week.")
         case .costDown(let fraction):
-            "Coût en baisse de \(AppFormat.percent(fraction)) par rapport à la même période de la semaine dernière."
+            String(localized: "Cost down \(AppFormat.percent(fraction)) compared with the same point last week.")
         case .unpricedModel(let model):
-            "\(model) n'a pas de tarif dédié — le tarif Sonnet par défaut est appliqué."
+            String(localized: "\(model) has no dedicated pricing — the default Sonnet rate is applied.")
         case .cacheHitRate(let rate):
-            "Taux de lecture du cache à \(AppFormat.percent(rate)) — cela contient les coûts."
+            String(localized: "Cache read rate at \(AppFormat.percent(rate)) — keeping costs down.")
         case .noNotableChange:
-            "Aucun changement notable sur cette période."
+            String(localized: "No notable change in this period.")
         }
     }
 }

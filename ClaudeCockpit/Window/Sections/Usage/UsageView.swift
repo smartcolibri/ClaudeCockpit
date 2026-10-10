@@ -22,9 +22,9 @@ struct UsageView: View {
                 if let message = store.usageState.errorMessage {
                     SourceBanner(
                         kind: .error,
-                        message: "Lecture de l'usage impossible : \(message). Aucun transcript trouvé dans ~/.claude/projects ?",
+                        message: String(localized: "Could not read the usage: \(message). No transcripts found in ~/.claude/projects?"),
                         action: { Task { await store.refreshUsage(rescan: true) } },
-                        actionTitle: "Rescanner")
+                        actionTitle: String(localized: "Rescan"))
                 }
                 UsageFilterBar(
                     filters: $store.usageFilters,
@@ -43,7 +43,7 @@ struct UsageView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
-                Text("Usage local")
+                Text("Local Usage")
                     .font(.display(22))
                     .foregroundStyle(Theme.ink)
                 Text(updatedLabel)
@@ -57,16 +57,16 @@ struct UsageView: View {
             Button {
                 Task { await store.refreshUsage(rescan: true) }
             } label: {
-                Label("Rescanner", systemImage: "arrow.clockwise")
+                Label("Rescan", systemImage: "arrow.clockwise")
             }
             .disabled(store.usageState.isLoading)
-            .help("Relire tous les transcripts de ~/.claude/projects")
+            .help("Read every transcript in ~/.claude/projects again")
         }
     }
 
     private var updatedLabel: String {
-        guard let date = store.usageLastScan else { return "Analyse des transcripts…" }
-        return "Mis à jour \(AppFormat.relative(date))"
+        guard let date = store.usageLastScan else { return String(localized: "Scanning transcripts…") }
+        return String(localized: "Updated \(AppFormat.relative(date))")
     }
 
     // MARK: Body states
@@ -78,17 +78,17 @@ struct UsageView: View {
         } else if store.usage == nil && store.usageState.errorMessage == nil {
             placeholder(
                 icon: "hourglass",
-                title: "Lecture des transcripts…",
-                message: "Premier scan de ~/.claude/projects, cela peut prendre quelques secondes.")
+                title: "Reading transcripts…",
+                message: "First scan of ~/.claude/projects; this can take a few seconds.")
         } else if store.usageState.errorMessage == nil {
             placeholder(
                 icon: "tray",
-                title: "Aucun usage sur cette période",
-                message: "Élargissez la période ou retirez le filtre projet pour voir davantage d'activité.")
+                title: "No usage in this period",
+                message: "Widen the period or remove the project filter to see more activity.")
         }
     }
 
-    private func placeholder(icon: String, title: String, message: String) -> some View {
+    private func placeholder(icon: String, title: LocalizedStringKey, message: LocalizedStringKey) -> some View {
         VStack(spacing: 10) {
             Image(systemName: icon)
                 .font(.system(size: 28, weight: .light))
