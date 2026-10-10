@@ -94,7 +94,10 @@ public enum UsageAggregator {
             }
             let session = event.sessionId
             projectBuckets[projectKey, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
-            modelBuckets[event.model, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
+            // `<synthetic>` placeholders name no model, as on the Overview.
+            if event.model != "<synthetic>" {
+                modelBuckets[event.model, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
+            }
             agentBuckets[event.attributionAgent ?? BreakdownDimension.directLabel, default: Bucket()]
                 .add(tokens: tokens, cost: cost, session: session)
             skillBuckets[event.attributionSkill ?? BreakdownDimension.directLabel, default: Bucket()]

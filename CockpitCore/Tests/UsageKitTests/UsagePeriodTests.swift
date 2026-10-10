@@ -272,6 +272,8 @@ final class UsagePeriodTests: XCTestCase {
             opus("2026-10-27 11:00", session: "a"),
             opus("2026-10-27 12:00", cwd: projB, session: "b"),
             sonnet("2026-10-27 13:00", session: "c"),
+            // Claude Code's placeholder turns name no model, as on the Overview.
+            EventFactory.make(sessionId: "d", model: "<synthetic>", timestamp: local("2026-10-27 14:00")),
         ]
         let snap = snapshot(events, range: .last7Days)
         let byModel = snap.breakdown(for: .model)
@@ -280,6 +282,6 @@ final class UsagePeriodTests: XCTestCase {
         XCTAssertEqual(byModel[0].turnCount, 3)
         XCTAssertEqual(byModel[0].estimatedCostUSD, 15, accuracy: 1e-9)
         let byProject = snap.breakdown(for: .project)
-        XCTAssertEqual(byProject.map(\.sessionCount), [2, 1])
+        XCTAssertEqual(byProject.map(\.sessionCount), [3, 1])
     }
 }
