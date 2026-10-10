@@ -43,7 +43,7 @@ flowchart TD
     end
 
     subgraph core["CockpitCore — package SwiftPM local"]
-        SHARED["CockpitShared<br/>ClaudePaths · FRFormat<br/>DirectoryWatcher · RecursiveWatcher · Frontmatter"]
+        SHARED["CockpitShared<br/>ClaudePaths · AppFormat<br/>DirectoryWatcher · RecursiveWatcher · Frontmatter"]
         USAGE["UsageKit<br/>UsageService · TranscriptScanner<br/>UsageAggregator · InsightEngine"]
         SESSIONS["SessionsKit<br/>SessionService · SessionStore<br/>TranscriptParser · TranscriptWalker"]
         QUOTA["QuotaKit<br/>QuotaService · CredentialStore<br/>QuotaAPI · UsageMath"]
@@ -86,7 +86,7 @@ flowchart TD
 
 | Module | Responsabilité | Types clés | Dépend de |
 |---|---|---|---|
-| `CockpitShared` | Tout ce sur quoi les autres kits doivent s'accorder : où vivent les fichiers, comment s'écrivent les nombres en français, comment surveiller un répertoire, comment lire un front matter | `ClaudePaths`, `FRFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
+| `CockpitShared` | Tout ce sur quoi les autres kits doivent s'accorder : où vivent les fichiers, comment s'écrivent les nombres et les dates dans la langue de l'app, comment surveiller un répertoire, comment lire un front matter | `ClaudePaths`, `AppFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
 | `UsageKit` | Transforme les transcriptions de Claude Code en tous les chiffres qu'affichent les écrans d'usage | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
 | `SessionsKit` | Indexe les transcriptions de Claude Code dans une base SQLite/FTS5 locale et répond à tout ce que demande la section Sessions : liste, pagination d'une transcription, recherche plein texte, activité, éditions récentes, santé | `SessionService`, `SessionStore`, `TranscriptParser`, `TranscriptWalker`, `SessionHealthRule`, `SessionExporter`, `SessionRef`, `SessionMessage`, `ContentBlock`, `SessionFilter`, `ActivityReport` | `CockpitShared`, SQLite.swift |
 | `QuotaKit` | Lit le jeton OAuth, appelle l'endpoint de jauges d'Anthropic, applique la politique de limitation, projette le rythme | `QuotaService`, `CredentialStore`, `QuotaAPI`, `Meter`, `GaugeSnapshot`, `PaceProjection`, `UsageMath`, `PaceSentence` | `CockpitShared` |
@@ -412,6 +412,38 @@ RTK `history.db`. Les dossiers cachés sont stockés en `_dot_x` pour que Xcode 
 - « Quitter la démo » ramène à l'onboarding ; une fois les anciens services sessions et usage terminés, le
   dossier démo est supprimé, sauf si la démo a été relancée entre-temps. Un lancement normal supprime tout
   reste de démo.
+
+### Localisation
+
+L'anglais est la langue de développement (`developmentLanguage: en`, `CFBundleDevelopmentRegion` = `en`) ;
+le français est livré comme traduction et toute autre langue retombe sur l'anglais.
+
+- **Les chaînes de l'app** vivent dans `ClaudeCockpit/Resources/Localizable.xcstrings`. Les littéraux
+  SwiftUI (`Text`, `Button`, `Label`, `.help`) sont des clés ; les valeurs `String` simples (notices,
+  erreurs, libellés calculés, paramètres de composants) passent par `String(localized:)`. Chemins,
+  nombres et noms utilisent `Text(verbatim:)` pour ne jamais devenir des clés. Les compteurs utilisent
+  des variantes de pluriel, un seul nombre par chaîne : le français met 0 et 1 au singulier, l'anglais
+  seulement 1.
+- **Les chaînes du cœur** vivent dans un catalogue par module (`defaultLocalization: "en"` dans
+  `Package.swift`) et utilisent `String(localized:bundle: .module)` — erreurs et libellés de SkillsKit,
+  RTKKit, UsageKit, CockpitShared et SessionsKit. Quand le cœur n'a besoin de dire que *ce qui* s'est
+  passé, il renvoie une valeur et l'app la formule : `HealthEvidence` pour la note de santé,
+  `Insight.Kind`, `DateRangeFilter`. QuotaKit n'est pas lié à l'app et reste en français.
+- **`AppFormat`** (CockpitShared) formate nombres, montants, pourcentages, dates, durées et temps
+  relatifs dans `AppFormat.locale` : la langue résolue par l'app (`Bundle.main.preferredLocalizations`)
+  avec la région de l'utilisateur, si bien que l'anglais sur un Mac français donne `en_FR`
+  (« US$0,36 », « 10 Oct »). Chaque fonction prend une locale explicite, que les tests fixent. Ses
+  quelques mots (« à l'instant », « 2 h 05 ») dépendent de la langue de la locale et non d'un
+  catalogue, car un catalogue suit la langue du processus et ne pourrait pas être fixé.
+- **`SessionExporter`** écrit dans la langue de l'app : il cherche ses mots dans le `<langue>.lproj`
+  du module pour la locale (`Bundle.localization(for:)`) et renseigne `<html lang>`.
+- `ContentBlock.truncationMarker` est stocké et comparé dans `sessions.db`, il reste donc tel quel ;
+  la vue du transcript le remplace par le mot localisé.
+- Les racines de scène et le panneau du mode snapshot fixent `.environment(\.locale, AppFormat.locale)`
+  pour que les graphiques et les interpolations de `LocalizedStringKey` suivent la même locale.
+- `Scripts/check-l10n.py`, lancé après un build Debug, compare chaque catalogue aux clés extraites par
+  le compilateur (`*.stringsdata`) : rien de manquant, rien d'obsolète, chaque valeur française
+  traduite, pluriels complets, spécificateurs de format identiques.
 
 ## Gestion des erreurs
 
