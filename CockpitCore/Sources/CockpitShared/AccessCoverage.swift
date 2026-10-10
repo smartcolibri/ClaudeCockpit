@@ -35,18 +35,26 @@ public enum AccessCoverage {
     /// the app asked for (`expected`, usually the home) and the one it cannot work
     /// without (`required`, the Claude config directory).
     public enum SelectionVerdict: Equatable, Sendable {
-        /// The selection contains `expected`: everything the app reads is covered.
+        /// The selection contains `required` and `expected`: everything the app reads is covered.
         case full
         /// The selection contains `required` but not `expected`: the app works, degraded.
         case partial
-        /// The selection does not contain `required`: it gives the app nothing it needs.
+        /// The selection contains `expected` but not `required`: the Claude config directory
+        /// lives elsewhere (another volume, say) and needs a grant of its own.
+        case requiredElsewhere
+        /// The selection contains neither: it gives the app nothing it needs.
         case unrelated
     }
 
     public static func evaluate(selection: URL, expected: URL, required: URL) -> SelectionVerdict {
-        if isPath(expected.path, inside: selection.path) { return .full }
-        if isPath(required.path, inside: selection.path) { return .partial }
-        return .unrelated
+        let hasRequired = isPath(required.path, inside: selection.path)
+        let hasExpected = isPath(expected.path, inside: selection.path)
+        switch (hasRequired, hasExpected) {
+        case (true, true): return .full
+        case (true, false): return .partial
+        case (false, true): return .requiredElsewhere
+        case (false, false): return .unrelated
+        }
     }
 
     /// True when the process runs inside the App Sandbox.

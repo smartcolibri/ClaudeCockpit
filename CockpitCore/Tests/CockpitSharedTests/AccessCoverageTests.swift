@@ -29,6 +29,17 @@ final class AccessCoverageTests: XCTestCase {
         XCTAssertEqual(AccessCoverage.evaluate(selection: claude, expected: home, required: claude), .partial)
         XCTAssertEqual(AccessCoverage.evaluate(selection: claude, expected: claude, required: claude), .full)
         XCTAssertEqual(AccessCoverage.evaluate(selection: home.appendingPathComponent("Documents"), expected: home, required: claude), .unrelated)
-        XCTAssertEqual(AccessCoverage.evaluate(selection: claude.appendingPathComponent("projects"), expected: home, required: claude), .unrelated)
+        XCTAssertEqual(AccessCoverage.evaluate(selection: claude.appendingPathComponent("projects"), expected: home, required: claude), .unrelated)    }
+
+    /// A Claude config directory on another volume: picking the home covers what was asked
+    /// for but not what the app cannot work without, so it must never read as `.full`.
+    func testSelectionVerdictWhenRequiredLiesOutsideExpected() {
+        let home = URL(fileURLWithPath: "/Users/x")
+        let external = URL(fileURLWithPath: "/Volumes/Data/claude")
+        XCTAssertEqual(AccessCoverage.evaluate(selection: home, expected: home, required: external), .requiredElsewhere)
+        XCTAssertEqual(AccessCoverage.evaluate(selection: URL(fileURLWithPath: "/Users"), expected: home, required: external), .requiredElsewhere)
+        XCTAssertEqual(AccessCoverage.evaluate(selection: external, expected: home, required: external), .partial)
+        XCTAssertEqual(AccessCoverage.evaluate(selection: URL(fileURLWithPath: "/"), expected: home, required: external), .full)
+        XCTAssertEqual(AccessCoverage.evaluate(selection: URL(fileURLWithPath: "/Volumes/Other"), expected: home, required: external), .unrelated)
     }
 }

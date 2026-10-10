@@ -209,6 +209,15 @@ final class CockpitStore {
         switch AccessCoverage.evaluate(selection: url, expected: expected, required: paths.claudeDir) {
         case .unrelated:
             result = .rejected("Le dossier choisi (\(displayPath(url))) ne contient pas \(displayPath(paths.claudeDir)). Aucun accès n'a été enregistré.")
+        case .requiredElsewhere:
+            // The home is still worth keeping (rtk, project roots), but the app cannot start
+            // without the config directory, which lives outside it.
+            do {
+                try access.add(url)
+                result = .rejected("Accès à \(displayPath(url)) enregistré, mais le dossier de configuration Claude (\(displayPath(paths.claudeDir))) se trouve en dehors : autorisez-le séparément avec « Autoriser seulement \(displayPath(paths.claudeDir)) » ou dans Réglages › Accès.")
+            } catch {
+                result = .rejected("Impossible d'enregistrer l'accès : \(error.localizedDescription)")
+            }
         case .partial, .full:
             do {
                 try access.add(url)
