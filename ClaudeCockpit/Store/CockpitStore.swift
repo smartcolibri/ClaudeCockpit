@@ -76,7 +76,9 @@ final class CockpitStore {
     let access: AccessStore
     private var usageService: UsageService
     private var rtkService: RTKService
-    private(set) var sessionService: SessionService
+    /// One service for the app's lifetime: it owns the only connection to `sessions.db` and
+    /// follows a moved config directory through `setPaths`, serialised on its actor.
+    let sessionService: SessionService
     private var skillsStore: ResourceStore
     private let defaults = UserDefaults.standard
 
@@ -265,7 +267,9 @@ final class CockpitStore {
             sessionsWatcher?.stop()
             paths = fresh
             usageService = UsageService(paths: fresh)
-            sessionService = SessionService(paths: fresh)
+            // Also done by the watch task; repeated here for when indexing is turned off.
+            let service = sessionService
+            Task { await service.setPaths(fresh) }
             skillsStore = ResourceStore(paths: fresh)
             sessions = []
         }
@@ -386,7 +390,11 @@ final class CockpitStore {
             sessionsState = .unauthorized
             return
         }
+        let service = sessionService
+        let paths = paths
         sessionsWatchTask = Task { [weak self] in
+            // Waits for a pass still running on the previous archive, then switches.
+            await service.setPaths(paths)
             // The first index walks ~900 MB, so it starts right away and reports its
             // progress; everything after it is driven by the watcher. That is why the
             // sessions source owns no periodic timer and cannot collide with the usage

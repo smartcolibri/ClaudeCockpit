@@ -13,7 +13,9 @@ import CockpitShared
 /// follows it through the `progress` callback rather than by polling ``progress()``.
 public actor SessionService {
 
-    public let paths: ClaudePaths
+    /// Where the transcripts are read from. Changes with the Claude config directory setting;
+    /// the index itself stays put, and the next complete walk forgets the previous archive.
+    public private(set) var paths: ClaudePaths
     /// Where the index lives. `nil` at init → `appSupportDir/sessions.db`.
     public nonisolated let databaseURL: URL
 
@@ -23,6 +25,12 @@ public actor SessionService {
     public init(paths: ClaudePaths = .live, databaseURL: URL? = nil) {
         self.paths = paths
         self.databaseURL = databaseURL ?? paths.appSupportDir.appendingPathComponent("sessions.db")
+    }
+
+    /// Points the service at another archive. Runs on the actor, so it waits for an indexing
+    /// pass in flight instead of racing it: one service, one connection to `sessions.db`.
+    public func setPaths(_ newPaths: ClaudePaths) {
+        paths = newPaths
     }
 
     /// Opens the database, rebuilding it from scratch when it was written by an older schema.
