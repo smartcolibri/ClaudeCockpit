@@ -274,9 +274,11 @@ Usage** : `UsageAggregator.overview(events:pricing:now:calendar:home:)` calcule 
 par famille de modèles des 30 derniers jours, un coût par jour sur la fenêtre d'activité de
 12 semaines (du lundi d'il y a onze semaines à aujourd'hui), aujourd'hui et hier heure par heure,
 les tokens du jour par type, les 5 projets les plus coûteux et la répartition par modèle sur
-30 jours, le projet qui dépense le plus en Opus, le taux de lecture du cache (même ratio
-qu'`InsightEngine`), les modèles sans tarif, le coût quotidien moyen des 30 jours pleins avant
-aujourd'hui, le coût du mois en cours avec une projection linéaire (en jours calendaires, aucune
+30 jours, le projet qui dépense le plus en Opus et la part d'Opus sur les 30 jours d'avant, le
+taux de lecture du cache (lectures sur lectures + écritures + entrées — les écritures comptent,
+contrairement au ratio d'`InsightEngine`, sinon tout compte Claude Code frôle 100 %), les modèles
+sans tarif (les tours `<synthetic>` et sans token ne sont pas de l'usage de modèle), le coût
+quotidien moyen des jours pleins avant aujourd'hui (30, ou moins depuis le premier événement), le coût du mois en cours avec une projection linéaire (en jours calendaires, aucune
 avant un jour complet) et le coût du mois dernier, et cette semaine face au même tronçon de la
 semaine dernière.
 
@@ -288,12 +290,13 @@ semaine dernière.
   depuis `SessionService.activity`, coût par jour depuis `UsageOverview.dailyCost`, car l'index ne
   connaît que le coût que Claude Code a enregistré. Les tours d'un sous-agent sont crédités à sa
   session parente dans ces comptes quotidiens (ceux de l'onglet Activité aussi), si bien que le
-  chiffre d'un jour correspond à ce que le navigateur liste pour ce jour.
+  chiffre d'un jour correspond à ce que le navigateur liste pour ce jour ; les sous-agents d'une
+  session masquée sont masqués avec elle.
 - Interactions : les infobulles Swift Charts suivent le pointeur (`chartOverlay` +
   `onContinuousHover`, la sélection intégrée attendant un clic sur macOS) ; chaque tuile est un
   bouton qui mène à sa section ; un jour de la carte ouvre le navigateur de sessions borné à ce
-  jour (`since`/`until`, affiché comme une puce de date), la tuile santé l'ouvre sur « Avec
-  erreurs », une ligne de session ouvre sa transcription. `CockpitStore.showSessions(…)` part d'un
+  jour (`since`/`until`, affiché comme une puce de date), la tuile santé et la recommandation
+  d'erreurs l'ouvrent sur « Avec erreurs » pour aujourd'hui, une ligne de session ouvre sa transcription. `CockpitStore.showSessions(…)` part d'un
   `SessionFilter` vierge pour que rien de ce que l'utilisateur avait restreint ne masque la cible.
 - Chaque tuile enveloppe son contenu dans `TileSource` : le parcours d'autorisation sans accès,
   l'erreur avec un bouton Réessayer, une ligne de chargement — une source en échec ne vide que ses
@@ -304,12 +307,17 @@ semaine dernière.
   rtk — chacun `nil` ou `.unknown` quand sa source est indisponible) vers au plus 5
   `Recommendation` classées critique, avertissement, info, bonne nouvelle, à égalité dans l'ordre
   des règles. Règles et seuils (documentés dans le code) : coût de la semaine ±20 % (après un jour,
-  base ≥ 1 $), Opus ≥ 60 % du coût sur 30 jours (≥ 5 $) en nommant le projet, sessions en erreur
-  aujourd'hui (critique dès 3), sessions notées sous 60, une heure ≥ 40 % du coût du jour (≥ 1 $
-  sur ≥ 3 heures actives), taux de lecture du cache < 30 % ou ≥ 80 % (≥ 1 M de tokens
-  réutilisables), rtk absent ou économisant < 30 % (≥ 20 commandes), modèles sans tarif, et une
+  base ≥ 1 $), Opus ≥ 60 % du coût sur 30 jours (≥ 5 $) *et* en hausse de 15 points sur les 30 jours
+  d'avant, en nommant le projet, sessions avec une erreur dans un message daté d'aujourd'hui
+  (`SessionService.sessionsWithErrors`, critique dès 3), sessions notées sous 60, une heure ≥ 40 %
+  du coût du jour (≥ 1 $ sur ≥ 3 heures actives), taux de lecture du cache < 30 % (≥ 1 M de tokens
+  de prompt), rtk absent ou économisant < 30 % (≥ 20 commandes), modèles sans tarif, et une
   projection du mois ≥ 1,25 × le mois dernier (dès le 3e jour, mois dernier ≥ 5 $). Le cœur renvoie
-  des types et une section cible ; l'application rédige la phrase.
+  des types et une section cible ; l'application rédige la phrase. Les règles ne signalent que des changements et des anomalies : un
+  état permanent du compte (une habitude d'Opus ancienne, un bon cache) s'afficherait tous les
+  jours et ne serait plus lu.
+- La vue d'ensemble est mise en cache par `UsageService` jusqu'à un rafraîchissement, un changement
+  de tarif ou un nouveau jour : les filtres de l'écran Usage ne la recalculent jamais.
 
 ## Modèle de concurrence
 

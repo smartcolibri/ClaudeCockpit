@@ -250,9 +250,11 @@ filters**: `UsageAggregator.overview(events:pricing:now:calendar:home:)` compute
 `UsageOverview` from all events, carried by every `UsageSnapshot`. It holds the last 30 days of
 cost per day and model family, one cost per day over the 12-week activity window (Monday of the
 week eleven weeks back to today), today and yesterday by hour, today's tokens by kind, the top 5
-projects and the model mix over 30 days, the project spending most on Opus, the cache read rate
-(same ratio as `InsightEngine`), unpriced models, the mean daily cost of the 30 full days before
-today, month-to-date cost with a linear projection (calendar days, none before a full day) and
+projects and the model mix over 30 days, the project spending most on Opus and Opus's share of the
+30 days before, the cache read rate (cache reads over cache reads + writes + input — writes count,
+unlike `InsightEngine`'s ratio, or every Claude Code account reads near 100 %), unpriced models
+(`<synthetic>` and zero-token turns are not model usage), the mean daily cost of the full days
+before today (30, or fewer since the first event), month-to-date cost with a linear projection (calendar days, none before a full day) and
 last month's cost, and this week against the same stretch of last week.
 
 - Tiles: today's cost (14-day sparkline, delta against the 30-day mean, month projection), tokens
@@ -262,11 +264,12 @@ last month's cost, and this week against the same stretch of last week.
   skills, and the activity heatmap: sessions per day from `SessionService.activity`, cost per day
   from `UsageOverview.dailyCost`, because the index only knows the cost Claude Code recorded.
   A sub-agent's turns credit its parent session in those daily counts (the Activity tab's too),
-  so a day's figure matches what the browser lists for it.
+  so a day's figure matches what the browser lists for it; the sub-agents of a hidden session are
+  hidden with it.
 - Interactions: Swift Charts tooltips follow the pointer (`chartOverlay` + `onContinuousHover`,
   since the built-in selection waits for a click on macOS); each tile is one button leading to its
   section; a heatmap day opens the Sessions browser bounded to that day (`since`/`until`, shown as
-  a date chip), the health tile opens it on "With Errors", a session row opens that transcript.
+  a date chip), the health tile and the errors recommendation open it on "With Errors" for today, a session row opens that transcript.
   `CockpitStore.showSessions(…)` starts from a fresh `SessionFilter` so nothing the user had
   narrowed hides the target.
 - Each tile wraps its content in `TileSource`: the grant flow when unauthorized, the error with a
@@ -276,12 +279,15 @@ last month's cost, and this week against the same stretch of last week.
   plain-value `RecommendationInput` (usage facts, today's session counts, rtk state — each `nil`
   or `.unknown` when its source is unavailable) to at most 5 `Recommendation`s ranked critical,
   warning, info, good, ties in rule order. Rules and thresholds (documented in code): week-to-date
-  cost ±20 % (after a day, baseline ≥ $1), Opus ≥ 60 % of 30-day cost (≥ $5) naming the project,
-  sessions with errors today (critical from 3), sessions scored below 60, one hour ≥ 40 % of
-  today's cost (≥ $1 over ≥ 3 active hours), cache read rate < 30 % or ≥ 80 % (≥ 1 M cacheable
-  tokens), rtk missing or saving < 30 % (≥ 20 commands), unpriced models, and a month projection
+  cost ±20 % (after a day, baseline ≥ $1), Opus ≥ 60 % of 30-day cost (≥ $5) *and* up 15 points on
+  the 30 days before, naming the project, sessions with an error in a message dated today
+  (`SessionService.sessionsWithErrors`, critical from 3), sessions scored below 60, one hour ≥ 40 %
+  of today's cost (≥ $1 over ≥ 3 active hours), cache read rate < 30 % (≥ 1 M prompt tokens), rtk missing or saving < 30 % (≥ 20 commands), unpriced models, and a month projection
   ≥ 1.25 × last month (from day 3, last month ≥ $5). The core returns kinds and a target section;
-  the app writes the sentence.
+  the app writes the sentence. Rules flag changes and anomalies only: a permanent state of the
+  account (a long Opus habit, a good cache) would show every day and stop being read.
+- The overview is cached by `UsageService` until a refresh, a pricing change or a new day, so the
+  Usage screen's filters never recompute it.
 
 ## Concurrency model
 
