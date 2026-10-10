@@ -69,10 +69,25 @@ public struct UsageEvent: Identifiable, Hashable, Codable, Sendable {
 
 /// Path helpers local to UsageKit (the source app's `Formatters.shortenPath`).
 public enum UsagePath {
+    private static let lock = NSLock()
+    nonisolated(unsafe) private static var storedDisplayHome = ClaudePaths.realHome
+
+    /// The home `shorten` abbreviates by default: the real one, or the demo's copy while the
+    /// demo mode runs, so its sample paths read `~/DevApps/…` like real ones.
+    public static var displayHome: URL {
+        lock.lock(); defer { lock.unlock() }
+        return storedDisplayHome
+    }
+
+    public static func setDisplayHome(_ home: URL) {
+        lock.lock(); defer { lock.unlock() }
+        storedDisplayHome = home
+    }
+
     /// Replaces the home directory prefix with `~`, matching how paths are shown in a terminal.
     public static func shorten(
         _ path: String,
-        home: URL = ClaudePaths.realHome
+        home: URL = UsagePath.displayHome
     ) -> String {
         let root = home.path
         // A whole path component only: home `/Users/vincent` must leave `/Users/vincent2` alone.
