@@ -1,6 +1,7 @@
 import SwiftUI
 import Charts
 import CockpitShared
+import UsageKit
 
 /// The chrome every Overview tile shares: an uppercase label with its icon, then the content.
 /// With an `action` the whole tile is one button — a label for VoiceOver, a hover outline for
@@ -29,7 +30,11 @@ struct OverviewTile<Content: View>: View {
                 .accessibilityHint(destination.map { String(localized: "Opens \($0)", locale: AppFormat.locale) } ?? "")
                 .accessibilityAddTraits(.isButton)
         } else {
+            // `.contain`, not `.ignore`: a source banner's Retry button inside must stay reachable.
             chrome(hover: false)
+                .accessibilityElement(children: .contain)
+                .accessibilityLabel(title)
+                .accessibilityValue(summary)
         }
     }
 
@@ -125,6 +130,32 @@ struct TileCaption: View {
             .foregroundStyle(tint)
             .lineLimit(1)
             .truncationMode(.tail)
+    }
+}
+
+/// One bar split between the four token kinds, each kind's share of `parts`' total. Cache
+/// reads usually dwarf the rest, so any non-zero kind keeps a sliver wide enough to see.
+struct TokenSplitBar: View {
+    let parts: [(UsageSeries, Int)]
+
+    var body: some View {
+        GeometryReader { geometry in
+            let total = max(1, parts.reduce(0) { $0 + $1.1 })
+            HStack(spacing: 1.5) {
+                ForEach(parts, id: \.0) { series, value in
+                    if value > 0 {
+                        Rectangle()
+                            .fill(series.color)
+                            .frame(width: max(3, geometry.size.width * CGFloat(value) / CGFloat(total)))
+                            .help(Text(verbatim: "\(series.displayName): \(AppFormat.tokens(value))"))
+                    }
+                }
+                if parts.allSatisfy({ $0.1 == 0 }) { Rectangle().fill(Theme.track) }
+            }
+            .frame(width: geometry.size.width, alignment: .leading)
+            .clipShape(Capsule())
+        }
+        .frame(height: 8)
     }
 }
 

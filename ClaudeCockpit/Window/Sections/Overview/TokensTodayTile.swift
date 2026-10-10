@@ -34,7 +34,7 @@ struct TokensTodayTile: View {
     private func content(_ today: UsageSummary) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             TileValue(text: AppFormat.tokens(today.totalTokens))
-            splitBar(today)
+            TokenSplitBar(parts: parts(today))
             LazyVGrid(columns: [GridItem(.flexible(), spacing: 6, alignment: .leading), GridItem(.flexible(), alignment: .leading)],
                       alignment: .leading, spacing: 3) {
                 ForEach(parts(today), id: \.0) { series, _ in
@@ -49,28 +49,6 @@ struct TokensTodayTile: View {
                 }
             }
         }
-    }
-
-    /// One bar, each kind's share of today's tokens. Cache reads usually dwarf the rest, so
-    /// any non-zero kind keeps a sliver wide enough to see.
-    private func splitBar(_ today: UsageSummary) -> some View {
-        GeometryReader { geometry in
-            let total = max(1, today.totalTokens)
-            HStack(spacing: 1.5) {
-                ForEach(parts(today), id: \.0) { series, value in
-                    if value > 0 {
-                        Rectangle()
-                            .fill(series.color)
-                            .frame(width: max(3, geometry.size.width * CGFloat(value) / CGFloat(total)))
-                            .help(Text(verbatim: "\(series.displayName): \(AppFormat.tokens(value))"))
-                    }
-                }
-                if today.totalTokens == 0 { Rectangle().fill(Theme.track) }
-            }
-            .frame(width: geometry.size.width, alignment: .leading)
-            .clipShape(Capsule())
-        }
-        .frame(height: 8)
     }
 
     private var summary: String {
