@@ -209,8 +209,8 @@ final class CockpitStore {
         let message = target == .home
             ? "Sélectionnez votre dossier personnel « \(paths.home.lastPathComponent) » puis cliquez sur Autoriser."
             : "Sélectionnez le dossier \(displayPath(paths.claudeDir)) puis cliquez sur Autoriser."
-        // The home folder is the panel's start either way: `.claude` is visible in it
-        // (hidden files are shown) and a click on Autoriser picks the home itself.
+        // The panel opens on the folder asked for: the home, where a click on Autoriser picks
+        // the home itself, or the Claude directory for the minimal grant.
         guard let url = access.runPanel(directory: target == .home ? paths.home : paths.claudeDir, message: message) else {
             return .cancelled
         }
@@ -235,7 +235,15 @@ final class CockpitStore {
                 result = .rejected("Impossible d'enregistrer l'accès : \(error.localizedDescription)")
             }
         }
-        if case .rejected(let text) = result { notice = text }
+        switch result {
+        case .rejected(let text):
+            notice = text
+        case .granted(full: false):
+            // The onboarding gives way to the overview at once, so the toast is what remains.
+            notice = "Accès limité à \(displayPath(paths.claudeDir)) : skills liés ailleurs, RTK et analyse des projets restent indisponibles. Élargissez-le dans Réglages › Accès."
+        case .granted(full: true), .cancelled:
+            break
+        }
         return result
     }
 

@@ -74,6 +74,8 @@ struct OnboardingView: View {
         switch result {
         case .cancelled: feedback = nil
         case .rejected(let message): feedback = message
+        // A partial grant replaces this screen with the overview; the store's notice says
+        // what stays unavailable.
         case .granted: feedback = nil
         }
     }
