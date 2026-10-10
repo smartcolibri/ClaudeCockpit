@@ -117,12 +117,21 @@ enum SessionsPalette {
     /// Markdown-lite: inline syntax only, so the source line breaks of a transcript
     /// survive. Bodies over ``markdownCap`` are left as plain text.
     static func markdown(_ raw: String) -> AttributedString {
+        let raw = displayable(raw)
         guard raw.utf8.count <= markdownCap else { return AttributedString(raw) }
         let options = AttributedString.MarkdownParsingOptions(
             allowsExtendedAttributes: true,
             interpretedSyntax: .inlineOnlyPreservingWhitespace,
             failurePolicy: .returnPartiallyParsedIfPossible)
         return (try? AttributedString(markdown: raw, options: options)) ?? AttributedString(raw)
+    }
+
+    /// A capped body ends with ``ContentBlock/truncationMarker``, which is stored in the index
+    /// and matched there, so it stays as it is; the reader sees it in the app's language.
+    static func displayable(_ text: String) -> String {
+        guard text.hasSuffix(ContentBlock.truncationMarker) else { return text }
+        return String(text.dropLast(ContentBlock.truncationMarker.count))
+            + "\n… [\(String(localized: "truncated"))]"
     }
 
     /// `sonnet-4-5` out of `claude-sonnet-4-5-20250929`.
@@ -202,7 +211,7 @@ struct HealthBadge: View {
             .foregroundStyle(.white)
             .frame(width: compact ? 16 : 20, height: compact ? 16 : 20)
             .background(Circle().fill(SessionsPalette.color(for: grade)))
-            .accessibilityLabel("Santé de la session : \(grade.rawValue)")
+            .accessibilityLabel("Session health: \(grade.rawValue)")
     }
 }
 
@@ -254,5 +263,26 @@ struct MonospacedBox: View {
         }
         .frame(maxHeight: maxHeight)
         .background(Theme.cardFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+    }
+}
+
+extension HealthEvidence {
+    /// The sentence shown in the health popover. Counts and rates sit side by side so the
+    /// sentence explains the grade instead of seeming to contradict it.
+    var displayText: String {
+        switch self {
+        case .toolErrors(let count, let calls, let rate):
+            String(localized: "\(String(localized: "\(count) tool errors")) out of \(String(localized: "\(calls) calls")), or \(AppFormat.percent(rate, digits: 1)).")
+        case .apiErrors(let count, let turns, let rate):
+            String(localized: "\(String(localized: "\(count) API errors")) out of \(String(localized: "\(turns) assistant turns")), or \(AppFormat.percent(rate, digits: 1)).")
+        case .endedOnError:
+            String(localized: "The session ends on an error.")
+        case .abortedTurns(let count, let turns):
+            String(localized: "\(String(localized: "\(count) interrupted turns")) out of \(String(localized: "\(turns) assistant turns")).")
+        case .repeatedFailure(let times):
+            String(localized: "The same tool call failed \(times) times in a row.")
+        case .noErrors:
+            String(localized: "No errors detected.")
+        }
     }
 }

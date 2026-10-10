@@ -32,7 +32,7 @@ struct ToolCallCard: View {
     private static let maxDepth = 2
 
     private var isError: Bool { result?.isError ?? false }
-    private var toolName: String { block.toolName ?? "Outil" }
+    private var toolName: String { block.toolName ?? String(localized: "Tool") }
     private var tag: String? {
         SessionsPalette.argumentTag(toolName: block.toolName, input: block.text, fileEdit: block.fileEdit)
     }
@@ -93,7 +93,7 @@ struct ToolCallCard: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 11))
                         .foregroundStyle(.red)
-                        .accessibilityLabel("Cet appel a échoué")
+                        .accessibilityLabel("This call failed")
                 }
             }
             .padding(.horizontal, 12)
@@ -101,7 +101,7 @@ struct ToolCallCard: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("\(toolName). \(tag ?? "")")
+        .accessibilityLabel(Text(verbatim: "\(toolName). \(tag ?? "")"))
     }
 
     // MARK: - Input
@@ -112,10 +112,10 @@ struct ToolCallCard: View {
             if let edit = block.fileEdit {
                 DiffBox(edit: edit)
             } else {
-                MonospacedBox(text: block.text.isEmpty ? "(aucun argument)" : block.text)
+                MonospacedBox(text: block.text.isEmpty ? String(localized: "(no arguments)") : block.text)
             }
         } label: {
-            sectionLabel("Entrée", icon: "arrow.right.circle")
+            sectionLabel(String(localized: "Input"), icon: "arrow.right.circle")
         }
     }
 
@@ -128,7 +128,7 @@ struct ToolCallCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     MonospacedBox(text: shownOutput(result.text), tint: result.isError ? .red : Theme.ink)
                     if isCut(result.text) {
-                        Button("Afficher tout (\(AppFormat.integer(result.text.count)) caractères)") {
+                        Button("Show All (\(AppFormat.integer(result.text.count)) characters)") {
                             showFullOutput = true
                         }
                         .buttonStyle(.link)
@@ -136,10 +136,10 @@ struct ToolCallCard: View {
                     }
                 }
             } label: {
-                sectionLabel(result.isError ? "Sortie — erreur" : "Sortie", icon: "arrow.left.circle")
+                sectionLabel(result.isError ? String(localized: "Output — error") : String(localized: "Output"), icon: "arrow.left.circle")
             }
         } else {
-            Label("Résultat non chargé — il arrive avec la page suivante du transcript.",
+            Label("Result not loaded — it comes with the next page of the transcript.",
                   systemImage: "clock.arrow.circlepath")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
@@ -152,7 +152,7 @@ struct ToolCallCard: View {
 
     private func shownOutput(_ text: String) -> String {
         guard isCut(text) else { return text }
-        return String(text.prefix(SessionsPalette.outputCap)) + "\n… [coupé]"
+        return String(text.prefix(SessionsPalette.outputCap)) + "\n… [\(String(localized: "cut"))]"
     }
 
     // MARK: - Sub-agent
@@ -161,7 +161,7 @@ struct ToolCallCard: View {
     private var subagentSection: some View {
         if let agentId = block.subagentId {
             if depth >= Self.maxDepth {
-                Label("Sous-agent imbriqué trop profondément — ouvrez-le depuis la liste des sessions.",
+                Label("Sub-agent nested too deep — open it from the sessions list.",
                       systemImage: "arrow.turn.down.right")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
@@ -169,7 +169,7 @@ struct ToolCallCard: View {
                 DisclosureGroup(isExpanded: $subagentExpanded) {
                     subagentBody
                 } label: {
-                    sectionLabel("Ouvrir le sous-agent", icon: "person.2.fill")
+                    sectionLabel(String(localized: "Open the Sub-agent"), icon: "person.2.fill")
                 }
                 .onChange(of: subagentExpanded) { _, isOpen in
                     guard isOpen, subagentMessages.isEmpty, !subagentLoading else { return }
@@ -184,13 +184,13 @@ struct ToolCallCard: View {
         if subagentLoading {
             HStack(spacing: 8) {
                 ProgressView().controlSize(.small)
-                Text("Lecture du transcript du sous-agent…")
+                Text("Reading the sub-agent transcript…")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
             }
             .padding(.vertical, 6)
         } else if subagentMessages.isEmpty {
-            Text("Transcript du sous-agent introuvable dans l'index.")
+            Text("Sub-agent transcript not found in the index.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
                 .padding(.vertical, 6)
@@ -267,7 +267,7 @@ private struct DiffBox: View {
                 VStack(alignment: .leading, spacing: 0) {
                     ForEach(lines) { line in
                         HStack(alignment: .top, spacing: 6) {
-                            Text(line.kind == .added ? "+" : "\u{2212}")
+                            Text(verbatim: line.kind == .added ? "+" : "\u{2212}")
                                 .font(.data(11))
                                 .foregroundStyle(line.kind == .added ? Theme.emerald : .red)
                             Text(line.text.isEmpty ? " " : line.text)
@@ -287,7 +287,7 @@ private struct DiffBox: View {
             .frame(maxHeight: 320)
             .background(Theme.cardFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             if lines.count >= SessionsPalette.diffLineCap {
-                Text("Diff tronqué à \(AppFormat.integer(SessionsPalette.diffLineCap)) lignes.")
+                Text("Diff truncated to \(AppFormat.integer(SessionsPalette.diffLineCap)) lines.")
                     .font(.system(size: 10))
                     .foregroundStyle(Theme.mist)
             }

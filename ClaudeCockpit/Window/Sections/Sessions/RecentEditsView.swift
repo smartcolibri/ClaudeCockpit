@@ -1,4 +1,4 @@
-// "Fichiers modifiés" tab of the Sessions section — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
+// "Edited Files" tab of the Sessions section — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
 import AppKit
 import SwiftUI
 import CockpitShared
@@ -27,9 +27,9 @@ struct RecentEditsView: View {
                 if let message = store.sessionsState.errorMessage {
                     SourceBanner(
                         kind: .error,
-                        message: "Lecture de l'index impossible : \(message)",
+                        message: String(localized: "Could not read the index: \(message)"),
                         action: { Task { await store.indexSessions() } },
-                        actionTitle: "Réindexer")
+                        actionTitle: String(localized: "Reindex"))
                 }
                 content
             }
@@ -100,16 +100,16 @@ struct RecentEditsView: View {
     private var filterBar: some View {
         HStack(alignment: .center, spacing: 20) {
             VStack(alignment: .leading, spacing: 6) {
-                SectionLabel(text: "Chemin")
-                TextField("", text: $search, prompt: Text("Filtrer par chemin de fichier"))
+                SectionLabel(text: String(localized: "Path"))
+                TextField("", text: $search, prompt: Text("Filter by file path"))
                     .textFieldStyle(.roundedBorder)
                     .frame(minWidth: 240, maxWidth: 360)
             }
             Divider().frame(height: 32)
             VStack(alignment: .leading, spacing: 6) {
-                SectionLabel(text: "Projet")
+                SectionLabel(text: String(localized: "Project"))
                 Picker("", selection: $projectCwd) {
-                    Text("Tous les projets").tag(String?.none)
+                    Text("All Projects").tag(String?.none)
                     ForEach(projects) { project in
                         Text(UsagePath.shorten(project.cwd)).tag(String?.some(project.cwd))
                     }
@@ -129,23 +129,23 @@ struct RecentEditsView: View {
         if !indexEnabled {
             ActivityPlaceholder(
                 icon: "square.stack.3d.up.slash",
-                title: "Indexation désactivée",
-                message: "Activez « Indexer les transcripts » dans les réglages pour alimenter cette section.")
+                title: String(localized: "Indexing turned off"),
+                message: String(localized: "Turn on “Index Transcripts” in Settings to feed this section."))
         } else if edits == nil {
             ActivityPlaceholder(
                 icon: "hourglass",
-                title: store.sessionIndex.isRunning ? "Indexation en cours" : "Lecture des modifications…",
+                title: store.sessionIndex.isRunning ? String(localized: "Indexing in progress") : String(localized: "Reading edits…"),
                 message: store.sessionIndex.isRunning
-                    ? "\(AppFormat.integer(store.sessionIndex.filesDone)) transcripts sur \(AppFormat.integer(store.sessionIndex.filesTotal)) analysés."
-                    : "Recherche des fichiers écrits par les sessions indexées.",
+                    ? String(localized: "\(AppFormat.integer(store.sessionIndex.filesDone)) of \(AppFormat.integer(store.sessionIndex.filesTotal)) transcripts scanned.")
+                    : String(localized: "Looking for the files written by the indexed sessions."),
                 isBusy: true)
         } else if groups.isEmpty {
             ActivityPlaceholder(
                 icon: "doc.text.magnifyingglass",
-                title: search.isEmpty ? "Aucun fichier modifié" : "Aucun fichier ne correspond",
+                title: search.isEmpty ? String(localized: "No edited files") : String(localized: "No matching files"),
                 message: search.isEmpty
-                    ? "Aucune session indexée n'a écrit de fichier pour ce projet."
-                    : "Aucun chemin ne contient « \(search) ». Effacez le filtre pour tout revoir.")
+                    ? String(localized: "No indexed session wrote a file for this project.")
+                    : String(localized: "No path contains “\(search)”. Clear the filter to see everything again."))
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
                 ForEach(groups) { project in
@@ -160,7 +160,7 @@ struct RecentEditsView: View {
             HStack(alignment: .firstTextBaseline) {
                 SectionLabel(text: UsagePath.shorten(project.cwd))
                 Spacer()
-                Text("\(AppFormat.plural(project.files.count, "fichier")) · \(AppFormat.plural(project.editCount, "modification"))")
+                Text(verbatim: "\(String(localized: "\(project.files.count) files")) · \(String(localized: "\(project.editCount) edits"))")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .monospacedDigit()
@@ -200,7 +200,7 @@ struct RecentEditsView: View {
                         .help(file.path)
                 }
                 Spacer(minLength: 8)
-                Text("\(AppFormat.integer(file.edits.count)) modif.")
+                Text("\(file.edits.count) edits (short)")
                     .font(.system(size: 11))
                     .monospacedDigit()
                     .foregroundStyle(Theme.slate)
@@ -234,8 +234,8 @@ struct RecentEditsView: View {
             .buttonStyle(.borderless)
             .disabled(!FileManager.default.fileExists(atPath: file.path))
             .help(FileManager.default.fileExists(atPath: file.path)
-                ? "Révéler dans le Finder"
-                : "Ce fichier n'existe plus sur le disque")
+                ? Text("Show in Finder")
+                : Text("This file no longer exists on disk"))
 
             Button {
                 // TODO(team-lead): only switches tabs. Jumping to the exact message would
@@ -247,7 +247,7 @@ struct RecentEditsView: View {
                 Image(systemName: "text.bubble")
             }
             .buttonStyle(.borderless)
-            .help("Ouvrir la session")
+            .help("Open the Session")
         }
         .font(.system(size: 12))
         .foregroundStyle(Theme.slate)
@@ -282,9 +282,9 @@ struct RecentEditsView: View {
 
     private func lineDelta(added: Int, removed: Int) -> some View {
         HStack(spacing: 6) {
-            Text("+\(AppFormat.integer(added))")
+            Text(verbatim: "+\(AppFormat.integer(added))")
                 .foregroundStyle(added > 0 ? Theme.emerald : Theme.mist)
-            Text("−\(AppFormat.integer(removed))")
+            Text(verbatim: "−\(AppFormat.integer(removed))")
                 .foregroundStyle(removed > 0 ? .red : Theme.mist)
         }
         .font(.system(size: 11, weight: .semibold))

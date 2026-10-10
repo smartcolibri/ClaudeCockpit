@@ -1,4 +1,4 @@
-// "Activité" tab of the Sessions section — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
+// "Activity" tab of the Sessions section — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
 import SwiftUI
 import CockpitShared
 import SessionsKit
@@ -38,9 +38,9 @@ struct SessionsActivityView: View {
                 if let message = store.sessionsState.errorMessage {
                     SourceBanner(
                         kind: .error,
-                        message: "Lecture de l'index impossible : \(message)",
+                        message: String(localized: "Could not read the index: \(message)"),
                         action: { Task { await store.indexSessions() } },
-                        actionTitle: "Réindexer")
+                        actionTitle: String(localized: "Reindex"))
                 }
                 content
             }
@@ -110,7 +110,7 @@ struct SessionsActivityView: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(alignment: .center, spacing: 20) {
                 VStack(alignment: .leading, spacing: 6) {
-                    SectionLabel(text: "Période")
+                    SectionLabel(text: String(localized: "Period"))
                     Picker("", selection: rangeBinding) {
                         ForEach(ActivityRange.allCases) { value in
                             Text(value.title).tag(value)
@@ -122,9 +122,9 @@ struct SessionsActivityView: View {
                 }
                 Divider().frame(height: 32)
                 VStack(alignment: .leading, spacing: 6) {
-                    SectionLabel(text: "Projet")
+                    SectionLabel(text: String(localized: "Project"))
                     Picker("", selection: $projectCwd) {
-                        Text("Tous les projets").tag(String?.none)
+                        Text("All Projects").tag(String?.none)
                         ForEach(projects) { project in
                             Text(UsagePath.shorten(project.cwd)).tag(String?.some(project.cwd))
                         }
@@ -136,8 +136,8 @@ struct SessionsActivityView: View {
             }
             if range == .custom {
                 HStack(spacing: 16) {
-                    DatePicker("Du", selection: $customStart, displayedComponents: .date)
-                    DatePicker("Au", selection: $customEnd, displayedComponents: .date)
+                    DatePicker("From", selection: $customStart, displayedComponents: .date)
+                    DatePicker("To", selection: $customEnd, displayedComponents: .date)
                     Spacer(minLength: 0)
                 }
                 .environment(\.locale, AppFormat.locale)
@@ -164,28 +164,28 @@ struct SessionsActivityView: View {
         if !indexEnabled {
             ActivityPlaceholder(
                 icon: "square.stack.3d.up.slash",
-                title: "Indexation désactivée",
-                message: "Activez « Indexer les transcripts » dans les réglages pour alimenter cette section.")
+                title: String(localized: "Indexing turned off"),
+                message: String(localized: "Turn on “Index Transcripts” in Settings to feed this section."))
         } else if let report {
             if report.sessions == 0 && report.turns == 0 {
                 ActivityPlaceholder(
                     icon: "tray",
-                    title: "Aucune activité sur cette période",
-                    message: "Élargissez la période ou retirez le filtre projet pour voir davantage de sessions.")
+                    title: String(localized: "No activity in this period"),
+                    message: String(localized: "Widen the period or remove the project filter to see more sessions."))
             } else {
                 dashboard(report)
             }
         } else if store.sessionIndex.isRunning {
             ActivityPlaceholder(
                 icon: "hourglass",
-                title: "Indexation en cours",
-                message: "\(AppFormat.integer(store.sessionIndex.filesDone)) transcripts sur \(AppFormat.integer(store.sessionIndex.filesTotal)) analysés.",
+                title: String(localized: "Indexing in progress"),
+                message: String(localized: "\(AppFormat.integer(store.sessionIndex.filesDone)) of \(AppFormat.integer(store.sessionIndex.filesTotal)) transcripts scanned."),
                 isBusy: true)
         } else {
             ActivityPlaceholder(
                 icon: "hourglass",
-                title: "Calcul de l'activité…",
-                message: "Agrégation des tours, des outils et des coûts sur la période choisie.",
+                title: String(localized: "Computing activity…"),
+                message: String(localized: "Adding up turns, tools and costs over the chosen period."),
                 isBusy: true)
         }
     }
@@ -206,26 +206,26 @@ struct SessionsActivityView: View {
     private func totals(_ report: ActivityReport) -> some View {
         LazyVGrid(columns: tileColumns, spacing: 12) {
             StatTile(
-                label: "Sessions",
+                label: String(localized: "Sessions"),
                 value: AppFormat.integer(report.sessions),
                 note: range.note,
                 icon: "bubble.left.and.bubble.right")
             StatTile(
-                label: "Tours",
+                label: String(localized: "Turns"),
                 value: AppFormat.tokens(report.turns),
-                note: "tours assistant",
+                note: String(localized: "assistant turns"),
                 tint: Theme.violet,
                 icon: "arrow.triangle.2.circlepath")
             StatTile(
-                label: "Appels d'outils",
+                label: String(localized: "Tool calls"),
                 value: AppFormat.tokens(report.toolCalls),
                 note: toolErrorNote(report),
                 tint: Theme.accent,
                 icon: "wrench.and.screwdriver")
             StatTile(
-                label: "Coût",
+                label: String(localized: "Cost"),
                 value: store.money(report.costUSD),
-                note: "d'après les transcripts",
+                note: String(localized: "from the transcripts"),
                 tint: Theme.blue,
                 icon: "creditcard")
         }
@@ -233,7 +233,7 @@ struct SessionsActivityView: View {
 
     private func toolErrorNote(_ report: ActivityReport) -> String {
         let errors = report.tools.reduce(0) { $0 + $1.errors }
-        guard errors > 0 else { return "aucune erreur" }
-        return "\(AppFormat.integer(errors)) en erreur"
+        guard errors > 0 else { return String(localized: "no errors") }
+        return String(localized: "\(AppFormat.integer(errors)) failed")
     }
 }

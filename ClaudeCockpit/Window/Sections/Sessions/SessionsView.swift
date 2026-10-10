@@ -15,9 +15,9 @@ struct SessionsView: View {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .browser: "Sessions"
-            case .activity: "Activité"
-            case .edits: "Fichiers modifiés"
+            case .browser: String(localized: "Sessions")
+            case .activity: String(localized: "Activity")
+            case .edits: String(localized: "Edited Files")
             }
         }
     }
@@ -70,7 +70,7 @@ struct IndexStatusBadge: View {
         HStack(spacing: 8) {
             if progress.isRunning {
                 ProgressView().controlSize(.small)
-                Text("Indexation \(progress.filesDone)/\(progress.filesTotal)")
+                Text("Indexing \(progress.filesDone)/\(progress.filesTotal)")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                     .monospacedDigit()
@@ -80,7 +80,7 @@ struct IndexStatusBadge: View {
                     .foregroundStyle(.orange)
                     .lineLimit(1)
             } else if let last = progress.lastRun {
-                Text("Index à jour · \(AppFormat.relative(last, now: Date()))")
+                Text("Index up to date · \(AppFormat.relative(last, now: Date()))")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

@@ -66,13 +66,13 @@ struct SessionDetailView: View {
         }
         .onChange(of: targetMessageId) { _, _ in resolveTarget() }
         .onChange(of: findQuery) { _, _ in recomputeMatches() }
-        .alert("Masquer cette session ?", isPresented: $confirmHide) {
-            Button("Annuler", role: .cancel) {}
-            Button("Masquer", role: .destructive) {
+        .alert("Hide This Session?", isPresented: $confirmHide) {
+            Button("Cancel", role: .cancel) {}
+            Button("Hide", role: .destructive) {
                 Task { await store.hideSession(session.id) }
             }
         } message: {
-            Text("La session disparaît de la liste. Le transcript sur le disque n'est jamais modifié et une reconstruction de l'index la fera revenir.")
+            Text("The session disappears from the list. The transcript on disk is never changed, and rebuilding the index brings it back.")
         }
     }
 
@@ -97,7 +97,7 @@ struct SessionDetailView: View {
     @ViewBuilder
     private var titleField: some View {
         if isEditingTitle {
-            TextField("Titre de la session", text: $titleDraft)
+            TextField("Session title", text: $titleDraft)
                 .textFieldStyle(.plain)
                 .font(.display(16))
                 .foregroundStyle(Theme.ink)
@@ -119,8 +119,8 @@ struct SessionDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.mist)
-                .help("Renommer la session")
-                .accessibilityLabel("Renommer la session")
+                .help("Rename the Session")
+                .accessibilityLabel("Rename the session")
             }
         }
     }
@@ -153,10 +153,10 @@ struct SessionDetailView: View {
 
     private var statsLine: some View {
         HStack(spacing: 6) {
-            SessionChip(title: "Entrée \(AppFormat.tokens(session.inputTokens))", tint: Theme.blue)
-            SessionChip(title: "Sortie \(AppFormat.tokens(session.outputTokens))", tint: Theme.blue)
+            SessionChip(title: String(localized: "Input \(AppFormat.tokens(session.inputTokens))"), tint: Theme.blue)
+            SessionChip(title: String(localized: "Output \(AppFormat.tokens(session.outputTokens))"), tint: Theme.blue)
             SessionChip(
-                title: "Cache \(AppFormat.tokens(session.cacheReadTokens + session.cacheCreationTokens))",
+                title: String(localized: "Cache \(AppFormat.tokens(session.cacheReadTokens + session.cacheCreationTokens))"),
                 tint: Theme.blue)
             if let cost = store.sessionCost(session) {
                 // Estimated from the per-model tokens when the transcript carries
@@ -165,10 +165,10 @@ struct SessionDetailView: View {
                     title: cost.estimated ? "~\(store.money(cost.usd))" : store.money(cost.usd),
                     systemImage: "eurosign.circle", active: true, tint: Theme.blue)
             }
-            SessionChip(title: AppFormat.plural(session.toolCalls, "outil"), systemImage: "wrench.and.screwdriver")
+            SessionChip(title: String(localized: "\(session.toolCalls) tools"), systemImage: "wrench.and.screwdriver")
             if session.toolErrors > 0 {
                 SessionChip(
-                    title: AppFormat.plural(session.toolErrors, "erreur"),
+                    title: String(localized: "\(session.toolErrors) errors"),
                     systemImage: "exclamationmark.triangle", active: true, tint: .red)
             }
             Spacer(minLength: 8)
@@ -182,7 +182,7 @@ struct SessionDetailView: View {
             Button { showHealth.toggle() } label: {
                 HStack(spacing: 5) {
                     HealthBadge(grade: health.grade)
-                    Text("\(health.score)/100")
+                    Text(verbatim: "\(health.score)/100")
                         .font(.data(10))
                         .monospacedDigit()
                         .foregroundStyle(Theme.slate)
@@ -190,19 +190,19 @@ struct SessionDetailView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Détail de la note de santé")
+            .help("Health Grade Details")
             .popover(isPresented: $showHealth, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         HealthBadge(grade: health.grade)
-                        Text("Santé de la session · \(health.score)/100")
+                        Text("Session health · \(health.score)/100")
                             .font(.system(size: 13, weight: .semibold))
                     }
                     if health.evidence.isEmpty {
-                        Text("Aucun incident relevé.").font(.system(size: 12)).foregroundStyle(Theme.slate)
+                        Text("No incidents found.").font(.system(size: 12)).foregroundStyle(Theme.slate)
                     } else {
                         ForEach(Array(health.evidence.enumerated()), id: \.offset) { _, line in
-                            Label(line, systemImage: "circle.fill")
+                            Label(line.displayText, systemImage: "circle.fill")
                                 .labelStyle(.titleAndIcon)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Theme.slate)
@@ -221,7 +221,7 @@ struct SessionDetailView: View {
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.violet)
             ForEach(session.prLinks, id: \.url) { link in
-                Link("#\(link.number) \(link.repository)", destination: link.url)
+                Link(destination: link.url) { Text(verbatim: "#\(link.number) \(link.repository)") }
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.violet)
             }
@@ -240,22 +240,22 @@ struct SessionDetailView: View {
                     .foregroundStyle(session.isStarred ? Theme.accent : Theme.mist)
             }
             .buttonStyle(.plain)
-            .help(session.isStarred ? "Retirer des favoris" : "Mettre en favori")
-            .accessibilityLabel(session.isStarred ? "Retirer des favoris" : "Mettre en favori")
+            .help(session.isStarred ? Text("Remove from Favorites") : Text("Add to Favorites"))
+            .accessibilityLabel(session.isStarred ? Text("Remove from Favorites") : Text("Add to Favorites"))
 
             Button {
                 store.resumeSession(session)
             } label: {
-                Label("Copier la commande de reprise", systemImage: "doc.on.clipboard")
+                Label("Copy Resume Command", systemImage: "doc.on.clipboard")
                     .labelStyle(.iconOnly)
             }
             .buttonStyle(.plain)
             .foregroundStyle(store.canResume(session) ? Theme.emerald : Theme.mist)
             .disabled(!store.canResume(session))
             .help(store.canResume(session)
-                  ? "Copier la commande de reprise (cd + claude --resume) pour la coller dans un terminal"
-                  : "Dossier de travail inconnu pour cette session")
-            .accessibilityLabel("Copier la commande de reprise")
+                  ? Text("Copy the resume command (cd + claude --resume) to paste into a terminal")
+                  : Text("Unknown working folder for this session"))
+            .accessibilityLabel("Copy resume command")
 
             Button {
                 Task { await store.revealTranscript(session) }
@@ -264,8 +264,8 @@ struct SessionDetailView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Révéler le transcript dans le Finder")
-            .accessibilityLabel("Révéler le transcript")
+            .help("Show the Transcript in Finder")
+            .accessibilityLabel("Show the transcript")
 
             Menu {
                 Button("Markdown") { Task { await store.exportSession(session, format: .markdown) } }
@@ -276,8 +276,8 @@ struct SessionDetailView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .frame(width: 22)
-            .help("Exporter la session")
-            .accessibilityLabel("Exporter la session")
+            .help("Export the Session")
+            .accessibilityLabel("Export the session")
 
             Button {
                 copyIdentifier()
@@ -286,8 +286,8 @@ struct SessionDetailView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Copier l'identifiant de la session")
-            .accessibilityLabel("Copier l'identifiant")
+            .help("Copy the Session ID")
+            .accessibilityLabel("Copy the ID")
 
             Button {
                 findVisible = true
@@ -298,8 +298,8 @@ struct SessionDetailView: View {
             .buttonStyle(.plain)
             .foregroundStyle(findVisible ? Theme.accent : Theme.mist)
             .keyboardShortcut("f", modifiers: .command)
-            .help("Rechercher dans la session (Cmd+F)")
-            .accessibilityLabel("Rechercher dans la session")
+            .help("Find in the Session (Cmd+F)")
+            .accessibilityLabel("Find in the session")
 
             Button {
                 confirmHide = true
@@ -308,8 +308,8 @@ struct SessionDetailView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Masquer cette session de la liste")
-            .accessibilityLabel("Masquer la session")
+            .help("Hide This Session from the List")
+            .accessibilityLabel("Hide the session")
         }
         .font(.system(size: 13))
     }
@@ -317,7 +317,7 @@ struct SessionDetailView: View {
     private func copyIdentifier() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(session.id, forType: .string)
-        store.notice = "Identifiant copié : \(session.id)"
+        store.notice = String(localized: "ID copied: \(session.id)")
     }
 
     // MARK: - Find bar
@@ -325,15 +325,15 @@ struct SessionDetailView: View {
     private var findBar: some View {
         HStack(spacing: 8) {
             Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(Theme.slate)
-            TextField("Rechercher dans les tours chargés", text: $findQuery)
+            TextField("Find in Loaded Turns", text: $findQuery)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .focused($findFocused)
                 .onSubmit { step(1) }
             if !findQuery.isEmpty {
                 Text(findMatches.isEmpty
-                     ? "Aucun tour"
-                     : "\(findIndex + 1) sur \(findMatches.count)")
+                     ? String(localized: "No turns")
+                     : String(localized: "\(findIndex + 1) of \(findMatches.count)"))
                     .font(.data(11))
                     .monospacedDigit()
                     .foregroundStyle(Theme.slate)
@@ -343,15 +343,15 @@ struct SessionDetailView: View {
                 .foregroundStyle(Theme.mist)
                 .keyboardShortcut("[", modifiers: .command)
                 .disabled(findMatches.isEmpty)
-                .help("Tour précédent (Cmd+[ ou [)")
-                .accessibilityLabel("Tour précédent")
+                .help("Previous Turn (Cmd+[ or [)")
+                .accessibilityLabel("Previous turn")
             Button { step(1) } label: { Image(systemName: "chevron.down") }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.mist)
                 .keyboardShortcut("]", modifiers: .command)
                 .disabled(findMatches.isEmpty)
-                .help("Tour suivant (Cmd+] ou ])")
-                .accessibilityLabel("Tour suivant")
+                .help("Next Turn (Cmd+] or ])")
+                .accessibilityLabel("Next turn")
             Button {
                 findVisible = false
                 findQuery = ""
@@ -361,7 +361,7 @@ struct SessionDetailView: View {
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
             .keyboardShortcut(.cancelAction)
-            .accessibilityLabel("Fermer la recherche")
+            .accessibilityLabel("Close the search")
             bareBracketShortcuts
         }
         .padding(.horizontal, 20)
@@ -488,10 +488,10 @@ struct SessionDetailView: View {
         SourceBanner(
             kind: .info,
             message: isChasingTarget
-                ? "Chargement du transcript jusqu'au message recherché…"
-                : "Ce résultat est plus loin dans le transcript, au-delà des tours déjà chargés.",
+                ? String(localized: "Loading the transcript up to the message found…")
+                : String(localized: "This result is further into the transcript, past the turns already loaded."),
             action: { Task { await chaseTarget() } },
-            actionTitle: "Charger jusqu'au message")
+            actionTitle: String(localized: "Load Up to the Message"))
     }
 
     @ViewBuilder
@@ -500,21 +500,21 @@ struct SessionDetailView: View {
             if isLoading {
                 HStack(spacing: 8) {
                     ProgressView().controlSize(.small)
-                    Text("Chargement des tours…").font(.system(size: 11)).foregroundStyle(Theme.slate)
+                    Text("Loading turns…").font(.system(size: 11)).foregroundStyle(Theme.slate)
                 }
             } else if !reachedEnd {
-                Button("Charger la suite") { Task { await loadNextPage() } }
+                Button("Load More") { Task { await loadNextPage() } }
                     .controlSize(.small)
             }
             if total > 0 {
                 // The total now counts the same set the pages return, so the two
                 // denominators match and this can honestly say "messages".
-                Text("\(AppFormat.plural(messages.count, "message")) sur \(AppFormat.integer(total))")
+                Text("\(String(localized: "\(messages.count) messages")) out of \(AppFormat.integer(total))")
                     .font(.system(size: 10))
                     .monospacedDigit()
                     .foregroundStyle(Theme.mist)
             } else if messages.isEmpty && !isLoading {
-                Text("Aucun message indexé pour cette session.")
+                Text("No messages indexed for this session.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
             }
