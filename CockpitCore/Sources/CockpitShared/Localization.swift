@@ -7,6 +7,9 @@ extension Bundle {
     /// ignores any locale passed to it. Text that must be written in a chosen language — an
     /// export that follows the app's language, a test that pins one — looks its strings up in
     /// the sub-bundle this returns instead.
+    ///
+    /// Only the language code is matched, which is enough for the languages shipped (en, fr);
+    /// a script or region variant (`zh-Hant`, `pt-BR`) would need the full identifier tried first.
     public func localization(for locale: Locale) -> Bundle {
         for code in [locale.language.languageCode?.identifier, "en"].compactMap({ $0 }) {
             if let path = path(forResource: code, ofType: "lproj"), let bundle = Bundle(path: path) {

@@ -209,38 +209,6 @@
         }
       }
     },
-    "%@ out of %@, or %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ out of %@, or %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ sur %2$@, soit %3$@."
-          }
-        }
-      }
-    },
-    "%@ out of %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ out of %@."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ sur %2$@."
-          }
-        }
-      }
-    },
     "%@ out of %lld. The list fills in as it goes." : {
       "localizations" : {
         "en" : {
@@ -417,86 +385,6 @@
         }
       }
     },
-    "%lld API errors" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld API error"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld API errors"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld erreur d'API"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld erreurs d'API"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld assistant turns" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld assistant turn"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld assistant turns"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld tour assistant"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld tours assistant"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld attachments" : {
       "localizations" : {
         "en" : {
@@ -530,46 +418,6 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld pièces jointes"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld calls" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld call"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld calls"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld appel"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld appels"
                 }
               }
             }
@@ -873,46 +721,6 @@
         }
       }
     },
-    "%lld interrupted turns" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld interrupted turn"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld interrupted turns"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld tour interrompu"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld tours interrompus"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "%lld messages" : {
       "localizations" : {
         "en" : {
@@ -1098,46 +906,6 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld exécutions"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld tool errors" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld tool error"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld tool errors"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld erreur d'outil"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld erreurs d'outil"
                 }
               }
             }
@@ -4969,22 +4737,6 @@
         }
       }
     },
-    "No errors detected." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No errors detected."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune erreur détectée."
-          }
-        }
-      }
-    },
     "No filtered commands in the last seven days." : {
       "localizations" : {
         "en" : {
@@ -7921,46 +7673,6 @@
         }
       }
     },
-    "The same tool call failed %lld times in a row." : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "The same tool call failed %lld time in a row."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "The same tool call failed %lld times in a row."
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Le même appel d'outil a échoué %lld fois de suite."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Le même appel d'outil a échoué %lld fois de suite."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "The session disappears from the list. The transcript on disk is never changed, and rebuilding the index brings it back." : {
       "localizations" : {
         "en" : {
@@ -7973,22 +7685,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "La session disparaît de la liste. Le transcript sur le disque n'est jamais modifié et une reconstruction de l'index la fera revenir."
-          }
-        }
-      }
-    },
-    "The session ends on an error." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The session ends on an error."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "La session se termine sur une erreur."
           }
         }
       }

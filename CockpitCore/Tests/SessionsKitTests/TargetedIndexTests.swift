@@ -244,6 +244,10 @@ final class ExportSafetyTests: XCTestCase {
         XCTAssertEqual(SessionExporter.attachmentNote(["api.go"], words: en), "1 attachment: api.go")
         XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"], words: en),
                        "2 attachments: api.go, store.go")
+        XCTAssertEqual(SessionExporter.attachmentNote([], words: en), "")
+        // A zero count: French singular, English plural.
+        XCTAssertEqual(fr("\(0) attachments"), "0 pièce jointe")
+        XCTAssertEqual(en("\(0) attachments"), "0 attachments")
     }
 
     /// A count in a plural string keeps its locale's grouping: the plural variant picks the

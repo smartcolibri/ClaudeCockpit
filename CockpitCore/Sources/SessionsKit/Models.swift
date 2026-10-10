@@ -458,8 +458,8 @@ public struct SessionHealth: Hashable, Sendable, Codable {
     }
 }
 
-/// One reason behind a health grade, as values: the wording, and the language it is in,
-/// belong to the app. Rates are fractions (0…1) and are cited next to the counts so the
+/// One reason behind a health grade, as values; ``sentence(locale:)`` words it in the
+/// language asked for, which the app passes. Rates are fractions (0…1) and are cited next to the counts so the
 /// sentence explains the grade instead of seeming to contradict it.
 public enum HealthEvidence: Hashable, Sendable, Codable {
     case toolErrors(count: Int, calls: Int, rate: Double)

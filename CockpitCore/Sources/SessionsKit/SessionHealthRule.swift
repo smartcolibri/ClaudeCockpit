@@ -1,5 +1,6 @@
 // SessionsKit — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
 import Foundation
+import CockpitShared
 
 extension SessionHealthRule {
 
@@ -152,6 +153,33 @@ extension SessionHealthRule {
             current = (identity == key) ? current + 1 : 1
             key = identity
             longest = max(longest, current)
+        }
+    }
+}
+
+extension HealthEvidence {
+    /// The sentence shown in the health popover, written in `locale`'s language. Counts and
+    /// rates sit side by side so the sentence explains the grade instead of seeming to
+    /// contradict it; each count agrees with its own noun.
+    public func sentence(locale: Locale) -> String {
+        let bundle = Bundle.module.localization(for: locale)
+        func words(_ key: String.LocalizationValue) -> String {
+            String(localized: key, bundle: bundle, locale: locale)
+        }
+        func percent(_ rate: Double) -> String { AppFormat.percent(rate, digits: 1, locale: locale) }
+        switch self {
+        case .toolErrors(let count, let calls, let rate):
+            return words("\(words("\(count) tool errors")) out of \(words("\(calls) calls")), or \(percent(rate)).")
+        case .apiErrors(let count, let turns, let rate):
+            return words("\(words("\(count) API errors")) out of \(words("\(turns) assistant turns")), or \(percent(rate)).")
+        case .endedOnError:
+            return words("The session ends on an error.")
+        case .abortedTurns(let count, let turns):
+            return words("\(words("\(count) interrupted turns")) out of \(words("\(turns) assistant turns")).")
+        case .repeatedFailure(let times):
+            return words("The same tool call failed \(times) times in a row.")
+        case .noErrors:
+            return words("No errors detected.")
         }
     }
 }

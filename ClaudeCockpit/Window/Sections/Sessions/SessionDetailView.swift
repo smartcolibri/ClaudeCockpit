@@ -225,7 +225,7 @@ struct SessionDetailView: View {
                         Text("No incidents found.").font(.system(size: 12)).foregroundStyle(Theme.slate)
                     } else {
                         ForEach(Array(health.evidence.enumerated()), id: \.offset) { _, line in
-                            Label(line.displayText, systemImage: "circle.fill")
+                            Label(line.sentence(locale: AppFormat.locale), systemImage: "circle.fill")
                                 .labelStyle(.titleAndIcon)
                                 .font(.system(size: 12))
                                 .foregroundStyle(Theme.slate)

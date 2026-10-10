@@ -264,24 +264,3 @@ struct MonospacedBox: View {
         .background(Theme.cardFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
     }
 }
-
-extension HealthEvidence {
-    /// The sentence shown in the health popover. Counts and rates sit side by side so the
-    /// sentence explains the grade instead of seeming to contradict it.
-    var displayText: String {
-        switch self {
-        case .toolErrors(let count, let calls, let rate):
-            String(localized: "\(String(localized: "\(count) tool errors", locale: AppFormat.locale)) out of \(String(localized: "\(calls) calls", locale: AppFormat.locale)), or \(AppFormat.percent(rate, digits: 1)).", locale: AppFormat.locale)
-        case .apiErrors(let count, let turns, let rate):
-            String(localized: "\(String(localized: "\(count) API errors", locale: AppFormat.locale)) out of \(String(localized: "\(turns) assistant turns", locale: AppFormat.locale)), or \(AppFormat.percent(rate, digits: 1)).", locale: AppFormat.locale)
-        case .endedOnError:
-            String(localized: "The session ends on an error.")
-        case .abortedTurns(let count, let turns):
-            String(localized: "\(String(localized: "\(count) interrupted turns", locale: AppFormat.locale)) out of \(String(localized: "\(turns) assistant turns", locale: AppFormat.locale)).", locale: AppFormat.locale)
-        case .repeatedFailure(let times):
-            String(localized: "The same tool call failed \(times) times in a row.", locale: AppFormat.locale)
-        case .noErrors:
-            String(localized: "No errors detected.")
-        }
-    }
-}

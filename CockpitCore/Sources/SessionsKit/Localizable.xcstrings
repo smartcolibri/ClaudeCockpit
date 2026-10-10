@@ -1,6 +1,38 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ out of %@, or %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ out of %@, or %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ sur %2$@, soit %3$@."
+          }
+        }
+      }
+    },
+    "%@ out of %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ out of %@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ sur %2$@."
+          }
+        }
+      }
+    },
     "%@: %@" : {
       "localizations" : {
         "en" : {
@@ -13,6 +45,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ : %2$@"
+          }
+        }
+      }
+    },
+    "%lld API errors" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld API error"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld API errors"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld erreur d'API"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld erreurs d'API"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld assistant turns" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld assistant turn"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld assistant turns"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tour assistant"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tours assistant"
+                }
+              }
+            }
           }
         }
       }
@@ -130,6 +242,86 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld en erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld interrupted turns" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld interrupted turn"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld interrupted turns"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tour interrompu"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tours interrompus"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld tool errors" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tool error"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld tool errors"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld erreur d'outil"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld erreurs d'outil"
                 }
               }
             }
@@ -281,6 +473,22 @@
         }
       }
     },
+    "No errors detected." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No errors detected."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune erreur détectée."
+          }
+        }
+      }
+    },
     "Project" : {
       "localizations" : {
         "en" : {
@@ -389,6 +597,62 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Système"
+          }
+        }
+      }
+    },
+    "The same tool call failed %lld times in a row." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "The same tool call failed %lld time in a row."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "The same tool call failed %lld times in a row."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Le même appel d'outil a échoué %lld fois de suite."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Le même appel d'outil a échoué %lld fois de suite."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "The session ends on an error." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The session ends on an error."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La session se termine sur une erreur."
           }
         }
       }
