@@ -19,3 +19,37 @@ final class ClaudePathsTests: XCTestCase {
         XCTAssertEqual(p.appSupportDir.path, "/tmp/home/Library/Application Support/ClaudeCockpit")
     }
 }
+
+final class ClaudePathsSandboxTests: XCTestCase {
+    func testExplicitAppSupportIsKeptApartFromHome() {
+        let p = ClaudePaths(home: URL(fileURLWithPath: "/Users/x"),
+                            appSupport: URL(fileURLWithPath: "/c/Data/Library/Application Support/ClaudeCockpit"))
+        XCTAssertEqual(p.claudeDir.path, "/Users/x/.claude")
+        XCTAssertEqual(p.appSupportDir.path, "/c/Data/Library/Application Support/ClaudeCockpit")
+        XCTAssertEqual(p.rtkDatabaseCandidates.first?.path, "/Users/x/Library/Application Support/rtk/history.db")
+    }
+
+    func testRealHomeComesFromThePasswordDatabase() {
+        let entry = getpwuid(getuid())
+        XCTAssertNotNil(entry)
+        XCTAssertEqual(ClaudePaths.realHome.path, String(cString: entry!.pointee.pw_dir))
+        XCTAssertEqual(ClaudePaths.live.home, ClaudePaths.realHome)
+        XCTAssertFalse(ClaudePaths.live.appSupportDir.path.isEmpty)
+    }
+
+    func testTildeExpandsAgainstTheGivenHome() {
+        let home = URL(fileURLWithPath: "/Users/x")
+        XCTAssertEqual(ClaudePaths.expandTilde("~", home: home), "/Users/x")
+        XCTAssertEqual(ClaudePaths.expandTilde("~/DevApps", home: home), "/Users/x/DevApps")
+        XCTAssertEqual(ClaudePaths.expandTilde("/opt/x", home: home), "/opt/x")
+        XCTAssertEqual(ClaudePaths.expandTilde("~other/x", home: home), "~other/x")
+    }
+
+    func testConfigDirSettingWinsOverEnvironment() {
+        let home = URL(fileURLWithPath: "/Users/x")
+        let env = ["CLAUDE_CONFIG_DIR": "~/env-cfg"]
+        XCTAssertEqual(ClaudePaths.resolveConfigDir(setting: "~/set-cfg", environment: env, home: home)?.path, "/Users/x/set-cfg")
+        XCTAssertEqual(ClaudePaths.resolveConfigDir(setting: "  ", environment: env, home: home)?.path, "/Users/x/env-cfg")
+        XCTAssertNil(ClaudePaths.resolveConfigDir(setting: nil, environment: [:], home: home))
+    }
+}

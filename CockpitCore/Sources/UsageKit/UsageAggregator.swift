@@ -1,4 +1,5 @@
 import Foundation
+import CockpitShared
 
 /// Turns a flat event list into everything the usage screens display. A pure function of its
 /// inputs — the computation the source app's `UsageViewModel` did in `recomputeFiltered` and
@@ -11,7 +12,7 @@ public enum UsageAggregator {
         pricing: PricingSettings = .default,
         now: Date = Date(),
         calendar: Calendar = .current,
-        home: URL = FileManager.default.homeDirectoryForCurrentUser
+        home: URL = ClaudePaths.realHome
     ) -> UsageSnapshot {
         // Model/project filtering only: the fixed day/week comparisons deliberately ignore
         // the range filter.

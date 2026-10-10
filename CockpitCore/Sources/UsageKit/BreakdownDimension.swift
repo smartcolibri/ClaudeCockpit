@@ -1,4 +1,5 @@
 import Foundation
+import CockpitShared
 
 /// One row of the breakdown table: a group key (project / agent / skill) with its aggregate
 /// usage, sorted by cost.
@@ -34,7 +35,7 @@ public enum BreakdownDimension: String, CaseIterable, Identifiable, Hashable, Se
     /// `directLabel` under Agent/Skill.
     public func key(
         for event: UsageEvent,
-        home: URL = FileManager.default.homeDirectoryForCurrentUser
+        home: URL = ClaudePaths.realHome
     ) -> String {
         switch self {
         case .project: UsagePath.shorten(event.cwd, home: home)
