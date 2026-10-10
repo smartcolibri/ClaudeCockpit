@@ -56,6 +56,17 @@ public struct ClaudePaths: Sendable, Equatable {
             appSupport: processAppSupportDir)
     }
 
+    /// The demo mode's world, all under `root` (see `DemoSeeder`): a fictional home holding
+    /// `.claude`, rtk's database and the project roots, and app data kept apart from the
+    /// real index so nothing the demo does reaches the user's own state.
+    public static func demo(root: URL) -> ClaudePaths {
+        let home = root.appendingPathComponent("home", isDirectory: true)
+        return ClaudePaths(
+            home: home,
+            configDir: home.appendingPathComponent(".claude", isDirectory: true),
+            appSupport: root.appendingPathComponent("appdata", isDirectory: true))
+    }
+
     /// Setting first, then `CLAUDE_CONFIG_DIR`, `~` expanded against `home`; nil when neither is set.
     /// A relative value is skipped: it would resolve against whatever the working directory is.
     public static func resolveConfigDir(setting: String?, environment: [String: String], home: URL) -> URL? {
