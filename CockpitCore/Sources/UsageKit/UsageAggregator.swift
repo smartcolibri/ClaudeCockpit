@@ -141,6 +141,9 @@ public enum UsageAggregator {
         let todayEvents = unranged.filter { $0.timestamp >= todayStart && $0.timestamp < todayEnd }
         let costTodayUSD = PricingCalculator.estimatedCostUSD(for: todayEvents, pricing: pricing)
         let tokensToday = todayEvents.reduce(0) { $0 + $1.totalTokens }
+        let allTodayEvents = allEvents.filter { $0.timestamp >= todayStart && $0.timestamp < todayEnd }
+        let costTodayUnfilteredUSD = PricingCalculator.estimatedCostUSD(for: allTodayEvents, pricing: pricing)
+        let tokensTodayUnfiltered = allTodayEvents.reduce(0) { $0 + $1.totalTokens }
 
         let insights = InsightEngine.derive(
             events: filtered,
@@ -179,6 +182,8 @@ public enum UsageAggregator {
             insights: insights,
             costTodayUSD: costTodayUSD,
             tokensToday: tokensToday,
+            costTodayUnfilteredUSD: costTodayUnfilteredUSD,
+            tokensTodayUnfiltered: tokensTodayUnfiltered,
             availableProjects: availableProjects,
             availableModels: availableModels,
             availableModelFamilies: availableModelFamilies)

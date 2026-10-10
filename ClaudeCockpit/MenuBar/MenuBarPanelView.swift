@@ -104,10 +104,10 @@ struct MenuBarPanelView: View {
             expanded: $showToday
         ) {
             if let usage = store.usage {
-                InfoRow(label: "Coût local du jour", value: store.money(usage.costTodayUSD), tint: Theme.blue)
+                InfoRow(label: "Coût local du jour", value: store.money(usage.costTodayUnfilteredUSD), tint: Theme.blue)
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Tokens du jour", value: FRFormat.tokens(usage.tokensToday),
+                    label: "Tokens du jour", value: FRFormat.tokens(usage.tokensTodayUnfiltered),
                     note: "entrée + sortie + cache, tous modèles confondus")
                 Divider().opacity(0.4)
                 InfoRow(

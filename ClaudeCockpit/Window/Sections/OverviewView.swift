@@ -76,13 +76,13 @@ struct OverviewView: View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 14)], spacing: 14) {
             StatTile(
                 label: "Coût du jour",
-                value: store.usage.map { store.money($0.costTodayUSD) } ?? "—",
+                value: store.usage.map { store.money($0.costTodayUnfilteredUSD) } ?? "—",
                 note: store.usage.map { "\(store.money($0.costThisWeekUSD)) depuis lundi" },
                 tint: Theme.blue,
                 icon: "eurosign.circle")
             StatTile(
                 label: "Tokens du jour",
-                value: store.usage.map { FRFormat.tokens($0.tokensToday) } ?? "—",
+                value: store.usage.map { FRFormat.tokens($0.tokensTodayUnfiltered) } ?? "—",
                 note: store.usage == nil ? nil : "depuis minuit, cache compris",
                 tint: Theme.blue,
                 icon: "number.circle")

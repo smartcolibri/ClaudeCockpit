@@ -135,10 +135,10 @@ final class CockpitStore {
 
     // MARK: Derived
     /// Menu-bar label: today's estimated cost, formatted like the overview's
-    /// "Coût du jour" tile. A dash stands for "not read yet" and is never
+    /// "Coût du jour" tile and, like it, blind to the Usage screen's filters. A dash stands for "not read yet" and is never
     /// rendered as a zero amount.
     var menuBarTitle: String {
-        usage.map { money($0.costTodayUSD) } ?? "–"
+        usage.map { money($0.costTodayUnfilteredUSD) } ?? "–"
     }
     var currency: String { defaults.string(forKey: SettingsKey.currency) ?? "USD" }
     /// Converts a USD amount to the display currency.
