@@ -66,7 +66,9 @@ final class UsagePeriodTests: XCTestCase {
     func testPreviousPeriodOfEachRange() {
         assertPrevious(.today, "2026-10-27 00:00", "2026-10-27 15:00")
         assertPrevious(.thisWeek, "2026-10-19 00:00", "2026-10-21 15:00")
-        assertPrevious(.thisMonth, "2026-09-01 00:00", "2026-09-28 15:00")
+        // The same elapsed duration from the previous month's start: 27 days 16 hours, the
+        // switch back to winter time included.
+        assertPrevious(.thisMonth, "2026-09-01 00:00", "2026-09-28 16:00")
         assertPrevious(.prevMonth, "2026-08-01 00:00", "2026-09-01 00:00")
         // Same length, same wall-clock end: the previous window crosses the DST switch.
         assertPrevious(.last7Days, "2026-10-15 00:00", "2026-10-21 15:00")
@@ -75,9 +77,11 @@ final class UsagePeriodTests: XCTestCase {
         XCTAssertNil(DateRangeFilter.all.previousBounds(now: now, calendar: calendar))
     }
 
-    func testPreviousMonthToDateIsClampedToTheShorterMonth() {
-        assertPrevious(.thisMonth, at: local("2026-03-31 10:00"), "2026-02-01 00:00", "2026-02-28 10:00")
-        assertPrevious(.thisMonth, at: local("2028-03-31 10:00"), "2028-02-01 00:00", "2028-02-29 10:00")
+    func testPreviousMonthToDateLastsTheSameButStopsAtTheMonthEnd() {
+        assertPrevious(.thisMonth, at: local("2026-02-10 12:00"), "2026-01-01 00:00", "2026-01-10 12:00")
+        // 30 days and 9 hours of March outlast the whole of February: capped at its end.
+        assertPrevious(.thisMonth, at: local("2026-03-31 10:00"), "2026-02-01 00:00", "2026-03-01 00:00")
+        assertPrevious(.thisMonth, at: local("2028-03-31 10:00"), "2028-02-01 00:00", "2028-03-01 00:00")
     }
 
     func testPreviousCostKeepsModelAndProjectFiltersButNotTheRange() {
@@ -125,12 +129,55 @@ final class UsagePeriodTests: XCTestCase {
     // MARK: Buckets
 
     func testGranularityThresholds() {
-        XCTAssertEqual(UsagePeriod.granularity(forDayCount: 1), .hour)
-        XCTAssertEqual(UsagePeriod.granularity(forDayCount: 2), .day)
-        XCTAssertEqual(UsagePeriod.granularity(forDayCount: UsagePeriod.maxDailyBuckets), .day)
-        XCTAssertEqual(UsagePeriod.granularity(forDayCount: UsagePeriod.maxDailyBuckets + 1), .week)
-        XCTAssertEqual(UsagePeriod.granularity(forDayCount: UsagePeriod.maxWeeklyBuckets * 7), .week)
-        XCTAssertEqual(UsagePeriod.granularity(forDayCount: UsagePeriod.maxWeeklyBuckets * 7 + 1), .month)
+        XCTAssertEqual(UsagePeriod.granularity(range: .today, dayCount: 1), .hour)
+        XCTAssertEqual(UsagePeriod.granularity(range: .thisWeek, dayCount: 1), .day)
+        XCTAssertEqual(UsagePeriod.granularity(range: .all, dayCount: 1), .day)
+        XCTAssertEqual(UsagePeriod.granularity(range: .last30Days, dayCount: UsagePeriod.maxDailyBuckets), .day)
+        XCTAssertEqual(UsagePeriod.granularity(range: .all, dayCount: UsagePeriod.maxDailyBuckets + 1), .week)
+        XCTAssertEqual(UsagePeriod.granularity(range: .all, dayCount: UsagePeriod.maxWeeklyBuckets * 7), .week)
+        XCTAssertEqual(UsagePeriod.granularity(range: .all, dayCount: UsagePeriod.maxWeeklyBuckets * 7 + 1), .month)
+    }
+
+    func testThisWeekOnMondayIsOneDailyBar() {
+        let period = snapshot([sonnet("2026-10-26 10:00")], range: .thisWeek, at: local("2026-10-26 15:00")).period
+        XCTAssertEqual(period.granularity, .day)
+        XCTAssertEqual(period.buckets.count, 1)
+        XCTAssertEqual(period.buckets[0].costUSD, 3, accuracy: 1e-9)
+    }
+
+    // MARK: Data horizon
+
+    /// Claude Code deletes old transcripts, so the scanned history can start inside the period
+    /// or its comparison window: days before it are unknown, not idle.
+    func testNoComparisonWhenHistoryStartsInsideThePreviousWindow() {
+        // History starts 2026-10-10; the previous 30 days run from 2026-08-30.
+        let events = [sonnet("2026-10-10 10:00"), sonnet("2026-10-27 10:00")]
+        XCTAssertNil(snapshot(events, range: .last30Days).period.previousCostUSD)
+        // The previous 7 days (from 2026-10-15) are covered.
+        XCTAssertEqual(try XCTUnwrap(snapshot(events, range: .last7Days).period.previousCostUSD), 0, accuracy: 1e-9)
+    }
+
+    func testOneDayOfToleranceOnTheHorizon() {
+        // The previous 7 days start 2026-10-15 00:00; history starts that day at 10:00.
+        let events = [sonnet("2026-10-15 10:00"), sonnet("2026-10-27 10:00")]
+        XCTAssertEqual(try XCTUnwrap(snapshot(events, range: .last7Days).period.previousCostUSD), 3, accuracy: 1e-9)
+    }
+
+    func testTheHorizonIgnoresTheFilters() {
+        // An Opus turn long ago proves the archive reaches back, even under a Sonnet filter.
+        let events = [opus("2026-08-01 10:00"), sonnet("2026-10-27 10:00")]
+        XCTAssertEqual(try XCTUnwrap(snapshot(events, range: .last30Days, models: [.sonnet]).period.previousCostUSD), 0, accuracy: 1e-9)
+    }
+
+    func testMeansCountOnlyTheDaysTheHistoryCovers() {
+        // 30-day range, history from 2026-10-19: ten days covered (19th to 28th).
+        let events = [sonnet("2026-10-19 10:00"), sonnet("2026-10-27 10:00")]
+        let period = snapshot(events, range: .last30Days).period
+        XCTAssertEqual(period.days.count, 30)
+        XCTAssertEqual(period.coveredDays, 10)
+        XCTAssertEqual(period.meanCostPerHour[10], 6.0 / 10, accuracy: 1e-9)
+        XCTAssertEqual(period.weekdayDays.reduce(0, +), 10)
+        XCTAssertEqual(snapshot([], range: .last30Days).period.coveredDays, 0)
     }
 
     func testThirtyDaysAreDailyBucketsSplitByFamily() {
@@ -205,7 +252,8 @@ final class UsagePeriodTests: XCTestCase {
                                        inputTokens: 1_000_000)
         XCTAssertEqual(calendar.component(.hour, from: summer.timestamp), 2)
         XCTAssertEqual(calendar.component(.hour, from: winter.timestamp), 2)
-        let period = snapshot([summer, winter, sonnet("2026-10-27 10:00")], range: .last7Days).period
+        // An older turn puts the whole week inside the history.
+        let period = snapshot([opus("2026-09-01 10:00"), summer, winter, sonnet("2026-10-27 10:00")], range: .last7Days).period
         XCTAssertEqual(period.hourly[2].estimatedCostUSD, 6, accuracy: 1e-9)
         XCTAssertEqual(period.meanCostPerHour[2], 6.0 / 7, accuracy: 1e-9)
         XCTAssertEqual(period.meanCostPerHour[10], 3.0 / 7, accuracy: 1e-9)
@@ -225,6 +273,7 @@ final class UsagePeriodTests: XCTestCase {
             sonnet("2026-10-26 01:00", session: "a"),
             sonnet("2026-10-26 10:00", session: "b"),   // Monday
             sonnet("2026-10-27 10:00", session: "c"),   // Tuesday
+            opus("2026-09-01 10:00", session: "z"),     // history reaching back before the week
         ]
         let period = snapshot(events, range: .last7Days).period
         XCTAssertEqual(period.sessionsByWeekday, [1, 1, 0, 0, 0, 0, 1])
@@ -234,8 +283,9 @@ final class UsagePeriodTests: XCTestCase {
     }
 
     func testThisWeekKnowsWhichWeekdaysAreStillToCome() {
-        XCTAssertEqual(snapshot([], range: .thisWeek).period.weekdayDays, [1, 1, 1, 0, 0, 0, 0])
-        XCTAssertEqual(snapshot([], range: .last30Days).period.weekdayDays, [4, 5, 5, 4, 4, 4, 4])
+        let history = [opus("2026-09-01 10:00")]
+        XCTAssertEqual(snapshot(history, range: .thisWeek).period.weekdayDays, [1, 1, 1, 0, 0, 0, 0])
+        XCTAssertEqual(snapshot(history, range: .last30Days).period.weekdayDays, [4, 5, 5, 4, 4, 4, 4])
     }
 
     // MARK: Midnight DST

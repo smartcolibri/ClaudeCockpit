@@ -17,7 +17,7 @@ struct UsageCostTile: View {
                             .layoutPriority(1)
                         sparkline(usage.period.buckets)
                     }
-                    let delta = deltaCaption(usage)
+                    let delta = delta(usage)
                     TileCaption(text: delta.text, tint: delta.tint)
                     TileCaption(text: String(localized: "API rates, approximate"))
                 }
@@ -47,7 +47,7 @@ struct UsageCostTile: View {
         switch range {
         case .today: String(localized: "vs yesterday at this time")
         case .thisWeek: String(localized: "vs last week at this point")
-        case .thisMonth: String(localized: "vs last month at this point")
+        case .thisMonth: String(localized: "vs the same span of last month")
         case .prevMonth: String(localized: "vs the month before")
         case .last7Days: String(localized: "vs the previous 7 days")
         case .last30Days: String(localized: "vs the previous 30 days")
@@ -56,20 +56,38 @@ struct UsageCostTile: View {
         }
     }
 
-    private func deltaCaption(_ usage: UsageSnapshot) -> (text: String, tint: Color) {
-        guard let comparison = Self.comparison(usage.filters.range), let previous = usage.period.previousCostUSD else {
-            return (String(localized: "All recorded history"), Theme.slate)
+    /// The change against the previous period: the shown caption, what VoiceOver says
+    /// (words, not arrows) and its colour.
+    private func delta(_ usage: UsageSnapshot) -> (text: String, spoken: String, tint: Color) {
+        guard let comparison = Self.comparison(usage.filters.range) else {
+            let text = String(localized: "All recorded history")
+            return (text, text, Theme.slate)
         }
-        guard previous > 0 else { return (String(localized: "No spend in the previous period"), Theme.slate) }
-        let delta = (usage.totals.estimatedCostUSD - previous) / previous
-        // Arrows and the percentage are not words: the sentence is the comparison's.
-        return ("\(delta >= 0 ? "▲" : "▼") \(AppFormat.percent(abs(delta))) \(comparison)",
-                delta >= 0 ? .orange : Theme.emerald)
+        // Claude Code deletes old transcripts: a window the history does not reach is unknown.
+        guard let previous = usage.period.previousCostUSD else {
+            let text = String(localized: "Not enough history to compare")
+            return (text, text, Theme.slate)
+        }
+        guard previous > 0 else {
+            let text = String(localized: "No spend in the previous period")
+            return (text, text, Theme.slate)
+        }
+        let change = (usage.totals.estimatedCostUSD - previous) / previous
+        let percent = AppFormat.percent(abs(change))
+        // Under half a percent, a rounded "0 %" with an arrow would read as a trend.
+        guard abs(change) >= 0.005 else {
+            let text = String(localized: "No change \(comparison)", locale: AppFormat.locale)
+            return (text, text, Theme.slate)
+        }
+        // The arrow and the percentage are not words: the sentence is the comparison's.
+        return change > 0
+            ? ("▲ \(percent) \(comparison)", String(localized: "Up \(percent) \(comparison)", locale: AppFormat.locale), .orange)
+            : ("▼ \(percent) \(comparison)", String(localized: "Down \(percent) \(comparison)", locale: AppFormat.locale), Theme.emerald)
     }
 
     private var summary: String {
         guard let usage = store.usage else { return "" }
-        return [store.money(usage.totals.estimatedCostUSD), deltaCaption(usage).text].joined(separator: ", ")
+        return [store.money(usage.totals.estimatedCostUSD), delta(usage).spoken].joined(separator: ", ")
     }
 }
 
@@ -89,7 +107,7 @@ struct UsageSessionsTile: View {
     }
 
     private func captions(_ usage: UsageSnapshot) -> [String] {
-        let days = max(1, usage.period.elapsedDays)
+        let days = max(1, usage.period.coveredDays)
         return [
             String(localized: "\(AppFormat.decimal(Double(usage.totals.sessionCount) / Double(days))) per day", locale: AppFormat.locale),
             String(localized: "over \(days) days", locale: AppFormat.locale),
@@ -120,7 +138,7 @@ struct UsageTurnsTile: View {
     private func captions(_ usage: UsageSnapshot) -> [String] {
         let totals = usage.totals
         let perSession = totals.sessionCount > 0 ? Int((Double(totals.turnCount) / Double(totals.sessionCount)).rounded()) : 0
-        let perDay = Double(totals.turnCount) / Double(max(1, usage.period.elapsedDays))
+        let perDay = Double(totals.turnCount) / Double(max(1, usage.period.coveredDays))
         return [
             String(localized: "\(AppFormat.integer(perSession)) per session", locale: AppFormat.locale),
             // A tenth of a turn says nothing once there are a hundred a day.

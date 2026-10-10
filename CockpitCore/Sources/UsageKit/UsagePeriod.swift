@@ -40,6 +40,10 @@ public struct UsagePeriod: Hashable, Sendable {
     /// The start of each day of the period, oldest first, ending today at the latest. For
     /// `.all`, from the first filtered event; empty without one.
     public let days: [Date]
+    /// How many of `days` the scanned history covers. Claude Code deletes old transcripts, so
+    /// the history can start inside the period: the days before it are unknown, not idle, and
+    /// every per-day mean divides by this rather than by `days.count`.
+    public let coveredDays: Int
     public let granularity: Granularity
     public let buckets: [Bucket]
     /// Totals per hour of day (0...23) summed over the period.
@@ -47,15 +51,17 @@ public struct UsagePeriod: Hashable, Sendable {
     /// Sessions per weekday, Monday first. Each session counts once, on the day of its first
     /// turn in the period, so the counts add up to the Sessions figure.
     public let sessionsByWeekday: [Int]
-    /// How many of each weekday the period contains, Monday first: 0 for a weekday "this
+    /// How many of each weekday the covered days contain, Monday first: 0 for a weekday "this
     /// week" has not reached yet.
     public let weekdayDays: [Int]
     /// Cost of the previous period of equal length (see `DateRangeFilter.previousBounds`),
-    /// same model and project filters. `nil` for `.all`.
+    /// same model and project filters. `nil` for `.all`, and when the scanned history starts
+    /// more than a day after that window does: a comparison with unknown days means nothing.
     public let previousCostUSD: Double?
 
     public init(
         days: [Date],
+        coveredDays: Int,
         granularity: Granularity,
         buckets: [Bucket],
         hourly: [HourlyUsage],
@@ -64,6 +70,7 @@ public struct UsagePeriod: Hashable, Sendable {
         previousCostUSD: Double?
     ) {
         self.days = days
+        self.coveredDays = coveredDays
         self.granularity = granularity
         self.buckets = buckets
         self.hourly = hourly
@@ -73,25 +80,24 @@ public struct UsagePeriod: Hashable, Sendable {
     }
 
     public static let empty = UsagePeriod(
-        days: [], granularity: .day, buckets: [],
+        days: [], coveredDays: 0, granularity: .day, buckets: [],
         hourly: (0..<24).map { HourlyUsage(hour: $0) },
         sessionsByWeekday: Array(repeating: 0, count: 7),
         weekdayDays: Array(repeating: 0, count: 7),
         previousCostUSD: nil)
 
-    /// Hour bars for a single day, day bars up to two months, then weeks, then months.
-    public static func granularity(forDayCount count: Int) -> Granularity {
-        if count <= 1 { return .hour }
+    /// Hour bars for Today, day bars up to two months, then weeks, then months. Another range
+    /// on its first day ("this week" on a Monday) stays one daily bar.
+    public static func granularity(range: DateRangeFilter, dayCount count: Int) -> Granularity {
+        if range == .today { return .hour }
         if count <= maxDailyBuckets { return .day }
         if count <= maxWeeklyBuckets * 7 { return .week }
         return .month
     }
 
-    public var elapsedDays: Int { days.count }
-
-    /// Mean cost per hour of day over the period's days, idle days counted as zero.
+    /// Mean cost per hour of day over the covered days, idle days counted as zero.
     public var meanCostPerHour: [Double] {
-        let count = Double(max(1, elapsedDays))
+        let count = Double(max(1, coveredDays))
         return hourly.map { $0.estimatedCostUSD / count }
     }
 
@@ -120,9 +126,11 @@ public struct UsagePeriod: Hashable, Sendable {
 extension UsageAggregator {
     /// The period series for `ranged` (filtered, range applied, oldest first). `unranged`
     /// carries the same model and project filters without the range, for the previous period.
+    /// `horizon` is the first scanned event whatever the filters: where the history starts.
     static func period(
         ranged: [UsageEvent],
         unranged: [UsageEvent],
+        horizon: Date?,
         range: DateRangeFilter,
         pricing: PricingSettings,
         now: Date,
@@ -149,11 +157,13 @@ extension UsageAggregator {
         // Monday = 0 … Sunday = 6, whatever the calendar's first weekday.
         func weekdayIndex(_ date: Date) -> Int { (calendar.component(.weekday, from: date) + 5) % 7 }
 
+        let horizonDay = horizon.map(calendar.startOfDay(for:))
+        let covered = horizonDay.map { start in days.filter { $0 >= start } } ?? []
         var weekdayDays = Array(repeating: 0, count: 7)
-        for day in days { weekdayDays[weekdayIndex(day)] += 1 }
+        for day in covered { weekdayDays[weekdayIndex(day)] += 1 }
 
         // Buckets, and where each day (or hour) falls.
-        let granularity = UsagePeriod.granularity(forDayCount: days.count)
+        let granularity = UsagePeriod.granularity(range: range, dayCount: days.count)
         var starts: [Date] = []
         var bucketOfDay: [Date: Int] = [:]
         switch granularity {
@@ -195,9 +205,11 @@ extension UsageAggregator {
             let family = ModelFamily.detect(from: event.model)
             let cost = pricing.pricing(for: family).cost(for: event)
             let index: Int?
-            if granularity == .hour {
-                let hourStart = calendar.dateInterval(of: .hour, for: event.timestamp)?.start ?? event.timestamp
-                index = starts.lastIndex { $0 <= hourStart }
+            if granularity == .hour, let first = starts.first {
+                // Hour buckets are whole-hour steps from midnight, so the offset is the index
+                // (a 25-hour day has 25 of them).
+                let offset = Int(event.timestamp.timeIntervalSince(first) / 3600)
+                index = starts.indices.contains(offset) ? offset : nil
             } else {
                 index = bucketOfDay[calendar.startOfDay(for: event.timestamp)]
             }
@@ -221,14 +233,20 @@ extension UsageAggregator {
         }
         for index in buckets.indices { buckets[index].sessionCount = bucketSessions[index].count }
 
-        let previousCost = range.previousBounds(now: now, calendar: calendar).map { window in
-            PricingCalculator.estimatedCostUSD(
+        // A day of tolerance: history that starts on the window's first day still covers it.
+        let previousCost = range.previousBounds(now: now, calendar: calendar).flatMap { window -> Double? in
+            guard let horizon,
+                  let latestStart = calendar.date(byAdding: .day, value: 1, to: window.start),
+                  horizon < latestStart
+            else { return nil }
+            return PricingCalculator.estimatedCostUSD(
                 for: unranged.filter { $0.timestamp >= window.start && $0.timestamp < window.end },
                 pricing: pricing)
         }
 
         return UsagePeriod(
             days: days,
+            coveredDays: covered.count,
             granularity: granularity,
             buckets: buckets,
             hourly: hourly,

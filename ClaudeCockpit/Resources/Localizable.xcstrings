@@ -9625,22 +9625,6 @@
         }
       }
     },
-    "vs last month at this point" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vs last month at this point"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "vs le mois dernier au même stade"
-          }
-        }
-      }
-    },
     "vs last week at this point" : {
       "localizations" : {
         "en" : {
@@ -9733,6 +9717,102 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "vs hier à la même heure"
+          }
+        }
+      }
+    },
+    "vs the same span of last month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs the same span of last month"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs la même durée le mois dernier"
+          }
+        }
+      }
+    },
+    "Not enough history to compare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not enough history to compare"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas assez d'historique pour comparer"
+          }
+        }
+      }
+    },
+    "No change %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No change %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans changement %@"
+          }
+        }
+      }
+    },
+    "Up %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %1$@ %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En hausse de %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Down %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Down %1$@ %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En baisse de %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Tokens: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens : %@"
           }
         }
       }

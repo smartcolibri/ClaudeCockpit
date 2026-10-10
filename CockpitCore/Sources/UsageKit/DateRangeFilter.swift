@@ -55,10 +55,11 @@ public enum DateRangeFilter: String, CaseIterable, Identifiable, Codable, Hashab
     }
 
     /// The window this range is compared with: the same length just before it, ending at the
-    /// same point. An open range (today, this week, this month, N days) ends at `now`, so its
-    /// previous window ends at `now` moved back by the same calendar step, wall-clock time
-    /// kept across a DST switch and clamped to the range's own start; the previous month is
-    /// the whole month before. `nil` for `.all`, which has nothing before it.
+    /// same point. Today, this week and N days end at `now`, so their previous window ends at
+    /// `now` moved back by the same calendar step, wall-clock time kept across a DST switch.
+    /// This month compares the same elapsed duration from the previous month's start, capped
+    /// at that month's end; the previous month is the whole month before. `nil` for `.all`,
+    /// which has nothing before it.
     public func previousBounds(
         now: Date = Date(),
         calendar: Calendar = .current
@@ -75,11 +76,15 @@ public enum DateRangeFilter: String, CaseIterable, Identifiable, Codable, Hashab
         case .last90Days: step = DateComponents(day: -90)
         case .all: return nil
         }
-        guard let previousStart = calendar.date(byAdding: step, to: start),
-              // Only the previous month is closed; today's own end (tomorrow) is not reached yet.
-              let previousEnd = calendar.date(byAdding: step, to: self == .prevMonth ? (end ?? now) : now)
-        else { return nil }
-        return (calendar.startOfDay(for: previousStart), min(previousEnd, start))
+        guard let previousStart = calendar.date(byAdding: step, to: start).map(calendar.startOfDay(for:)) else { return nil }
+        if self == .thisMonth {
+            // Months differ in length: the same elapsed duration from the previous month's
+            // start, never past that month's end.
+            return (previousStart, min(previousStart.addingTimeInterval(now.timeIntervalSince(start)), start))
+        }
+        // Only the previous month is closed; today's own end (tomorrow) is not reached yet.
+        guard let previousEnd = calendar.date(byAdding: step, to: self == .prevMonth ? (end ?? now) : now) else { return nil }
+        return (previousStart, min(previousEnd, start))
     }
 
     /// Whether `date` falls inside this range.

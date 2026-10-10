@@ -133,7 +133,8 @@ public enum UsageAggregator {
             sessionsThisWeekUnfilteredTotal: sessionsThisWeekUnfiltered,
             sessionsLastWeekUnfilteredTotal: sessionsLastWeekUnfiltered,
             overview: precomputed ?? overview(events: scannedEvents, pricing: pricing, now: now, calendar: calendar, home: home),
-            period: period(ranged: filtered, unranged: unranged, range: filters.range, pricing: pricing, now: now, calendar: calendar),
+            period: period(ranged: filtered, unranged: unranged, horizon: allEvents.lazy.map(\.timestamp).min(),
+                           range: filters.range, pricing: pricing, now: now, calendar: calendar),
             availableProjects: availableProjects,
             availableModelFamilies: availableModelFamilies)
     }

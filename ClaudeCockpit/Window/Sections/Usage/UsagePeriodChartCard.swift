@@ -180,7 +180,7 @@ struct UsagePeriodChartCard: View {
                 bucket.costByFamily[family].map { "\(family.label) \(store.money($0))" }
             }
         case .tokens:
-            [String(localized: "\(AppFormat.tokens(bucket.totalTokens)) tokens", locale: AppFormat.locale)]
+            [String(localized: "Tokens: \(AppFormat.tokens(bucket.totalTokens))", locale: AppFormat.locale)]
                 + UsageSeries.allCases.map { "\($0.displayName) \(AppFormat.tokens(bucket.tokens($0)))" }
         }
         return [head] + detail + [String(localized: "\(bucket.sessionCount) sessions", locale: AppFormat.locale)]
