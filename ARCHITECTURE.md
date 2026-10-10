@@ -430,15 +430,22 @@ le français est livré comme traduction et toute autre langue retombe sur l'ang
   passé, il renvoie une valeur et l'app la formule : `HealthEvidence` pour la note de santé,
   `Insight.Kind`, `DateRangeFilter`. QuotaKit n'est pas lié à l'app et reste en français.
 - **`AppFormat`** (CockpitShared) formate nombres, montants, pourcentages, dates, durées et temps
-  relatifs dans `AppFormat.locale` : la langue résolue par l'app (`Bundle.main.preferredLocalizations`)
-  avec la région de l'utilisateur, si bien que l'anglais sur un Mac français donne `en_FR`
-  (« US$0,36 », « 10 Oct »). Chaque fonction prend une locale explicite, que les tests fixent. Ses
+  relatifs dans `AppFormat.locale` : la locale de formatage de la langue résolue par l'app
+  (`Bundle.main.preferredLocalizations`), quelle que soit la région du Mac — l'anglais donne `en_US`
+  (« $0.36 », « Oct 10 », « 1,234 »), le français `fr_FR` (« 0,36 $US », « 10 oct. », « 1 234 »).
+  Chaque fonction prend une locale explicite, que les tests fixent. Ses
   quelques mots (« à l'instant », « 2 h 05 ») dépendent de la langue de la locale et non d'un
   catalogue, car un catalogue suit la langue du processus et ne pourrait pas être fixé.
 - **`SessionExporter`** écrit dans la langue de l'app : il cherche ses mots dans le `<langue>.lproj`
   du module pour la locale (`Bundle.localization(for:)`) et renseigne `<html lang>`.
 - `ContentBlock.truncationMarker` est stocké et comparé dans `sessions.db`, il reste donc tel quel ;
-  la vue du transcript le remplace par le mot localisé.
+  la vue du transcript le remplace par le mot localisé. Le `snippet()` FTS encadre les
+  correspondances de caractères à usage privé, que la liste remplace par les guillemets de la locale.
+- Les nombres des chaînes au pluriel sont formatés par la locale passée à
+  `String(localized:…, locale:)` (`AppFormat.locale` dans l'app), si bien que « 1,234 turns » /
+  « 1 234 tours » gardent leurs séparateurs.
+- L'export écrit les durées en toutes lettres (« 2 h 10 min » / « 2h 10 min »), contrairement à la
+  forme compacte de l'app.
 - Les racines de scène et le panneau du mode snapshot fixent `.environment(\.locale, AppFormat.locale)`
   pour que les graphiques et les interpolations de `LocalizedStringKey` suivent la même locale.
 - `Scripts/check-l10n.py`, lancé après un build Debug, compare chaque catalogue aux clés extraites par

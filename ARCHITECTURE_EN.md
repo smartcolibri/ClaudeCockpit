@@ -397,15 +397,20 @@ French ships as a translation and any other language falls back to English.
   value and the app words it: `HealthEvidence` for the health grade, `Insight.Kind`,
   `DateRangeFilter`. QuotaKit is not linked into the app and stays French.
 - **`AppFormat`** (CockpitShared) formats numbers, money, percentages, dates, durations and
-  relative times in `AppFormat.locale`: the language the app resolved
-  (`Bundle.main.preferredLocalizations`) with the user's region, so English on a French Mac is
-  `en_FR` ("US$0,36", "10 Oct"). Every function takes an explicit locale, which tests pin. Its few
+  relative times in `AppFormat.locale`: the formatting locale of the language the app resolved
+  (`Bundle.main.preferredLocalizations`), whatever the Mac's region — English is `en_US`
+  ("$0.36", "Oct 10", "1,234"), French `fr_FR` ("0,36 $US", "10 oct.", "1 234"). Every function
+  takes an explicit locale, which tests pin. Its few
   words ("just now", "2 h 05") switch on the locale's language rather than on a catalog, because
   a catalog follows the process language and could not be pinned.
 - **`SessionExporter`** writes in the app's language: it looks its words up in the module's
   `<language>.lproj` for the locale (`Bundle.localization(for:)`) and sets `<html lang>`.
 - `ContentBlock.truncationMarker` is stored and matched in `sessions.db`, so it stays as it is;
-  the transcript view swaps it for the localised word.
+  the transcript view swaps it for the localised word. FTS `snippet()` marks matches with
+  private-use characters, which the list replaces with the locale's quotes.
+- Counts in plural strings are formatted by the locale passed to `String(localized:…, locale:)`
+  (`AppFormat.locale` in the app), so "1,234 turns" / "1 234 tours" keep their grouping.
+- The export spells durations out ("2 h 10 min" / "2h 10 min"), unlike the compact in-app form.
 - The scene roots and the snapshot panel set `.environment(\.locale, AppFormat.locale)` so
   charts and `LocalizedStringKey` interpolations follow the same locale.
 - `Scripts/check-l10n.py`, run after a Debug build, compares each catalog with the keys the
