@@ -218,6 +218,12 @@ extension CockpitStore {
     /// behalf, so the app hands over the command instead of running it. The flag
     /// was checked against the installed binary before being wired here.
     func resumeSession(_ session: SessionRef) {
+        // A sample session has nothing to resume: copying the command would hand the
+        // reviewer one that fails in a terminal.
+        guard !isDemo else {
+            notice = "Mode démo : les sessions d'exemple ne peuvent pas être reprises dans Claude Code."
+            return
+        }
         guard canResume(session) else {
             notice = "Dossier de travail inconnu pour cette session."
             return
