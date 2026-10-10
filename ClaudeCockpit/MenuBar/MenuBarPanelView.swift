@@ -98,36 +98,36 @@ struct MenuBarPanelView: View {
 
     private var todaySection: some View {
         DisclosureCard(
-            title: "Aujourd'hui",
+            title: String(localized: "Today"),
             icon: "text.alignleft",
             iconColor: Theme.violet,
             expanded: $showToday
         ) {
             if let usage = store.usage {
-                InfoRow(label: "Coût local du jour", value: store.money(usage.costTodayUnfilteredUSD), tint: Theme.blue)
+                InfoRow(label: String(localized: "Local cost today"), value: store.money(usage.costTodayUnfilteredUSD), tint: Theme.blue)
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Tokens du jour", value: AppFormat.tokens(usage.tokensTodayUnfiltered),
-                    note: "entrée + sortie + cache, tous modèles confondus")
+                    label: String(localized: "Tokens today"), value: AppFormat.tokens(usage.tokensTodayUnfiltered),
+                    note: String(localized: "input + output + cache, all models"))
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Sessions cette semaine", value: AppFormat.integer(usage.sessionsThisWeekUnfilteredTotal),
-                    note: "\(AppFormat.integer(usage.sessionsLastWeekUnfilteredTotal)) la semaine précédente")
+                    label: String(localized: "Sessions this week"), value: AppFormat.integer(usage.sessionsThisWeekUnfilteredTotal),
+                    note: String(localized: "\(AppFormat.integer(usage.sessionsLastWeekUnfilteredTotal)) last week"))
             } else if store.usageState.isUnauthorized {
-                AccessRequiredBanner(message: "ouvrez le cockpit pour autoriser la lecture de vos transcripts.")
+                AccessRequiredBanner(message: String(localized: "open the cockpit to allow reading your transcripts."))
                     .padding(.vertical, 6)
             } else if let message = store.usageState.errorMessage {
                 SourceBanner(kind: .error, message: message, action: { Task { await store.refreshUsage() } })
                     .padding(.vertical, 6)
             } else {
-                InfoRow(label: "Lecture des transcripts", value: "en cours…")
+                InfoRow(label: String(localized: "Reading transcripts"), value: String(localized: "in progress…"))
             }
         }
     }
 
     private var savingsSection: some View {
         DisclosureCard(
-            title: "Économies RTK",
+            title: String(localized: "RTK Savings"),
             icon: "scissors",
             iconColor: Theme.emerald,
             expanded: $showSavings
@@ -135,25 +135,25 @@ struct MenuBarPanelView: View {
             if let rtk = store.rtk {
                 let week = rtk.last7Days.reduce(0) { $0 + $1.savedTokens }
                 InfoRow(
-                    label: "Tokens économisés aujourd'hui", value: AppFormat.tokens(rtk.today.savedTokens),
+                    label: String(localized: "Tokens saved today"), value: AppFormat.tokens(rtk.today.savedTokens),
                     tint: Theme.emerald,
-                    note: "\(AppFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) de \(AppFormat.tokens(rtk.today.inputTokens)) tokens, sur \(AppFormat.integer(rtk.today.count)) commandes filtrées")
+                    note: String(localized: "\(AppFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) of \(AppFormat.tokens(rtk.today.inputTokens)) tokens, across \(AppFormat.integer(rtk.today.count)) filtered commands"))
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Sur 7 jours", value: AppFormat.tokens(week),
-                    note: "cumul des sept derniers jours")
+                    label: String(localized: "Last 7 days"), value: AppFormat.tokens(week),
+                    note: String(localized: "total over the last seven days"))
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Depuis l'installation", value: AppFormat.tokens(rtk.allTime.savedTokens),
-                    note: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) économisés sur \(AppFormat.integer(rtk.allTime.count)) commandes")
+                    label: String(localized: "Since install"), value: AppFormat.tokens(rtk.allTime.savedTokens),
+                    note: String(localized: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) saved across \(AppFormat.integer(rtk.allTime.count)) commands"))
             } else if store.rtkState.isUnauthorized {
                 InfoRow(
-                    label: "Économies rtk", value: "accès non autorisé",
-                    note: "base RTK hors des dossiers autorisés (Réglages › Accès)")
+                    label: String(localized: "rtk savings"), value: String(localized: "access not granted"),
+                    note: String(localized: "RTK database outside the allowed folders (Settings › Access)"))
             } else {
                 InfoRow(
-                    label: "Économies rtk", value: "aucune donnée",
-                    note: "rtk n'a encore rien enregistré")
+                    label: String(localized: "rtk savings"), value: String(localized: "no data"),
+                    note: String(localized: "rtk has not recorded anything yet"))
             }
         }
     }
@@ -167,8 +167,8 @@ struct MenuBarPanelView: View {
             } label: {
                 ActionRow(
                     icon: "macwindow", iconColor: Theme.accent,
-                    title: "Ouvrir le cockpit",
-                    subtitle: "Usage, sessions, RTK et skills")
+                    title: String(localized: "Open Cockpit"),
+                    subtitle: String(localized: "Usage, sessions, RTK and skills"))
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -186,7 +186,7 @@ struct MenuBarPanelView: View {
             } label: {
                 ActionRow(
                     icon: "arrow.clockwise", iconColor: Theme.blue,
-                    title: isRefreshing ? "Actualisation en cours…" : "Rafraîchir",
+                    title: isRefreshing ? String(localized: "Refreshing…") : String(localized: "Refresh"),
                     subtitle: refreshSubtitle
                 ) {
                     if isRefreshing { ProgressView().controlSize(.small) }
@@ -201,7 +201,7 @@ struct MenuBarPanelView: View {
             Button {
                 NSApplication.shared.terminate(nil)
             } label: {
-                ActionRow(icon: "xmark.circle", iconColor: .red, title: "Quitter")
+                ActionRow(icon: "xmark.circle", iconColor: .red, title: String(localized: "Quit"))
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -213,7 +213,7 @@ struct MenuBarPanelView: View {
 
     /// Says when the transcripts were last read.
     private var refreshSubtitle: String {
-        guard let scanned = store.usageLastScan else { return "Transcripts jamais lus" }
-        return "Transcripts lus \(AppFormat.relative(scanned, now: now))"
+        guard let scanned = store.usageLastScan else { return String(localized: "Transcripts never read") }
+        return String(localized: "Transcripts read \(AppFormat.relative(scanned, now: now))")
     }
 }
