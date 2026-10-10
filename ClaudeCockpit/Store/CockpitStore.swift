@@ -181,10 +181,12 @@ final class CockpitStore {
     var claudeAccess: Bool { access.covers(paths.claudeDir) }
     /// The whole home is readable: skills linked outside `~/.claude` resolve.
     var homeAccess: Bool { access.covers(paths.home) }
-    /// rtk's database can be read: the chosen one, or any automatic candidate.
+    /// rtk's database can be read: the chosen one, or any automatic candidate. Always through
+    /// its folder: rtk runs SQLite in WAL mode, and a grant on `history.db` alone would read
+    /// the main file without its `-wal` journal, i.e. stale data shown as current.
     var rtkAccess: Bool {
         if let override = Self.rtkOverride(paths: paths) {
-            return access.covers(override.deletingLastPathComponent()) || access.covers(override)
+            return access.covers(override.deletingLastPathComponent())
         }
         return paths.rtkDatabaseCandidates.contains { access.covers($0.deletingLastPathComponent()) }
     }
@@ -246,11 +248,15 @@ final class CockpitStore {
     }
 
     /// Stores a grant for a URL just picked in an open panel; a failure becomes a notice.
-    func grant(_ url: URL) {
+    /// Returns whether it was stored, in which case `accessDidChange` already ran.
+    @discardableResult
+    func grant(_ url: URL) -> Bool {
         do {
             try access.add(url)
+            return true
         } catch {
             notice = "Impossible d'enregistrer l'accès : \(error.localizedDescription)"
+            return false
         }
     }
 
@@ -278,14 +284,16 @@ final class CockpitStore {
             Task { await service.setPaths(fresh) }
             skillsStore = ResourceStore(paths: fresh)
             sessions = []
+            // Another archive: what is on screen no longer describes it. Otherwise the current
+            // snapshots stay up while the sources reload, so the menu bar does not flash "–".
+            usage = nil
+            skills = nil
         }
-        usage = nil
-        skills = nil
         guard loopsStarted else { return }
         Task { await refreshUsage() }
         startSessionsWatch()
         startSkillsWatch()
-        rtkPathDidChange()
+        rtkPathDidChange(keepSnapshot: true)
     }
 
     // MARK: Loops
@@ -486,14 +494,16 @@ final class CockpitStore {
     }
 
     /// Re-resolves the rtk database after the user changed the path setting.
-    func rtkPathDidChange() {
+    /// - Parameter keepSnapshot: keeps the figures on screen until the reload replaces them,
+    ///   for a grant change that leaves the database where it was.
+    func rtkPathDidChange(keepSnapshot: Bool = false) {
         // Cancel before stopping the old service: `stop()` finishes its stream, and the
         // loop must not race a refresh against the service it is about to lose.
         rtkWatchTask?.cancel()
         rtkWatchTask = nil
         rtkService.stop()
         rtkService = RTKService(paths: paths, overridePath: Self.rtkOverride(paths: paths))
-        rtk = nil
+        if !keepSnapshot { rtk = nil }
         // Refreshes once and re-subscribes, this time to the new service.
         startRTKWatch()
     }

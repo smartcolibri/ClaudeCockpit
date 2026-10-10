@@ -231,9 +231,10 @@ private struct RTKSettingsTab: View {
     }
 
     /// Picks `history.db` or the folder holding it. Under the sandbox the choice is kept
-    /// as a bookmark when no grant covers it, and on the **folder**: rtk runs SQLite in WAL
-    /// mode, so reading needs the `-wal`/`-shm` siblings, and `rtk reset` recreates the file,
-    /// which a bookmark on the file alone would not survive.
+    /// as a bookmark when no grant covers it, and always on the **folder**: rtk runs SQLite in
+    /// WAL mode, so reading needs the `-wal`/`-shm` siblings, and `rtk reset` recreates the
+    /// file, which a bookmark on the file alone would not survive. Without the folder nothing
+    /// is stored: the file alone would show stale data as if it were current.
     private func chooseDatabase() {
         let start = store.rtkDatabaseURL?.deletingLastPathComponent()
             ?? store.paths.home.appendingPathComponent("Library/Application Support/rtk", isDirectory: true)
@@ -246,18 +247,26 @@ private struct RTKSettingsTab: View {
         let pickedFolder = FileManager.default.fileExists(atPath: picked.path, isDirectory: &isDir) && isDir.boolValue
         let folder = pickedFolder ? picked : picked.deletingLastPathComponent()
         let database = pickedFolder ? picked.appendingPathComponent("history.db") : picked
-        if !store.isCovered(folder) {
-            if pickedFolder {
-                store.grant(folder)
-            } else if store.grantFolder(
-                startingAt: folder,
-                message: "Autorisez aussi le dossier de la base : SQLite y lit son journal (-wal).") == nil {
-                // Without the folder the file alone still reads, minus what sits in the journal.
-                store.grant(picked)
-            }
+        if store.isCovered(folder) {
+            rtkPath = database.path
+            store.rtkPathDidChange()
+            return
         }
+        var grantTarget = folder
+        if !pickedFolder {
+            guard let confirmed = store.access.runPanel(
+                directory: folder,
+                message: "Autorisez aussi le dossier de la base : SQLite y lit son journal (-wal)."),
+                AccessCoverage.isPath(folder.path, inside: confirmed.path)
+            else {
+                store.notice = "Base RTK non enregistrée : l'accès au dossier \(store.displayPath(folder)) est nécessaire, car SQLite y lit son journal (-wal). Sans lui, les chiffres affichés seraient périmés."
+                return
+            }
+            grantTarget = confirmed
+        }
+        // Set before granting: the reload the grant triggers then already reads this database.
         rtkPath = database.path
-        store.rtkPathDidChange()
+        if !store.grant(grantTarget) { store.rtkPathDidChange() }
     }
 }
 
