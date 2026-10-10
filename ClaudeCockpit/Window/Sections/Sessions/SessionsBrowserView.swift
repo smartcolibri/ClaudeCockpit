@@ -175,19 +175,28 @@ struct SessionsBrowserView: View {
             ForEach(Period.allCases) { value in
                 Button(value.title) {
                     period = value
+                    // Also leaves a single day picked from the Overview's activity grid.
                     store.sessionFilter.since = value.since(Date())
+                    store.sessionFilter.until = nil
                 }
             }
         } label: {
             SessionChip(
-                title: period.title,
+                title: dayFilterTitle ?? period.title,
                 systemImage: "calendar",
-                active: period != .all,
+                active: dayFilterTitle != nil || period != .all,
                 tint: Theme.blue)
         }
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
+    }
+
+    /// The day the Overview's activity grid opened the browser on: a bounded filter no
+    /// period of the menu describes, so the chip names it instead.
+    private var dayFilterTitle: String? {
+        guard store.sessionFilter.until != nil, let since = store.sessionFilter.since else { return nil }
+        return AppFormat.shortDate(since)
     }
 
     // MARK: - Search

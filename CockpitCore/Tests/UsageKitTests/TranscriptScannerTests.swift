@@ -306,6 +306,27 @@ final class TranscriptScannerTests: XCTestCase {
         XCTAssertGreaterThan(warmResult.bytesRead, 0, "tout est relu depuis les transcripts")
     }
 
+    /// The overview ignores the filters, so a filter change reuses it; a new refresh, another
+    /// pricing or another day computes it again.
+    func testServiceReusesTheOverviewAcrossFilterChanges() async throws {
+        let service = UsageService(paths: fixture.paths)
+        try await service.refresh()
+        let now = Date()
+        let first = await service.snapshot(filters: UsageFilters(range: .all), now: now)
+        let second = await service.snapshot(filters: UsageFilters(range: .today), now: now.addingTimeInterval(5))
+        XCTAssertEqual(first.overview, second.overview)
+        var computed = await service.overviewComputations
+        XCTAssertEqual(computed, 1)
+
+        var pricing = PricingSettings.default
+        pricing.sonnet = ModelPricing(inputPerMTok: 1, outputPerMTok: 1, cacheWritePerMTok: 1, cacheReadPerMTok: 1)
+        _ = await service.snapshot(pricing: pricing, now: now)
+        try await service.refresh()
+        _ = await service.snapshot(pricing: pricing, now: now)
+        computed = await service.overviewComputations
+        XCTAssertEqual(computed, 3)
+    }
+
     func testServiceRefreshReturnsEventsAndFailsOnMissingProjectsDir() async throws {
         let service = UsageService(paths: fixture.paths)
         let events = try await service.refresh()

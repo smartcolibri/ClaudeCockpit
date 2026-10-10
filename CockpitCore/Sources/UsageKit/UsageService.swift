@@ -27,6 +27,18 @@ public actor UsageService {
     /// When the last successful `refresh()` completed.
     public private(set) var lastRefreshedAt: Date?
 
+    /// The overview ignores the filters, so a filter change must not recompute it: it is kept
+    /// until a refresh, a pricing change or a new day.
+    private struct OverviewKey: Equatable {
+        let refreshedAt: Date?
+        let eventCount: Int
+        let pricing: PricingSettings
+        let day: Date
+    }
+    private var overviewCache: (key: OverviewKey, value: UsageOverview)?
+    /// How many times the overview was computed — for tests.
+    private(set) var overviewComputations = 0
+
     public init(paths: ClaudePaths = .live) {
         self.paths = paths
         self.scanner = TranscriptScanner(paths: paths)
@@ -65,12 +77,24 @@ public actor UsageService {
         pricing: PricingSettings = .default,
         now: Date = Date()
     ) -> UsageSnapshot {
-        UsageAggregator.snapshot(
+        let key = OverviewKey(
+            refreshedAt: lastRefreshedAt, eventCount: lastEvents.count, pricing: pricing,
+            day: Calendar.current.startOfDay(for: now))
+        let overview: UsageOverview
+        if let cached = overviewCache, cached.key == key {
+            overview = cached.value
+        } else {
+            overview = UsageAggregator.overview(events: lastEvents, pricing: pricing, now: now, home: paths.home)
+            overviewComputations += 1
+            overviewCache = (key, overview)
+        }
+        return UsageAggregator.snapshot(
             events: lastEvents,
             sessionInfo: lastSessionInfo,
             filters: filters,
             pricing: pricing,
             now: now,
-            home: paths.home)
+            home: paths.home,
+            overview: overview)
     }
 }

@@ -16,6 +16,13 @@ enum SnapshotRunner {
 
     static func runIfRequested(store: CockpitStore, select: @escaping (CockpitSection) -> Void) async {
         guard let dir = requestedDirectory else { return }
+        // `CLAUDECOCKPIT_SNAPSHOT_APPEARANCE=light|dark` pins the appearance, so both themes
+        // can be captured whatever the Mac is set to.
+        switch ProcessInfo.processInfo.environment["CLAUDECOCKPIT_SNAPSHOT_APPEARANCE"] {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         // Let the data sources settle (transcripts, rtk, skills).
         try? await Task.sleep(for: .seconds(8))

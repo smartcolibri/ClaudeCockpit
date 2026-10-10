@@ -4,10 +4,10 @@
 //
 //  Writes ClaudeCockpit/Resources/Demo/: a manifest naming the anchor instant and the sample
 //  home `/Users/demo` (the seeder points those paths at the demo copy), and a fictional home
-//  holding Claude Code transcripts (three projects, eight sessions with
-//  sub-agents, edits, titles and costs), skills / agents / commands at every level, a
-//  plugin, and an rtk history.db over seven UTC days. Everything is invented and in
-//  English; no path or name comes from a real machine.
+//  holding Claude Code transcripts (three projects, eight detailed sessions with
+//  sub-agents, edits, titles and costs, plus short ones over twelve weeks), skills /
+//  agents / commands at every level, a plugin, and an rtk history.db over seven UTC days.
+//  Everything is invented and in English; no path or name comes from a real machine.
 //
 //  Timestamps are written against a fixed anchor; `DemoSeeder` moves them next to the
 //  current date when the demo starts. Directories that start with a dot are written as
@@ -568,6 +568,81 @@ do {
     s.title("CI on pull requests")
     s.costState()
     s.save()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MARK: - Background activity
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Short sessions over the twelve weeks before the anchor (and a few earlier today), so the
+// Overview's activity grid and 30-day charts have a history to show: busier on weekdays,
+// the odd weekend, mostly Sonnet, now and then a failing command. The weekday pattern is
+// written against the anchor (a Wednesday); the seeder keeps day offsets, not weekdays, so
+// once seeded the busy days shift with the current weekday.
+do {
+    /// A linear congruential generator: the same numbers on every run.
+    var state: UInt64 = 0x5EED_2026_0318
+    func roll(_ bound: Int) -> Int {
+        state = state &* 6_364_136_223_846_793_005 &+ 1_442_695_040_888_963_407
+        return Int((state >> 33) % UInt64(bound))
+    }
+
+    let prompts: [(Project, String, String)] = [
+        (weather, "Tidy up the forecast view model and drop the unused properties.", "Clean up forecast view model"),
+        (weather, "Why does the radar map flicker when it reloads?", "Fix radar map flicker"),
+        (weather, "Add a unit test for the wind direction formatter.", "Test wind direction formatter"),
+        (weather, "Localise the precipitation labels.", "Localise precipitation labels"),
+        (notes, "Add an index on notes.created_at and check the query plan.", "Index notes by creation date"),
+        (notes, "Return 404 instead of 500 when a note does not exist.", "Return 404 for missing notes"),
+        (notes, "Write the OpenAPI description for the tags endpoints.", "Document tags endpoints"),
+        (notes, "Bump the Go toolchain and fix what breaks.", "Bump Go toolchain"),
+        (site, "Compress the hero images on the home page.", "Compress hero images"),
+        (site, "Fix the broken links reported by the crawler.", "Fix broken links"),
+        (site, "Add Open Graph tags to the blog posts.", "Open Graph tags for posts"),
+        (site, "Make the navigation usable with the keyboard.", "Keyboard navigation"),
+    ]
+
+    func lightSession(day: Int, index: Int, start: Date, prompt pick: Int? = nil) -> Session {
+        let (project, prompt, title) = prompts[pick ?? roll(prompts.count)]
+        let pick = roll(100)
+        let model = pick < 55 ? sonnet : pick < 85 ? opus : haiku
+        let id = String(format: "b%07x-%04x-4%03x-8%03x-%012x", 0xA0_0000 + (-day), index, roll(4096), roll(4096), roll(1 << 30))
+        let s = Session(id: id, project: project, model: model, start: start)
+        s.user(prompt, after: 0)
+        let turns = 2 + roll(3)
+        for turn in 0..<turns {
+            if turn == 1 && roll(10) < 3 {
+                let (call, callId) = s.tool("Bash", ["command": "make test", "description": "Run the tests"])
+                s.assistant([call], output: 60 + roll(80), cacheRead: 8_000 + roll(20_000), cacheWrite: 300 + roll(1_200))
+                // One run in six fails: some days end with a session in error.
+                let fails = roll(6) == 0
+                s.toolResult(callId, fails ? "FAIL: 1 test failed" : "ok, all tests passed", isError: fails, after: 20)
+            }
+            s.assistant([s.text(turn == turns - 1 ? "Done." : "Working on it.")],
+                        output: 200 + roll(700), cacheRead: 8_000 + roll(24_000), cacheWrite: 800 + roll(5_000))
+        }
+        s.title(title)
+        s.costState()
+        return s
+    }
+
+    for day in stride(from: -83, through: -1, by: 1) {
+        // Monday = 1 … Sunday = 7, counted from the anchor's Wednesday.
+        let weekday = ((2 + day) % 7 + 7) % 7 + 1
+        let count = weekday >= 6 ? (roll(10) < 3 ? 1 : 0) : 1 + roll(4)
+        for index in 0..<count {
+            let minutes = 8 * 60 + roll(11 * 60)
+            let light = lightSession(day: day, index: index, start: at(day: day, String(format: "%02d:%02d", minutes / 60, minutes % 60)))
+            light.save()
+        }
+    }
+
+    // Today: three more short sessions between the two longer ones, all before the anchor.
+    for (index, (time, prompt)) in [("10:05", 0), ("11:20", 5), ("14:40", 9)].enumerated() {
+        let session = lightSession(day: 0, index: index, start: at(day: 0, time), prompt: prompt)
+        checkToday(session)
+        session.save()
+    }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

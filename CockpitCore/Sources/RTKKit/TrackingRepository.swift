@@ -241,11 +241,12 @@ extension TrackingRepository {
             let lastDay = UTCDay.start(of: now)
             let firstDay = lastDay.addingTimeInterval(-86_400 * Double(days - 1))
 
-            var buckets: [String: (saved: Int, count: Int)] = [:]
+            var buckets: [String: (saved: Int, count: Int, input: Int)] = [:]
             let sql = """
                 SELECT substr(timestamp, 1, 10) AS day,
                        COALESCE(SUM(saved_tokens), 0),
-                       COUNT(*)
+                       COUNT(*),
+                       COALESCE(SUM(input_tokens), 0)
                 FROM commands
                 WHERE timestamp >= ?
                 GROUP BY day
@@ -253,7 +254,7 @@ extension TrackingRepository {
             do {
                 for row in try db.prepare(sql, UTCDay.lowerBound(firstDay)) {
                     guard let day = row[0] as? String else { continue }
-                    buckets[day] = (saved: Self.int(row[1]), count: Self.int(row[2]))
+                    buckets[day] = (saved: Self.int(row[1]), count: Self.int(row[2]), input: Self.int(row[3]))
                 }
             } catch {
                 throw RTKError.sqlite(error.localizedDescription)
@@ -261,8 +262,8 @@ extension TrackingRepository {
 
             return (0..<days).map { offset in
                 let date = firstDay.addingTimeInterval(86_400 * Double(offset))
-                let bucket = buckets[UTCDay.label(date)] ?? (saved: 0, count: 0)
-                return DayStat(date: date, savedTokens: bucket.saved, count: bucket.count)
+                let bucket = buckets[UTCDay.label(date)] ?? (saved: 0, count: 0, input: 0)
+                return DayStat(date: date, savedTokens: bucket.saved, count: bucket.count, inputTokens: bucket.input)
             }
         }
 

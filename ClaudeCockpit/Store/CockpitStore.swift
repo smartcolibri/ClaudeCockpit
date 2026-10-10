@@ -23,6 +23,9 @@ enum SourceState: Equatable {
     var isUnauthorized: Bool { self == .unauthorized }
     var errorMessage: String? { if case .failed(let m) = self { return m } else { return nil } }
     var lastSuccess: Date? { if case .ready(let d) = self { return d } else { return nil } }
+    /// The source shows a banner (the grant flow, or an error with its retry) instead of
+    /// figures, so the view holding it must not be a button around it.
+    var showsBanner: Bool { isUnauthorized || errorMessage != nil }
 }
 
 /// Sidebar sections of the main window.
@@ -93,6 +96,9 @@ final class CockpitStore {
 
     private(set) var rtk: RTKSnapshot?
     private(set) var rtkState: SourceState = .idle
+    /// The last read found no rtk database at all — rtk is not installed, as opposed to
+    /// unreadable — which the Overview turns into a suggestion.
+    private(set) var rtkIsMissing = false
 
     private(set) var skills: SkillsInventory?
     private(set) var skillsState: SourceState = .idle
@@ -626,6 +632,7 @@ final class CockpitStore {
         let generation = accessGeneration
         guard rtkAccess else {
             rtk = nil
+            rtkIsMissing = false
             rtkState = .unauthorized
             return
         }
@@ -635,10 +642,12 @@ final class CockpitStore {
             let snapshot = try await Task.detached(priority: .utility) { try service.snapshot() }.value
             guard generation == accessGeneration else { return }
             rtk = snapshot
+            rtkIsMissing = false
             rtkState = .ready(snapshot.generatedAt)
             if rtkWatchEnded { startRTKWatch() }
         } catch {
             guard generation == accessGeneration else { return }
+            rtkIsMissing = (error as? RTKError) == .databaseNotFound
             rtkState = .failed(error.localizedDescription)
         }
     }

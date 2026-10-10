@@ -177,6 +177,22 @@
         }
       }
     },
+    "%@ of filtered tokens saved" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of filtered tokens saved"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ d'économie"
+          }
+        }
+      }
+    },
     "%@ of input" : {
       "localizations" : {
         "en" : {
@@ -221,6 +237,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ sur %2$lld. La liste se remplit au fur et à mesure."
+          }
+        }
+      }
+    },
+    "%@ over 30 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ over 30 days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sur 30 j"
           }
         }
       }
@@ -273,34 +305,18 @@
         }
       }
     },
-    "%@ since Monday" : {
+    "%@ this month" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ since Monday"
+            "value" : "%@ this month"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ depuis lundi"
-          }
-        }
-      }
-    },
-    "%@ today" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ today"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ aujourd'hui"
+            "value" : "%@ ce mois-ci"
           }
         }
       }
@@ -321,18 +337,18 @@
         }
       }
     },
-    "%@ tokens avoided over seven days" : {
+    "%@ tokens saved" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ tokens avoided over seven days"
+            "value" : "%@ tokens saved"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ tokens évités sur sept jours"
+            "value" : "%@ tokens économisés"
           }
         }
       }
@@ -381,6 +397,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ : %2$@"
+          }
+        }
+      }
+    },
+    "%lld active days in 12 weeks" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld active day in 12 weeks"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld active days in 12 weeks"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld jour actif en 12 semaines"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld jours actifs en 12 semaines"
+                }
+              }
+            }
           }
         }
       }
@@ -793,6 +849,46 @@
         }
       }
     },
+    "%lld plugins" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld plugin"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld plugins"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld plugin"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld plugins"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld roots not accessible" : {
       "localizations" : {
         "en" : {
@@ -913,6 +1009,126 @@
         }
       }
     },
+    "%lld sessions" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sessions hit errors today." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session hit errors today."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions hit errors today."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session a rencontré des erreurs aujourd'hui."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions ont rencontré des erreurs aujourd'hui."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld sessions scored below 60 today." : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session scored below 60 today."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions scored below 60 today."
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session notée sous 60 aujourd'hui."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sessions notées sous 60 aujourd'hui."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld tools" : {
       "localizations" : {
         "en" : {
@@ -986,6 +1202,46 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld tours"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld without a recorded cost" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld without a recorded cost"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld without a recorded cost"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sans coût enregistré"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sans coût enregistré"
                 }
               }
             }
@@ -1101,6 +1357,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "7 j"
+          }
+        }
+      }
+    },
+    "7 days: %@/100" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 days: %@/100"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 jours : %@/100"
           }
         }
       }
@@ -1361,6 +1633,22 @@
         }
       }
     },
+    "Activity, 12 weeks — sessions per day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activity, 12 weeks — sessions per day"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activité, 12 semaines — sessions par jour"
+          }
+        }
+      }
+    },
     "Add" : {
       "localizations" : {
         "en" : {
@@ -1501,6 +1789,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Tout"
+          }
+        }
+      }
+    },
+    "All %lld sessions today" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session today"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "All %lld sessions today"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld session du jour"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Les %lld sessions du jour"
+                }
+              }
+            }
           }
         }
       }
@@ -1853,6 +2181,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Par jour"
+          }
+        }
+      }
+    },
+    "By hour" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By hour"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par heure"
           }
         }
       }
@@ -2513,34 +2857,18 @@
         }
       }
     },
-    "Cost is down %@ compared with the same point last week." : {
+    "Cost over the last 14 days" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Cost is down %@ compared with the same point last week."
+            "value" : "Cost over the last 14 days"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Le coût a baissé de %@ par rapport à la même période de la semaine précédente."
-          }
-        }
-      }
-    },
-    "Cost is up %@ compared with the same point last week." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cost is up %@ compared with the same point last week."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le coût a augmenté de %@ par rapport à la même période de la semaine précédente."
+            "value" : "Coût des 14 derniers jours"
           }
         }
       }
@@ -2561,6 +2889,22 @@
         }
       }
     },
+    "Cost per day, 30 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost per day, 30 days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût par jour, 30 j"
+          }
+        }
+      }
+    },
     "Cost per hour" : {
       "localizations" : {
         "en" : {
@@ -2573,22 +2917,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coût par heure"
-          }
-        }
-      }
-    },
-    "cost unknown" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cost unknown"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "coût inconnu"
           }
         }
       }
@@ -3329,6 +3657,22 @@
         }
       }
     },
+    "First day of use" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First day of use"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premier jour d'utilisation"
+          }
+        }
+      }
+    },
     "First scan of ~/.claude/projects; this can take a few seconds." : {
       "localizations" : {
         "en" : {
@@ -3405,6 +3749,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "d'après les transcripts"
+          }
+        }
+      }
+    },
+    "Full cost of these sessions: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full cost of these sessions: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût complet de ces sessions : %@"
           }
         }
       }
@@ -3629,6 +3989,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Heure"
+          }
+        }
+      }
+    },
+    "Hover a day for its sessions and cost; click to open them." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hover a day for its sessions and cost; click to open them."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Survolez un jour pour ses sessions et son coût ; cliquez pour les ouvrir."
           }
         }
       }
@@ -3985,22 +4361,6 @@
         }
       }
     },
-    "Insights" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Insights"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Insights"
-          }
-        }
-      }
-    },
     "Installed version" : {
       "localizations" : {
         "en" : {
@@ -4029,22 +4389,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sur 7 jours"
-          }
-        }
-      }
-    },
-    "last activity %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "last activity %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "dernière activité %@"
           }
         }
       }
@@ -4157,6 +4501,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "moins"
+          }
+        }
+      }
+    },
+    "Less" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Less"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Moins"
           }
         }
       }
@@ -4401,6 +4761,22 @@
         }
       }
     },
+    "Model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Model"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Modèle"
+          }
+        }
+      }
+    },
     "Models" : {
       "localizations" : {
         "en" : {
@@ -4449,6 +4825,22 @@
         }
       }
     },
+    "Month on track for %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Month on track for %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Projection du mois : %@"
+          }
+        }
+      }
+    },
     "more" : {
       "localizations" : {
         "en" : {
@@ -4461,6 +4853,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "plus"
+          }
+        }
+      }
+    },
+    "More" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "More"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Plus"
           }
         }
       }
@@ -5065,6 +5473,38 @@
         }
       }
     },
+    "No spend in the last 30 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No spend in the last 30 days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune dépense sur 30 jours"
+          }
+        }
+      }
+    },
+    "No spend on the previous days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No spend on the previous days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune dépense les jours précédents"
+          }
+        }
+      }
+    },
     "No tool calls in this period." : {
       "localizations" : {
         "en" : {
@@ -5145,22 +5585,6 @@
         }
       }
     },
-    "None of these sessions recorded its cost." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "None of these sessions recorded its cost."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucune de ces sessions n'a enregistré son coût."
-          }
-        }
-      }
-    },
     "not allowed" : {
       "localizations" : {
         "en" : {
@@ -5225,18 +5649,18 @@
         }
       }
     },
-    "Nothing notable in the period analyzed." : {
+    "Nothing to recommend right now." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nothing notable in the period analyzed."
+            "value" : "Nothing to recommend right now."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rien de notable sur la période analysée."
+            "value" : "Rien à recommander pour le moment."
           }
         }
       }
@@ -5301,6 +5725,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "seul %@ est autorisé. Les éléments liés hors de ce dossier et les projets ne sont pas listés."
+          }
+        }
+      }
+    },
+    "Only %@ of prompt tokens are read from the cache: sessions that keep their context reuse more." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Only %@ of prompt tokens are read from the cache: sessions that keep their context reuse more."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Seuls %@ des tokens de prompt sont lus depuis le cache : des sessions qui gardent leur contexte en réutilisent davantage."
           }
         }
       }
@@ -5397,6 +5837,86 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Ouvrir ce message dans le transcript"
+          }
+        }
+      }
+    },
+    "Opens %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre %@"
+          }
+        }
+      }
+    },
+    "Opens the session" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the session"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre la session"
+          }
+        }
+      }
+    },
+    "Opens the sessions of this day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opens the sessions of this day"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ouvre les sessions de ce jour"
+          }
+        }
+      }
+    },
+    "Opus rose to %@ of the cost, from %@: try Sonnet for short tasks in %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opus rose to %1$@ of the cost, from %2$@: try Sonnet for short tasks in %3$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opus est passé à %1$@ du coût, contre %2$@ : essayez Sonnet pour les tâches courtes de %3$@."
+          }
+        }
+      }
+    },
+    "Opus rose to %@ of the cost, from %@: try Sonnet for short tasks." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opus rose to %1$@ of the cost, from %2$@: try Sonnet for short tasks."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Opus est passé à %1$@ du coût, contre %2$@ : essayez Sonnet pour les tâches courtes."
           }
         }
       }
@@ -5541,46 +6061,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Vue d'ensemble"
-          }
-        }
-      }
-    },
-    "Partial cost: %lld sessions without a recorded cost." : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Partial cost: %lld session without a recorded cost."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Partial cost: %lld sessions without a recorded cost."
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Coût partiel : %lld session sans coût enregistré."
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "Coût partiel : %lld sessions sans coût enregistré."
-                }
-              }
-            }
           }
         }
       }
@@ -5985,22 +6465,6 @@
         }
       }
     },
-    "Reading the rtk database…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reading the rtk database…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lecture de la base rtk…"
-          }
-        }
-      }
-    },
     "Reading the sub-agent transcript…" : {
       "localizations" : {
         "en" : {
@@ -6065,6 +6529,22 @@
         }
       }
     },
+    "Reading…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture…"
+          }
+        }
+      }
+    },
     "Reauthorize" : {
       "localizations" : {
         "en" : {
@@ -6125,6 +6605,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Reconstruire l'index des sessions ?"
+          }
+        }
+      }
+    },
+    "Recommendations" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommendations"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recommandations"
           }
         }
       }
@@ -6593,6 +7089,22 @@
         }
       }
     },
+    "RTK is not set up: it trims shell output before it reaches the model." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RTK is not set up: it trims shell output before it reaches the model."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RTK n'est pas installé : il allège la sortie du shell avant qu'elle n'atteigne le modèle."
+          }
+        }
+      }
+    },
     "rtk not detected" : {
       "localizations" : {
         "en" : {
@@ -6605,6 +7117,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "rtk non détecté"
+          }
+        }
+      }
+    },
+    "RTK saved only %@ of what it filtered this week." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RTK saved only %@ of what it filtered this week."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "RTK n'a économisé que %@ de ce qu'il a filtré cette semaine."
           }
         }
       }
@@ -6641,18 +7169,18 @@
         }
       }
     },
-    "RTK tokens saved, 7 days" : {
+    "RTK, 7 days" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "RTK tokens saved, 7 days"
+            "value" : "RTK, 7 days"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tokens économisés RTK, 7 j"
+            "value" : "RTK, 7 j"
           }
         }
       }
@@ -6833,22 +7361,6 @@
         }
       }
     },
-    "session" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "session"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "session"
-          }
-        }
-      }
-    },
     "Session active right now" : {
       "localizations" : {
         "en" : {
@@ -6877,6 +7389,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Session exportée : %@"
+          }
+        }
+      }
+    },
+    "Session health" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Session health"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Santé"
           }
         }
       }
@@ -6961,22 +7489,6 @@
         }
       }
     },
-    "sessions" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sessions"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sessions"
-          }
-        }
-      }
-    },
     "Sessions are indexed from the transcripts in %@/projects, which the app is not allowed to read." : {
       "localizations" : {
         "en" : {
@@ -7037,22 +7549,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sessions cette semaine"
-          }
-        }
-      }
-    },
-    "Sessions today" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sessions today"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sessions aujourd'hui"
           }
         }
       }
@@ -7321,22 +7817,6 @@
         }
       }
     },
-    "since midnight, cache included" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "since midnight, cache included"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "depuis minuit, cache compris"
-          }
-        }
-      }
-    },
     "Size: %@" : {
       "localizations" : {
         "en" : {
@@ -7381,6 +7861,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Skills"
+          }
+        }
+      }
+    },
+    "Spending is down %@ compared with the same point last week." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spending is down %@ compared with the same point last week."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dépenses en baisse de %@ par rapport au même moment la semaine dernière."
+          }
+        }
+      }
+    },
+    "Spending is up %@ compared with the same point last week." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Spending is up %@ compared with the same point last week."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dépenses en hausse de %@ par rapport au même moment la semaine dernière."
           }
         }
       }
@@ -7513,22 +8025,6 @@
         }
       }
     },
-    "The cache is working well: %@ of reusable tokens are read back." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "The cache is working well: %@ of reusable tokens are read back."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Le cache est bien utilisé : %@ des tokens réutilisables sont relus."
-          }
-        }
-      }
-    },
     "The chosen folder (%@) does not contain %@. No access was saved." : {
       "localizations" : {
         "en" : {
@@ -7541,6 +8037,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Le dossier choisi (%1$@) ne contient pas %2$@. Aucun accès n'a été enregistré."
+          }
+        }
+      }
+    },
+    "the Claude folder cannot be read." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "the Claude folder cannot be read."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "le dossier Claude n'est pas lisible."
           }
         }
       }
@@ -7801,6 +8313,22 @@
         }
       }
     },
+    "This month is heading for %@, above last month's %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "This month is heading for %1$@, above last month's %2$@."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ce mois-ci se dirige vers %1$@, au-dessus des %2$@ du mois dernier."
+          }
+        }
+      }
+    },
     "This result is further into the transcript, past the turns already loaded." : {
       "localizations" : {
         "en" : {
@@ -7913,6 +8441,38 @@
         }
       }
     },
+    "Today %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd'hui %@"
+          }
+        }
+      }
+    },
+    "Today %@/100" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today %@/100"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aujourd'hui %@/100"
+          }
+        }
+      }
+    },
     "Today's cost" : {
       "localizations" : {
         "en" : {
@@ -7925,6 +8485,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coût du jour"
+          }
+        }
+      }
+    },
+    "Today's sessions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's sessions"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions du jour"
           }
         }
       }
@@ -8133,6 +8709,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Outils"
+          }
+        }
+      }
+    },
+    "Top projects" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top projects"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Top projets"
           }
         }
       }
@@ -8393,6 +8985,22 @@
         }
       }
     },
+    "Usage peaks between %@ and %@: %@ of today's cost." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Usage peaks between %1$@ and %2$@: %3$@ of today's cost."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pic d'usage entre %1$@ et %2$@ : %3$@ du coût du jour."
+          }
+        }
+      }
+    },
     "Usage, sessions, RTK and skills" : {
       "localizations" : {
         "en" : {
@@ -8569,6 +9177,22 @@
         }
       }
     },
+    "With errors: %lld · below %lld: %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "With errors: %1$lld · below %2$lld: %3$lld"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En erreur : %1$lld · sous %2$lld : %3$lld"
+          }
+        }
+      }
+    },
     "Workshop" : {
       "localizations" : {
         "en" : {
@@ -8597,6 +9221,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Hier"
+          }
+        }
+      }
+    },
+    "Yesterday %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Yesterday %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hier %@"
           }
         }
       }
@@ -8661,6 +9301,38 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "« Rétablir les tarifs par défaut » restaure les valeurs codées dans PricingSettings.default, qui ne sont pas forcément les tarifs du jour."
+          }
+        }
+      }
+    },
+    "▲ %@ vs %lld-day average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▲ %1$@ vs %2$lld-day average"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▲ %1$@ vs moy. %2$lld j"
+          }
+        }
+      }
+    },
+    "▼ %@ vs %lld-day average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▼ %1$@ vs %2$lld-day average"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "▼ %1$@ vs moy. %2$lld j"
           }
         }
       }

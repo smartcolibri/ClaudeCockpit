@@ -78,13 +78,16 @@ public struct DayStat: Sendable, Equatable, Identifiable {
     public let date: Date
     public let savedTokens: Int
     public let count: Int
+    /// Tokens rtk received that day, before filtering.
+    public let inputTokens: Int
 
     public var id: Date { date }
 
-    public init(date: Date, savedTokens: Int, count: Int) {
+    public init(date: Date, savedTokens: Int, count: Int, inputTokens: Int = 0) {
         self.date = date
         self.savedTokens = savedTokens
         self.count = count
+        self.inputTokens = inputTokens
     }
 }
 

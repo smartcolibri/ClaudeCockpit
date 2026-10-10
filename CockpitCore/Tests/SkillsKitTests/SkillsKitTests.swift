@@ -109,6 +109,26 @@ final class SkillsKitTests: XCTestCase {
         XCTAssertFalse(inventory.isEmpty)
     }
 
+    /// Plugins are counted once each, whatever their skill count or cached versions; a plugin
+    /// with no skill still counts, and one whose every version is orphaned does not.
+    func testInventoryCountsInstalledPluginsOnce() async throws {
+        let cache = fixture.paths.pluginsCacheDir
+        try Fixture.writeSkill(in: cache.appendingPathComponent("acme/toolkit/1.0.0/skills", isDirectory: true),
+                               name: "second-skill", description: "Deuxième")
+        try Fixture.writeSkill(in: cache.appendingPathComponent("acme/toolkit/0.9.0/skills", isDirectory: true),
+                               name: "old-skill", description: "Ancienne version")
+        try FileManager.default.createDirectory(
+            at: cache.appendingPathComponent("acme/agents-only/2.0.0/agents", isDirectory: true),
+            withIntermediateDirectories: true)
+        let gone = cache.appendingPathComponent("other/gone/1.0.0", isDirectory: true)
+        try Fixture.writeSkill(in: gone.appendingPathComponent("skills", isDirectory: true), name: "gone-skill", description: "x")
+        try Data().write(to: gone.appendingPathComponent(".orphaned_at"))
+
+        let inventory = try await store.inventory(projects: [fixture.project])
+        XCTAssertEqual(inventory.plugins.count, 3, "plugin skills, across versions")
+        XCTAssertEqual(inventory.installedPlugins, ["acme/agents-only", "acme/toolkit"])
+    }
+
     func testInventoryReadsDescriptionsFromFrontMatter() async throws {
         let inventory = try await store.inventory(projects: [fixture.project])
 

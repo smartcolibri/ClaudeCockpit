@@ -188,7 +188,7 @@ struct SessionDetailView: View {
             // no recorded total; the tilde keeps the two apart.
             SessionChip(
                 title: cost.estimated ? "~\(store.money(cost.usd))" : store.money(cost.usd),
-                systemImage: "eurosign.circle", active: true, tint: Theme.blue)
+                systemImage: "banknote", active: true, tint: Theme.blue)
         }
         SessionChip(title: String(localized: "\(session.toolCalls) tools", locale: AppFormat.locale), systemImage: "wrench.and.screwdriver")
         if session.toolErrors > 0 {

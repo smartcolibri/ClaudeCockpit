@@ -83,6 +83,8 @@ extension SessionStore {
         guard let id = row[0] as? String,
               let first = row[7] as? Double, let last = row[8] as? Double
         else { return nil }
+        let counters = counters(from: row)
+        let health = SessionHealthRule.evaluate(counters)
         return SessionRef(
             id: id,
             projectDir: row[1] as? String ?? "",
@@ -102,7 +104,9 @@ extension SessionStore {
             parentSessionId: row[20] as? String,
             isStarred: int(row[21]) != 0,
             prLinks: [],
-            healthGrade: SessionHealthRule.evaluate(counters(from: row)).grade)
+            healthGrade: health.grade,
+            healthScore: health.score,
+            apiErrors: counters.apiErrors)
     }
 
     /// The health counters as the indexer stored them, read straight off a `sessions` row.
@@ -181,7 +185,8 @@ extension SessionStore {
                 costStateUSD: ref.costStateUSD,
                 linesAdded: ref.linesAdded, linesRemoved: ref.linesRemoved,
                 parentSessionId: ref.parentSessionId, isStarred: ref.isStarred,
-                prLinks: links, healthGrade: ref.healthGrade, tokensByModel: byModel)
+                prLinks: links, healthGrade: ref.healthGrade, healthScore: ref.healthScore,
+                apiErrors: ref.apiErrors, tokensByModel: byModel)
         }
     }
 
@@ -535,6 +540,25 @@ extension SessionStore {
         }
     }
 
+    // MARK: - Errors by day
+
+    /// Top-level sessions with a tool or API error in a message dated in `[since, until)`, a
+    /// sub-agent's errors credited to its parent. A session that failed yesterday and is still
+    /// open today is not "in error today". Hidden sessions, and the sub-agents of hidden
+    /// ones, are left out.
+    func sessionsWithErrors(since: Date, until: Date) throws -> Set<String> {
+        let found = try rows("""
+            SELECT DISTINCT COALESCE(s.parent_session_id, s.id)
+            FROM messages m
+            JOIN sessions s ON s.id = m.session_id
+            LEFT JOIN sessions p ON p.id = s.parent_session_id
+            WHERE m.ts >= ? AND m.ts < ? AND s.deleted_at IS NULL AND p.deleted_at IS NULL
+              AND (m.is_api_error = 1
+                   OR EXISTS (SELECT 1 FROM blocks b WHERE b.message_id = m.id AND b.is_error = 1))
+            """, [since.timeIntervalSince1970, until.timeIntervalSince1970])
+        return Set(found.compactMap { $0[0] as? String })
+    }
+
     // MARK: - Activity
 
     /// Buckets are computed in Swift rather than in SQL because the weekday and the hour
@@ -559,13 +583,16 @@ extension SessionStore {
         var sessionsPerDay: [String: Set<String>] = [:]
         var turns = 0
         // A turn is one API response, however many lines and transcripts it was written into.
+        // A sub-agent's messages sit under its own id; the day's sessions credit its parent,
+        // as the browser lists it.
         for row in try rows("""
-            SELECT m.ts, m.session_id
+            SELECT m.ts, COALESCE(s.parent_session_id, s.id)
             FROM (\(Self.countedResponses(where: """
                 o.role = 'assistant' AND o.ts >= ? AND o.ts < ?
                 """))) m
             JOIN sessions s ON s.id = m.session_id
-            WHERE s.deleted_at IS NULL\(scope)
+            LEFT JOIN sessions p ON p.id = s.parent_session_id
+            WHERE s.deleted_at IS NULL AND p.deleted_at IS NULL\(scope)
             """, scoped) {
             guard let ts = row[0] as? Double, let sessionId = row[1] as? String else { continue }
             let date = Date(timeIntervalSince1970: ts)
@@ -604,7 +631,8 @@ extension SessionStore {
             FROM blocks b
             JOIN messages m ON m.id = b.message_id
             JOIN sessions s ON s.id = m.session_id
-            WHERE b.tool_name IS NOT NULL AND s.deleted_at IS NULL
+            LEFT JOIN sessions p ON p.id = s.parent_session_id
+            WHERE b.tool_name IS NOT NULL AND s.deleted_at IS NULL AND p.deleted_at IS NULL
               AND m.ts >= ? AND m.ts < ?\(scope)
             GROUP BY b.tool_name ORDER BY 2 DESC
             """, scoped) {
@@ -624,7 +652,8 @@ extension SessionStore {
                 o.role = 'assistant' AND o.model IS NOT NULL AND o.ts >= ? AND o.ts < ?
                 """))) m
             JOIN sessions s ON s.id = m.session_id
-            WHERE s.deleted_at IS NULL\(scope)
+            LEFT JOIN sessions p ON p.id = s.parent_session_id
+            WHERE s.deleted_at IS NULL AND p.deleted_at IS NULL\(scope)
             GROUP BY m.model ORDER BY 2 DESC
             """, scoped).compactMap { row -> ModelCount? in
             guard let model = row[0] as? String else { return nil }
@@ -666,7 +695,9 @@ extension SessionStore {
                 sessions: sessions[label]?.count ?? 0,
                 turns: turns[label] ?? 0))
             guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
-            cursor = next
+            // Back to the day's start: where summer time begins at midnight, the step lands at
+            // 01:00 and would carry that hour into every later day.
+            cursor = calendar.startOfDay(for: next)
         }
         return result
     }

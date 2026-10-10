@@ -19,6 +19,7 @@ enum SettingsKey {
     static let sessionsShowSystemLines = "sessions.showSystemLines"   // Bool, default false
     static let sessionsGrouping = "sessions.grouping"                 // "day" | "project"
     static let sessionsSelectedId = "sessions.selectedId"             // last opened session
+    static let sessionsTab = "sessions.tab"                           // "browser" | "activity" | "edits"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
