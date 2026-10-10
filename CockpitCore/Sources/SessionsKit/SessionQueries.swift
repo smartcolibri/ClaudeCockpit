@@ -564,8 +564,10 @@ extension SessionStore {
         var sessionsPerDay: [String: Set<String>] = [:]
         var turns = 0
         // A turn is one API response, however many lines and transcripts it was written into.
+        // A sub-agent's messages sit under its own id; the day's sessions credit its parent,
+        // as the browser lists it.
         for row in try rows("""
-            SELECT m.ts, m.session_id
+            SELECT m.ts, COALESCE(s.parent_session_id, s.id)
             FROM (\(Self.countedResponses(where: """
                 o.role = 'assistant' AND o.ts >= ? AND o.ts < ?
                 """))) m

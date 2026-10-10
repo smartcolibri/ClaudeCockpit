@@ -261,6 +261,8 @@ last month's cost, and this week against the same stretch of last week.
   `SessionRef.healthScore` today and over 7 days, sessions with errors, sessions below 60), active
   skills, and the activity heatmap: sessions per day from `SessionService.activity`, cost per day
   from `UsageOverview.dailyCost`, because the index only knows the cost Claude Code recorded.
+  A sub-agent's turns credit its parent session in those daily counts (the Activity tab's too),
+  so a day's figure matches what the browser lists for it.
 - Interactions: Swift Charts tooltips follow the pointer (`chartOverlay` + `onContinuousHover`,
   since the built-in selection waits for a click on macOS); each tile is one button leading to its
   section; a heatmap day opens the Sessions browser bounded to that day (`since`/`until`, shown as

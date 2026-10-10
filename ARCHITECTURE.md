@@ -286,7 +286,9 @@ semaine dernière.
   à hier, santé des sessions (moyenne de `SessionRef.healthScore` aujourd'hui et sur 7 jours,
   sessions en erreur, sessions sous 60), skills actifs, et la carte d'activité : sessions par jour
   depuis `SessionService.activity`, coût par jour depuis `UsageOverview.dailyCost`, car l'index ne
-  connaît que le coût que Claude Code a enregistré.
+  connaît que le coût que Claude Code a enregistré. Les tours d'un sous-agent sont crédités à sa
+  session parente dans ces comptes quotidiens (ceux de l'onglet Activité aussi), si bien que le
+  chiffre d'un jour correspond à ce que le navigateur liste pour ce jour.
 - Interactions : les infobulles Swift Charts suivent le pointeur (`chartOverlay` +
   `onContinuousHover`, la sélection intégrée attendant un clic sur macOS) ; chaque tuile est un
   bouton qui mène à sa section ; un jour de la carte ouvre le navigateur de sessions borné à ce

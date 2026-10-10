@@ -241,6 +241,18 @@ final class SessionQueriesTests: XCTestCase {
         XCTAssertEqual(report.days.first { $0.id == "2026-09-23" }?.costUSD ?? 0, 1.2345, accuracy: 0.0001)
     }
 
+    /// A sub-agent works inside its parent's session: the day's session count credits the
+    /// parent once, the same way the browser lists it once.
+    func testDailySessionsCountASubagentWithItsParent() async throws {
+        try await indexCorpus()
+        let report = try await service.activity(
+            since: TestClock.offset(-2880), until: TestClock.offset(2880),
+            calendar: TestClock.calendar)
+        let wednesday = try XCTUnwrap(report.days.first { $0.id == "2026-09-23" })
+        XCTAssertEqual(wednesday.turns, 7, "the sub-agent's turn still counts as work")
+        XCTAssertEqual(wednesday.sessions, 1)
+    }
+
     func testActivityCanBeScopedToOneProject() async throws {
         try await indexCorpus()
         let report = try await service.activity(
