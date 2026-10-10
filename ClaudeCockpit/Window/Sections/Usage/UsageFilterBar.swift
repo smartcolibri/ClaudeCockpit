@@ -65,14 +65,40 @@ struct UsageFilterBar: View {
     }
 
     private var rangePicker: some View {
-        Picker(String(localized: "Period"), selection: rangeBinding) {
+        rangeSegments.fixedSize()
+    }
+
+    /// The periods as a row of plain buttons at their natural widths: a system segmented
+    /// control gives every segment the widest one's width and would not fit on one line.
+    private var rangeSegments: some View {
+        HStack(spacing: 1) {
             ForEach(DateRangeFilter.allCases) { range in
-                Text(range.shortName).tag(range)
+                let isOn = filters.range == range
+                Button {
+                    rangeBinding.wrappedValue = range
+                } label: {
+                    Text(range.shortName)
+                        .font(.system(size: 12, weight: isOn ? .semibold : .regular))
+                        .foregroundStyle(isOn ? Color.white : Theme.ink)
+                        .lineLimit(1)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(
+                            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                                .fill(isOn ? Theme.blue : Color.clear))
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .help(Text(range.displayName))
+                .accessibilityLabel(Text(range.displayName))
+                .accessibilityAddTraits(isOn ? .isSelected : [])
             }
         }
-        .pickerStyle(.segmented)
-        .labelsHidden()
-        .fixedSize()
+        .padding(2)
+        .background(Theme.cardFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous).stroke(Theme.cardStroke, lineWidth: 1))
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "Period"))
     }
 
     private func chip(_ family: ModelFamily) -> some View {
