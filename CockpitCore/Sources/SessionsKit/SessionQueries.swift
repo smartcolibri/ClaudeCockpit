@@ -83,6 +83,8 @@ extension SessionStore {
         guard let id = row[0] as? String,
               let first = row[7] as? Double, let last = row[8] as? Double
         else { return nil }
+        let counters = counters(from: row)
+        let health = SessionHealthRule.evaluate(counters)
         return SessionRef(
             id: id,
             projectDir: row[1] as? String ?? "",
@@ -102,7 +104,9 @@ extension SessionStore {
             parentSessionId: row[20] as? String,
             isStarred: int(row[21]) != 0,
             prLinks: [],
-            healthGrade: SessionHealthRule.evaluate(counters(from: row)).grade)
+            healthGrade: health.grade,
+            healthScore: health.score,
+            apiErrors: counters.apiErrors)
     }
 
     /// The health counters as the indexer stored them, read straight off a `sessions` row.
@@ -181,7 +185,8 @@ extension SessionStore {
                 costStateUSD: ref.costStateUSD,
                 linesAdded: ref.linesAdded, linesRemoved: ref.linesRemoved,
                 parentSessionId: ref.parentSessionId, isStarred: ref.isStarred,
-                prLinks: links, healthGrade: ref.healthGrade, tokensByModel: byModel)
+                prLinks: links, healthGrade: ref.healthGrade, healthScore: ref.healthScore,
+                apiErrors: ref.apiErrors, tokensByModel: byModel)
         }
     }
 

@@ -40,6 +40,10 @@ public struct SessionRef: Identifiable, Hashable, Sendable, Codable {
     /// Derived from the counters the indexer stores, so the badge in the list and the verdict
     /// in the detail can never disagree. Never optional: a session with nothing wrong is an A.
     public let healthGrade: HealthGrade
+    /// The 0–100 score behind `healthGrade`, from the same counters.
+    public let healthScore: Int
+    /// API errors the indexer counted. With `toolErrors`, what the "With Errors" filter keys on.
+    public let apiErrors: Int
     /// Tokens consumed per model. ``costStateUSD`` is authoritative when Claude Code wrote a
     /// `cost-state` line, which it does for about one session in ten; everywhere else the
     /// view prices these tokens with the rates configured in Réglages.
@@ -49,6 +53,8 @@ public struct SessionRef: Identifiable, Hashable, Sendable, Codable {
     public var totalTokens: Int { inputTokens + outputTokens + cacheReadTokens + cacheCreationTokens }
     /// True for a `subagents/agent-*.jsonl` transcript.
     public var isSubagent: Bool { parentSessionId != nil }
+    /// Matches `SessionFilter.withErrorsOnly`: a tool or an API error.
+    public var hasErrors: Bool { toolErrors > 0 || apiErrors > 0 }
 
     public init(
         id: String,
@@ -75,6 +81,8 @@ public struct SessionRef: Identifiable, Hashable, Sendable, Codable {
         isStarred: Bool = false,
         prLinks: [PRLink] = [],
         healthGrade: HealthGrade = .a,
+        healthScore: Int = 100,
+        apiErrors: Int = 0,
         tokensByModel: [String: ModelTokens] = [:]
     ) {
         self.id = id
@@ -101,6 +109,8 @@ public struct SessionRef: Identifiable, Hashable, Sendable, Codable {
         self.isStarred = isStarred
         self.prLinks = prLinks
         self.healthGrade = healthGrade
+        self.healthScore = healthScore
+        self.apiErrors = apiErrors
         self.tokensByModel = tokensByModel
     }
 }

@@ -227,8 +227,26 @@ final class SessionHealthTests: XCTestCase {
         for session in sessions {
             let detail = try await service.health(sessionId: session.id)
             XCTAssertEqual(session.healthGrade, detail.grade, session.id)
+            XCTAssertEqual(session.healthScore, detail.score, session.id)
         }
         XCTAssertTrue(sessions.contains { $0.healthGrade != .a }, "au moins une session notée")
+    }
+
+    /// The score and the API error count survive the rebuild that attaches tokens and PR
+    /// links to a listed row — the demo session has both kinds of error and per-model tokens.
+    func testListedSessionCarriesItsScoreAndAPIErrors() async throws {
+        let fixture = try TranscriptFixture()
+        try fixture.writeDemoSession()
+        let service = fixture.service()
+        try await service.index()
+
+        let listed = try await service.listSessions(SessionFilter())
+        let session = try XCTUnwrap(listed.first { $0.id == Line.session })
+        XCTAssertFalse(session.tokensByModel.isEmpty, "the row went through the rebuild")
+        XCTAssertEqual(session.healthScore, 57)
+        XCTAssertEqual(session.apiErrors, 1)
+        XCTAssertEqual(session.toolErrors, 1)
+        XCTAssertTrue(session.hasErrors)
     }
 
     /// Three identical failing calls in a row, counted while the transcript is indexed.
