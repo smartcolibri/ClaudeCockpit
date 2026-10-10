@@ -252,6 +252,11 @@ public actor SessionService {
         try store().recentEdits(limit: limit, projectCwd: projectCwd)
     }
 
+    /// Sessions that hit a tool or API error in a message dated in `[since, until)`.
+    public func sessionsWithErrors(since: Date, until: Date) throws -> Set<String> {
+        try store().sessionsWithErrors(since: since, until: until)
+    }
+
     public func activity(
         since: Date,
         until: Date,

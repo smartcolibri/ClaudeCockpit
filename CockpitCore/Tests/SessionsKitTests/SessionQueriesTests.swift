@@ -253,6 +253,34 @@ final class SessionQueriesTests: XCTestCase {
         XCTAssertEqual(wednesday.sessions, 1)
     }
 
+    /// Hiding a session hides its sub-agents' work too: their rows are not hidden themselves.
+    func testActivityLeavesOutTheSubagentsOfAHiddenSession() async throws {
+        try await indexCorpus()
+        try await service.hide(sessionId: Line.session)
+        let report = try await service.activity(
+            since: TestClock.offset(-2880), until: TestClock.offset(2880),
+            calendar: TestClock.calendar)
+        XCTAssertEqual(report.turns, 1, "only the other session's turn is left")
+        XCTAssertNil(report.days.first { $0.id == "2026-09-23" && $0.turns > 0 })
+        XCTAssertEqual(report.models.reduce(0) { $0 + $1.turns }, 1)
+    }
+
+    /// Sessions credited with an error by a message dated inside the window, sub-agents under
+    /// their parent — not every session that ever failed and happens to be active.
+    func testSessionsWithErrorsAreDatedByTheFailingMessage() async throws {
+        try await indexCorpus()
+        let day = TestClock.calendar.startOfDay(for: TestClock.offset(0))
+        let next = TestClock.calendar.date(byAdding: .day, value: 1, to: day)!
+        let previous = TestClock.calendar.date(byAdding: .day, value: -1, to: day)!
+        let today = try await service.sessionsWithErrors(since: day, until: next)
+        XCTAssertEqual(today, [Line.session])
+        let before = try await service.sessionsWithErrors(since: previous, until: day)
+        XCTAssertEqual(before, [])
+        try await service.hide(sessionId: Line.session)
+        let hidden = try await service.sessionsWithErrors(since: day, until: next)
+        XCTAssertEqual(hidden, [])
+    }
+
     func testActivityCanBeScopedToOneProject() async throws {
         try await indexCorpus()
         let report = try await service.activity(
