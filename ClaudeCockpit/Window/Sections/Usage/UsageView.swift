@@ -41,19 +41,19 @@ struct UsageDashboard: View {
                 filters: $store.usageFilters,
                 availableFamilies: store.usage?.availableModelFamilies ?? [],
                 availableProjects: store.usage?.availableProjects ?? [])
-            if let usage = store.usage, usage.filteredEventCount == 0, !store.usageState.showsBanner {
-                placeholder
-            } else {
-                tiles
-                UsagePeriodChartCard()
-                SectionLabel(text: String(localized: "Breakdown")).padding(.top, 6)
-                row(ModelMixCard(), BreakdownBarsCard(), leading: 0.4)
-                SectionLabel(text: String(localized: "Rhythm over the period")).padding(.top, 6)
-                row(CostByHourCard(), SessionsByWeekdayCard(), leading: 0.6)
-                if let usage = store.usage {
-                    UsageSessionsList(sessions: usage.sessions, money: { store.money($0) })
-                        .padding(.top, 6)
+            sourceBanner
+            if let usage = store.usage {
+                if usage.filteredEventCount == 0 {
+                    placeholder(icon: "tray", title: "No usage in this period",
+                                message: "Widen the period or remove the project filter to see more activity.")
+                } else {
+                    // A failed rescan keeps the last figures, dimmed under the banner.
+                    dashboard(usage)
+                        .opacity(store.usageState.errorMessage == nil ? 1 : 0.6)
                 }
+            } else if !store.usageState.showsBanner {
+                placeholder(icon: "hourglass", title: "Reading transcripts…",
+                            message: "First scan of ~/.claude/projects; this can take a few seconds.")
             }
         }
         .padding(.horizontal, Self.horizontalPadding)
@@ -87,7 +87,33 @@ struct UsageDashboard: View {
         return String(localized: "Updated \(AppFormat.relative(date))", locale: AppFormat.locale)
     }
 
+    // MARK: Source
+
+    /// The transcripts are the screen's one source: one banner says why it cannot be read,
+    /// rather than one per card.
+    @ViewBuilder
+    private var sourceBanner: some View {
+        if store.usageState.isUnauthorized {
+            AccessRequiredBanner(message: String(localized: "the transcripts cannot be read."))
+        } else if let message = store.usageState.errorMessage {
+            SourceBanner(kind: .error, message: message, action: { Task { await store.refreshUsage(rescan: true) } })
+        }
+    }
+
     // MARK: Rows
+
+    private func dashboard(_ usage: UsageSnapshot) -> some View {
+        VStack(alignment: .leading, spacing: Self.spacing) {
+            tiles
+            UsagePeriodChartCard()
+            SectionLabel(text: String(localized: "Breakdown")).padding(.top, 6)
+            row(ModelMixCard(), BreakdownBarsCard(), leading: 0.4)
+            SectionLabel(text: String(localized: "Rhythm over the period")).padding(.top, 6)
+            row(CostByHourCard(), SessionsByWeekdayCard(), leading: 0.6)
+            UsageSessionsList(sessions: usage.sessions, money: { store.money($0) })
+                .padding(.top, 6)
+        }
+    }
 
     private var tiles: some View {
         Group {
@@ -133,15 +159,15 @@ struct UsageDashboard: View {
         }
     }
 
-    private var placeholder: some View {
+    private func placeholder(icon: String, title: LocalizedStringKey, message: LocalizedStringKey) -> some View {
         VStack(spacing: 10) {
-            Image(systemName: "tray")
+            Image(systemName: icon)
                 .font(.system(size: 28, weight: .light))
                 .foregroundStyle(Theme.mist)
-            Text("No usage in this period")
+            Text(title)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(Theme.ink)
-            Text("Widen the period or remove the project filter to see more activity.")
+            Text(message)
                 .font(.system(size: 12))
                 .foregroundStyle(Theme.slate)
                 .multilineTextAlignment(.center)

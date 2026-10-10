@@ -9816,6 +9816,38 @@
           }
         }
       }
+    },
+    "Reading transcripts…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading transcripts…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture des transcripts…"
+          }
+        }
+      }
+    },
+    "First scan of ~/.claude/projects; this can take a few seconds." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First scan of ~/.claude/projects; this can take a few seconds."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premier scan de ~/.claude/projects, cela peut prendre quelques secondes."
+          }
+        }
+      }
     }
   },
   "version" : "1.0"

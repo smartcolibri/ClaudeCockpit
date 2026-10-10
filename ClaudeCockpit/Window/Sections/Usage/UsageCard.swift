@@ -39,21 +39,15 @@ extension UsageCard where Accessory == EmptyView {
     }
 }
 
-/// What a Usage card shows in place of its figures while the transcripts cannot give them,
-/// as on the Overview: the grant flow, the error with a retry, or a loading line. A failing
-/// scan blanks the cards' figures, never the page.
+/// Hands a card the current snapshot. The screen shows its cards only once a snapshot exists
+/// and says once, above them, why the transcripts cannot be read; a failed rescan keeps the
+/// last figures on screen.
 struct UsageSource<Content: View>: View {
     @Environment(CockpitStore.self) private var store
     @ViewBuilder var content: (UsageSnapshot) -> Content
 
     var body: some View {
-        TileSource(
-            state: store.usageState, ready: store.usage != nil,
-            unauthorized: String(localized: "the transcripts cannot be read."),
-            retry: { Task { await store.refreshUsage(rescan: true) } }
-        ) {
-            if let usage = store.usage { content(usage) }
-        }
+        if let usage = store.usage { content(usage) }
     }
 }
 
