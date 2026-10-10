@@ -45,6 +45,8 @@ extension CockpitStore {
     /// every `fullWalkInterval`, otherwise a transcript deleted on disk would
     /// stay in the list until the next launch.
     func indexSessions(full: Bool = false, changedPaths: [String] = []) async {
+        // A pass that outlives a grant change must not overwrite what the change set.
+        let generation = accessGeneration
         if sessions.isEmpty && !full { sessionsState = .loading }
         if full { sessionsState = .loading }
         let due = Date().timeIntervalSince(lastFullSessionWalk) >= Self.fullWalkInterval
@@ -53,7 +55,10 @@ extension CockpitStore {
             let report: @Sendable (IndexProgress) -> Void = { [weak self] step in
                 // The closure is called from the indexer's own context; the UI owns
                 // `sessionIndex`, so hop to the main actor rather than mutating here.
-                Task { @MainActor in self?.sessionIndex = step }
+                Task { @MainActor in
+                    guard let self, self.accessGeneration == generation else { return }
+                    self.sessionIndex = step
+                }
             }
             let progress: IndexProgress
             if targeted {
@@ -62,10 +67,13 @@ extension CockpitStore {
                 progress = try await sessionService.index(full: full, progress: report)
                 lastFullSessionWalk = Date()
             }
+            guard generation == accessGeneration else { return }
             sessionIndex = progress
             await refreshSessionList()
+            guard generation == accessGeneration else { return }
             sessionsState = .ready(progress.lastRun ?? Date())
         } catch {
+            guard generation == accessGeneration else { return }
             sessionsState = .failed(error.localizedDescription)
             sessionIndex.isRunning = false
         }
@@ -78,16 +86,18 @@ extension CockpitStore {
 
     /// Re-runs the current filter. Cheap: it is one indexed query, not a scan.
     func refreshSessionList() async {
+        let generation = accessGeneration
         let filter = sessionFilter
         let service = sessionService
         do {
             let rows = try await service.listSessions(filter)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, generation == accessGeneration else { return }
             sessions = rows
             // A page filled to the brim almost certainly has more behind it. Saying so is
             // the point: a silent cut makes the archive look smaller than it is.
             sessionsTruncated = rows.count >= filter.limit
         } catch {
+            guard generation == accessGeneration else { return }
             sessionsState = .failed(error.localizedDescription)
         }
     }

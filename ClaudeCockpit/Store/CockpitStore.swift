@@ -119,6 +119,11 @@ final class CockpitStore {
     /// long a deleted session can linger in the list.
     var lastFullSessionWalk: Date = .distantPast
 
+    /// Bumped on every grant, revocation or config-directory change. A refresh that started
+    /// before the bump drops its result rather than overwrite the state the change produced
+    /// (a scan finishing after a revoke would otherwise turn `.unauthorized` back into data).
+    private(set) var accessGeneration = 0
+
     /// Last user-visible notice (toast) from a skills action.
     var notice: String?
 
@@ -261,6 +266,7 @@ final class CockpitStore {
     /// Reloads every source after a grant changed or the config directory moved. Paths are
     /// rebuilt only when they differ; watchers restart only on what is now covered.
     func accessDidChange() {
+        accessGeneration += 1
         let fresh = ClaudePaths.live(configDirSetting: defaults.string(forKey: SettingsKey.claudeConfigDir))
         if fresh != paths {
             sessionsWatchTask?.cancel()
@@ -427,31 +433,39 @@ final class CockpitStore {
 
     // MARK: Usage
     func refreshUsage(rescan: Bool = false) async {
+        let generation = accessGeneration
         guard claudeAccess else {
             usage = nil
             usageState = .unauthorized
             return
         }
         if usage == nil { usageState = .loading }
+        let service = usageService
         do {
-            if rescan { try await usageService.rescan() } else { try await usageService.refresh() }
+            if rescan { try await service.rescan() } else { try await service.refresh() }
+            guard generation == accessGeneration else { return }
             await recomputeUsage()
+            guard generation == accessGeneration else { return }
             usageLastScan = Date()
             usageState = .ready(Date())
         } catch {
+            guard generation == accessGeneration else { return }
             usageState = .failed(error.localizedDescription)
         }
     }
 
     private func recomputeUsage() async {
+        let generation = accessGeneration
         let filters = usageFilters
         let pricing = pricing
         let snapshot = await usageService.snapshot(filters: filters, pricing: pricing, now: Date())
+        guard generation == accessGeneration else { return }
         self.usage = snapshot
     }
 
     // MARK: RTK
     func refreshRTK() async {
+        let generation = accessGeneration
         guard rtkAccess else {
             rtk = nil
             rtkState = .unauthorized
@@ -461,10 +475,12 @@ final class CockpitStore {
         let service = rtkService
         do {
             let snapshot = try await Task.detached(priority: .utility) { try service.snapshot() }.value
+            guard generation == accessGeneration else { return }
             rtk = snapshot
             rtkState = .ready(snapshot.generatedAt)
             if rtkWatchEnded { startRTKWatch() }
         } catch {
+            guard generation == accessGeneration else { return }
             rtkState = .failed(error.localizedDescription)
         }
     }
@@ -507,6 +523,7 @@ final class CockpitStore {
     }
 
     func refreshSkills() async {
+        let generation = accessGeneration
         guard claudeAccess else {
             skills = nil
             skillsState = .unauthorized
@@ -519,6 +536,7 @@ final class CockpitStore {
                 let cached = cachedProjects
                 if !cached.isEmpty {
                     let quick = try await skillsStore.inventory(projects: cached)
+                    guard generation == accessGeneration else { return }
                     skills = quick
                     skillsState = .ready(quick.generatedAt)
                 }
@@ -526,11 +544,14 @@ final class CockpitStore {
             // 2. Full path: rescan roots (bounded walk) then rebuild the inventory.
             let roots = projectRoots.filter { access.covers($0) }
             let projects = await Task.detached(priority: .utility) { ProjectScanner().scan(roots: roots) }.value
+            guard generation == accessGeneration else { return }
             cachedProjects = projects
             let inventory = try await skillsStore.inventory(projects: projects)
+            guard generation == accessGeneration else { return }
             skills = inventory
             skillsState = .ready(inventory.generatedAt)
         } catch {
+            guard generation == accessGeneration else { return }
             skillsState = .failed(error.localizedDescription)
         }
     }
