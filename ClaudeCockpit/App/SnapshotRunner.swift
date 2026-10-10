@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import CockpitShared
 
 /// Developer mode: when `CLAUDECOCKPIT_SNAPSHOT_DIR` is set, the app walks every
 /// section of the main window, renders it from inside the process (no screen
@@ -65,7 +66,7 @@ enum SnapshotRunner {
             }
         }
 
-        // The Accès tab: granted folders and what they cover. Under the sandbox with no
+        // The Access tab: granted folders and what they cover. Under the sandbox with no
         // grant yet, the overview shot above is the onboarding screen.
         UserDefaults.standard.set(SettingsView.Tab.access.rawValue, forKey: SettingsKey.settingsTab)
         select(.settings)
@@ -83,7 +84,7 @@ enum SnapshotRunner {
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
         panel.contentView = NSHostingView(rootView:
-            MenuBarPanelView().environment(store))
+            MenuBarPanelView().environment(store).environment(\.locale, AppFormat.locale))
         panel.center()
         panel.orderFront(nil)
         try? await Task.sleep(for: .seconds(2))

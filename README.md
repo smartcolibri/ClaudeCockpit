@@ -43,6 +43,9 @@ it as a menu-bar-only app with no Dock icon, or as a regular windowed app.
 Everything is read locally from your own machine. The only network call the app ever makes
 is to Anthropic's own quota endpoint, with the token Claude Code already stored for you.
 
+The interface is in English, with a full French translation picked from your macOS language
+preferences; numbers, dates and currencies follow that language and your region.
+
 ## Features
 
 ### Quotas & pace
@@ -218,7 +221,7 @@ ClaudeCockpit/
 │   ├── Theme/                  design tokens and shared components
 │   └── Resources/              Assets.xcassets, Info.plist, entitlements
 ├── CockpitCore/                local SwiftPM package — all the logic, no UI
-│   ├── Sources/CockpitShared/  paths, French formatters, watchers, front matter
+│   ├── Sources/CockpitShared/  paths, locale-aware formatters, watchers, front matter
 │   ├── Sources/UsageKit/       transcript scanner, pricing, aggregation, insights
 │   ├── Sources/SessionsKit/    session index (SQLite/FTS5), transcript parser, health, export
 │   ├── Sources/QuotaKit/       credentials, usage API, pace math, rate limiting
@@ -271,7 +274,7 @@ landing page:
 - [x] Menu-bar-only mode and launch at login
 - [x] Signed, notarized DMG with Sparkle auto-update
 - [ ] Hooks, MCP servers, `CLAUDE.md` and memory editing — full parity with SkillManager
-- [ ] English UI alongside the French one
+- [x] English UI with a French translation
 - [ ] An iOS companion for the quota gauges
 
 ## License

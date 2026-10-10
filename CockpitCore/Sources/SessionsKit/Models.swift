@@ -240,6 +240,13 @@ public struct ContentBlock: Identifiable, Hashable, Sendable, Codable {
 
     public var isTruncated: Bool { text.hasSuffix(Self.truncationMarker) }
 
+    /// `text` as a reader sees it: the stored marker, which is matched in the index and so
+    /// never changes, becomes `… [word]` with `word` in the reader's language.
+    public static func displayable(_ text: String, truncated word: String) -> String {
+        guard text.hasSuffix(truncationMarker) else { return text }
+        return String(text.dropLast(truncationMarker.count)) + "\n… [\(word)]"
+    }
+
     public init(
         id: String,
         index: Int,
@@ -365,6 +372,17 @@ public struct SearchHit: Identifiable, Hashable, Sendable {
         self.snippet = snippet
         self.timestamp = timestamp
     }
+
+    /// What `snippet()` puts around each matched term: private-use characters, so the
+    /// quotes the reader sees are the app's to choose and never collide with the transcript's.
+    public static let matchStart = "\u{E000}"
+    public static let matchEnd = "\u{E001}"
+
+    /// The snippet with each match between `open` and `close`, e.g. the locale's quotes.
+    public func snippet(open: String, close: String) -> String {
+        snippet.replacingOccurrences(of: Self.matchStart, with: open)
+            .replacingOccurrences(of: Self.matchEnd, with: close)
+    }
 }
 
 /// One project (working directory) with its session count.
@@ -425,19 +443,32 @@ public struct SessionHealthCounters: Hashable, Sendable, Codable {
     }
 }
 
-/// A deterministic, LLM-free verdict on how a session went, with its reasons in French.
+/// A deterministic, LLM-free verdict on how a session went, with its reasons.
 public struct SessionHealth: Hashable, Sendable, Codable {
     public let grade: HealthGrade
     /// 0–100, clamped.
     public let score: Int
-    /// French sentences, in the order the rules fired.
-    public let evidence: [String]
+    /// The reasons, in the order the rules fired. The app words them.
+    public let evidence: [HealthEvidence]
 
-    public init(grade: HealthGrade, score: Int, evidence: [String]) {
+    public init(grade: HealthGrade, score: Int, evidence: [HealthEvidence]) {
         self.grade = grade
         self.score = score
         self.evidence = evidence
     }
+}
+
+/// One reason behind a health grade, as values; ``sentence(locale:)`` words it in the
+/// language asked for, which the app passes. Rates are fractions (0…1) and are cited next to the counts so the
+/// sentence explains the grade instead of seeming to contradict it.
+public enum HealthEvidence: Hashable, Sendable, Codable {
+    case toolErrors(count: Int, calls: Int, rate: Double)
+    case apiErrors(count: Int, turns: Int, rate: Double)
+    case endedOnError
+    case abortedTurns(count: Int, turns: Int)
+    case repeatedFailure(times: Int)
+    /// Nothing fired.
+    case noErrors
 }
 
 // MARK: - Activity
@@ -617,8 +648,8 @@ public enum SessionsError: Error, LocalizedError, Sendable, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .sqlite(let message): return "Erreur SQLite : \(message)"
-        case .unknownSession(let id): return "Session inconnue : \(id)"
+        case .sqlite(let message): return String(localized: "SQLite error: \(message)", bundle: .module)
+        case .unknownSession(let id): return String(localized: "Unknown session: \(id)", bundle: .module)
         }
     }
 }

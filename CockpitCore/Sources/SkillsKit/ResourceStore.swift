@@ -48,7 +48,7 @@ public actor ResourceStore {
         do {
             return try String(contentsOf: url, encoding: .utf8)
         } catch {
-            throw SkillsError.io("Lecture impossible : \(error.localizedDescription)")
+            throw SkillsError.io(String(localized: "Could not read: \(error.localizedDescription)", bundle: .module))
         }
     }
 
@@ -60,7 +60,7 @@ public actor ResourceStore {
         do {
             return try String(contentsOf: url, encoding: .utf8)
         } catch {
-            throw SkillsError.io("Lecture impossible : \(error.localizedDescription)")
+            throw SkillsError.io(String(localized: "Could not read: \(error.localizedDescription)", bundle: .module))
         }
     }
 
@@ -88,7 +88,7 @@ public actor ResourceStore {
         overwrite: Bool = false
     ) throws -> ClaudeResource {
         guard level != resource.level else {
-            throw SkillsError.io("La source et la destination sont identiques.")
+            throw SkillsError.io(String(localized: "The source and the destination are the same.", bundle: .module))
         }
         let name = try sanitizedName(resource.name)
         let source = resource.url
@@ -101,7 +101,7 @@ public actor ResourceStore {
         guard paths.isInsideHome(destinationDirectory) else { throw SkillsError.outsideHome }
         let destination = itemURL(kind: resource.kind, name: name, in: destinationDirectory)
         guard canonicalPath(source) != canonicalPath(destination) else {
-            throw SkillsError.io("La source et la destination sont identiques.")
+            throw SkillsError.io(String(localized: "The source and the destination are the same.", bundle: .module))
         }
         guard !isSymbolicLink(destination) else { throw SkillsError.symlinkUnsupported(destination) }
 
@@ -121,10 +121,10 @@ public actor ResourceStore {
             at: destination,
             replacingExisting: replacesExisting,
             backup: backupURL,
-            failureMessage: "Copie impossible")
+            failureMessage: String(localized: "Copy failed", bundle: .module))
 
         guard let created = load(kind: resource.kind, level: level, itemURL: destination) else {
-            throw failure("La ressource transférée est illisible.", backup: backupURL)
+            throw failure(String(localized: "The transferred resource cannot be read.", bundle: .module), backup: backupURL)
         }
 
         if mode == .move {
@@ -169,10 +169,10 @@ public actor ResourceStore {
             at: destination,
             replacingExisting: replacesExisting,
             backup: backupURL,
-            failureMessage: "Import impossible")
+            failureMessage: String(localized: "Import failed", bundle: .module))
 
         guard let created = load(kind: .skill, level: level, itemURL: destination) else {
-            throw SkillsError.io("Le skill importé est illisible.")
+            throw SkillsError.io(String(localized: "The imported skill cannot be read.", bundle: .module))
         }
         return created
     }
@@ -334,7 +334,7 @@ public actor ResourceStore {
     private func sanitizedName(_ raw: String) throws -> String {
         let name = NameSanitizer.sanitize(raw)
         guard !name.isEmpty, name != ".", name != ".." else {
-            throw SkillsError.io("Nom de ressource invalide.")
+            throw SkillsError.io(String(localized: "Invalid resource name.", bundle: .module))
         }
         return name
     }
@@ -367,7 +367,7 @@ public actor ResourceStore {
         do {
             try fileManager.copyItem(at: url, to: destination)
         } catch {
-            throw SkillsError.io("Sauvegarde impossible : \(error.localizedDescription)")
+            throw SkillsError.io(String(localized: "Backup failed: \(error.localizedDescription)", bundle: .module))
         }
         return destination
     }
@@ -397,7 +397,7 @@ public actor ResourceStore {
             try fileManager.copyItem(at: source, to: temporary)
         } catch {
             try? fileManager.removeItem(at: temporary)
-            throw failure("\(failureMessage) : \(error.localizedDescription)", backup: backup)
+            throw failure(String(localized: "\(failureMessage): \(error.localizedDescription)", bundle: .module), backup: backup)
         }
 
         do {
@@ -408,7 +408,7 @@ public actor ResourceStore {
             }
         } catch {
             try? fileManager.removeItem(at: temporary)
-            throw failure("\(failureMessage) : \(error.localizedDescription)", backup: backup)
+            throw failure(String(localized: "\(failureMessage): \(error.localizedDescription)", bundle: .module), backup: backup)
         }
     }
 
@@ -424,7 +424,7 @@ public actor ResourceStore {
         do {
             try fileManager.createDirectory(at: url, withIntermediateDirectories: true)
         } catch {
-            throw SkillsError.io("Création du dossier impossible : \(error.localizedDescription)")
+            throw SkillsError.io(String(localized: "Could not create the folder: \(error.localizedDescription)", bundle: .module))
         }
     }
 
@@ -433,7 +433,7 @@ public actor ResourceStore {
         do {
             try fileManager.removeItem(at: url)
         } catch {
-            throw SkillsError.io("Suppression impossible : \(error.localizedDescription)")
+            throw SkillsError.io(String(localized: "Delete failed: \(error.localizedDescription)", bundle: .module))
         }
     }
 

@@ -117,7 +117,9 @@ final class SessionQueriesTests: XCTestCase {
         let hit = try XCTUnwrap(hits.first)
         XCTAssertEqual(hit.sessionId, "sess-2")
         XCTAssertEqual(hit.messageId, "o1")
-        XCTAssertTrue(hit.snippet.contains("«"), hit.snippet)
+        XCTAssertTrue(hit.snippet.contains(SearchHit.matchStart), hit.snippet)
+        XCTAssertTrue(hit.snippet(open: "“", close: "”").contains("“"), hit.snippet)
+        XCTAssertFalse(hit.snippet(open: "“", close: "”").contains(SearchHit.matchEnd), hit.snippet)
         XCTAssertTrue(hit.snippet.lowercased().contains("licornes"), hit.snippet)
         XCTAssertEqual(hit.id, hit.messageId)
     }

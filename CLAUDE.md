@@ -15,7 +15,7 @@ cd CockpitCore && swift test          # core modules, no NSApplication needed
 - `Scripts/release.sh <version>`: sign, notarize, staple, DMG, Sparkle sign, appcast.
 
 ## Rules
-- UI strings in French; code, commits, docs in English. Conventional commits.
+- UI strings in English (source), French translation in the String Catalogs (`ClaudeCockpit/Resources/Localizable.xcstrings`, `CockpitCore/Sources/*/Localizable.xcstrings`); run `Scripts/check-l10n.py` after a build. Code, commits, docs in English. Conventional commits.
 - Never regenerate the Sparkle key (keychain account `ClaudeCockpit`).
 - All file access to `~/.claude` is read-only except SkillsKit transfers, which back up first into `~/.claude/backups/`.
 - Release artefacts go to `release/`.

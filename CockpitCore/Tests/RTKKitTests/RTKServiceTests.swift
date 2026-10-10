@@ -136,6 +136,6 @@ final class RTKServiceTests: XCTestCase {
     func testErrorMessagesAreLocalised() {
         XCTAssertNotNil(RTKError.databaseNotFound.errorDescription)
         XCTAssertNotNil(RTKError.invalidSchema.errorDescription)
-        XCTAssertEqual(RTKError.sqlite("boom").errorDescription, "Erreur SQLite : boom")
+        XCTAssertTrue(RTKError.sqlite("boom").errorDescription?.contains("boom") == true)
     }
 }

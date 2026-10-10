@@ -22,8 +22,8 @@ public enum DemoSeeder {
 
         public var errorDescription: String? {
             switch self {
-            case .missingManifest(let url): "Données d'exemple introuvables (\(url.path))."
-            case .sqlite(let message): "Base RTK d'exemple illisible : \(message)"
+            case .missingManifest(let url): String(localized: "Sample data not found (\(url.path)).", bundle: .module)
+            case .sqlite(let message): String(localized: "Sample RTK database cannot be read: \(message)", bundle: .module)
             }
         }
     }
@@ -260,7 +260,7 @@ public enum DemoSeeder {
         var handle: OpaquePointer?
         guard sqlite3_open(database.path, &handle) == SQLITE_OK, let handle else {
             sqlite3_close(handle)
-            throw SeedError.sqlite("ouverture impossible")
+            throw SeedError.sqlite("cannot open the database")
         }
         defer { sqlite3_close(handle) }
         func check(_ code: Int32) throws {

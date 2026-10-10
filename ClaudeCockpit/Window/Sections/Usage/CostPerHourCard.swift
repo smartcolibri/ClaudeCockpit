@@ -1,8 +1,9 @@
 import SwiftUI
 import Charts
+import CockpitShared
 import UsageKit
 
-/// "Hier vs aujourd'hui, par heure" — yesterday is a wide context bar, today overlays as a
+/// "Yesterday vs today, by hour" — yesterday is a wide context bar, today overlays as a
 /// narrower emphasis bar on the same hour slot, with a dashed rule on the current hour. Two
 /// independently-coloured `BarMark` series drawn without a shared `foregroundStyle(by:)` key,
 /// so Swift Charts overlays them instead of dodging them side by side.
@@ -17,10 +18,10 @@ struct CostPerHourCard: View {
         let money = money
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
-                SectionLabel(text: "Coût par heure")
+                SectionLabel(text: String(localized: "Cost per hour"))
                 Spacer()
-                legendChip("Hier", color: UsagePalette.context)
-                legendChip("Aujourd'hui", color: Theme.blue)
+                legendChip(String(localized: "Yesterday"), color: UsagePalette.context)
+                legendChip(String(localized: "Today"), color: Theme.blue)
             }
             Chart {
                 // `.fixed(_:)`, not `.ratio(_:)`: with a plain `Int` x-value (no `.day`-style
@@ -28,23 +29,23 @@ struct CostPerHourCard: View {
                 // ratio-sized bar — it needs an absolute width.
                 ForEach(yesterday) { bucket in
                     BarMark(
-                        x: .value("Heure", bucket.hour),
-                        y: .value("Coût", bucket.estimatedCostUSD),
+                        x: .value("Hour", bucket.hour),
+                        y: .value("Cost", bucket.estimatedCostUSD),
                         width: .fixed(12))
                     .foregroundStyle(UsagePalette.context.opacity(0.45))
                 }
                 ForEach(today) { bucket in
                     BarMark(
-                        x: .value("Heure", bucket.hour),
-                        y: .value("Coût", bucket.estimatedCostUSD),
+                        x: .value("Hour", bucket.hour),
+                        y: .value("Cost", bucket.estimatedCostUSD),
                         width: .fixed(6))
                     .foregroundStyle(Theme.blue)
                 }
-                RuleMark(x: .value("Heure", currentHour))
+                RuleMark(x: .value("Hour", currentHour))
                     .foregroundStyle(Theme.slate)
                     .lineStyle(StrokeStyle(lineWidth: 1, dash: [3, 3]))
                     .annotation(position: .top, alignment: .center) {
-                        Text("maintenant").font(.system(size: 10)).foregroundStyle(Theme.slate)
+                        Text("now").font(.system(size: 10)).foregroundStyle(Theme.slate)
                     }
             }
             .chartXAxis {
@@ -52,7 +53,7 @@ struct CostPerHourCard: View {
                     AxisGridLine().foregroundStyle(Theme.cardStroke)
                     AxisValueLabel {
                         if let hour = value.as(Int.self) {
-                            Text("\(hour) h").foregroundStyle(Theme.slate)
+                            Text(verbatim: AppFormat.hour(hour)).foregroundStyle(Theme.slate)
                         }
                     }
                 }
@@ -69,10 +70,10 @@ struct CostPerHourCard: View {
             }
             .frame(minHeight: 160)
             HStack(alignment: .bottom) {
-                total("Hier", yesterday.reduce(0) { $0 + $1.estimatedCostUSD }, color: Theme.ink)
+                total(String(localized: "Yesterday"), yesterday.reduce(0) { $0 + $1.estimatedCostUSD }, color: Theme.ink)
                 Spacer()
                 total(
-                    "Aujourd'hui",
+                    String(localized: "Today"),
                     today.reduce(0) { $0 + $1.estimatedCostUSD },
                     color: Theme.blue,
                     alignment: .trailing)

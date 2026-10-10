@@ -14,20 +14,6 @@ public enum DateRangeFilter: String, CaseIterable, Identifiable, Codable, Hashab
 
     public var id: String { rawValue }
 
-    /// French label for the picker.
-    public var frenchLabel: String {
-        switch self {
-        case .today: "Aujourd'hui"
-        case .thisWeek: "Cette semaine"
-        case .thisMonth: "Ce mois-ci"
-        case .prevMonth: "Mois précédent"
-        case .last7Days: "7 j"
-        case .last30Days: "30 j"
-        case .last90Days: "90 j"
-        case .all: "Tout"
-        }
-    }
-
     /// Returns the inclusive lower bound and exclusive upper bound for this range, or `nil`
     /// bounds for `.all` (no filtering).
     public func bounds(

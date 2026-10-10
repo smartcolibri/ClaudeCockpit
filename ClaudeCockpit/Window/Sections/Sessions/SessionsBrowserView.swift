@@ -32,8 +32,8 @@ struct SessionsBrowserView: View {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .day: return "Par jour"
-            case .project: return "Par projet"
+            case .day: return String(localized: "By Day")
+            case .project: return String(localized: "By Project")
             }
         }
     }
@@ -43,10 +43,10 @@ struct SessionsBrowserView: View {
         var id: String { rawValue }
         var title: String {
             switch self {
-            case .today: return "Aujourd'hui"
-            case .week: return "7 j"
-            case .month: return "30 j"
-            case .all: return "Tout"
+            case .today: return String(localized: "Today")
+            case .week: return String(localized: "7 days")
+            case .month: return String(localized: "30 days")
+            case .all: return String(localized: "All")
             }
         }
         func since(_ reference: Date, calendar: Calendar = .current) -> Date? {
@@ -92,7 +92,7 @@ struct SessionsBrowserView: View {
             HStack(spacing: 10) {
                 searchField
                 Spacer(minLength: 8)
-                Picker("Regroupement", selection: $groupingRaw) {
+                Picker("Grouping", selection: $groupingRaw) {
                     ForEach(SessionGrouping.allCases) { Text($0.title).tag($0.rawValue) }
                 }
                 .labelsHidden()
@@ -108,7 +108,7 @@ struct SessionsBrowserView: View {
     private var searchField: some View {
         HStack(spacing: 6) {
             Image(systemName: "magnifyingglass").font(.system(size: 11)).foregroundStyle(Theme.slate)
-            TextField("Rechercher dans tous les transcripts", text: $searchText)
+            TextField("Search All Transcripts", text: $searchText)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
                 .focused($searchFocused)
@@ -118,7 +118,7 @@ struct SessionsBrowserView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.mist)
-                .accessibilityLabel("Effacer la recherche")
+                .accessibilityLabel("Clear the search")
             }
         }
         .padding(.horizontal, 8)
@@ -133,15 +133,15 @@ struct SessionsBrowserView: View {
                 projectMenu
                 periodMenu
                 SessionChip(
-                    title: "Étoilées", systemImage: "star",
+                    title: String(localized: "Starred"), systemImage: "star",
                     active: store.sessionFilter.starredOnly, tint: Theme.accent
                 ) { store.sessionFilter.starredOnly.toggle() }
                 SessionChip(
-                    title: "Avec erreurs", systemImage: "exclamationmark.triangle",
+                    title: String(localized: "With Errors"), systemImage: "exclamationmark.triangle",
                     active: store.sessionFilter.withErrorsOnly, tint: .red
                 ) { store.sessionFilter.withErrorsOnly.toggle() }
                 SessionChip(
-                    title: "Sous-agents", systemImage: "person.2",
+                    title: String(localized: "Sub-agents"), systemImage: "person.2",
                     active: store.sessionFilter.includeSubagents, tint: Theme.violet
                 ) { store.sessionFilter.includeSubagents.toggle() }
             }
@@ -151,16 +151,16 @@ struct SessionsBrowserView: View {
 
     private var projectMenu: some View {
         Menu {
-            Button("Tous les projets") { store.sessionFilter.projectCwd = nil }
+            Button("All Projects") { store.sessionFilter.projectCwd = nil }
             Divider()
             ForEach(projects) { project in
-                Button("\(UsagePath.shorten(project.cwd)) (\(project.sessions))") {
+                Button(UsagePath.shorten(project.cwd) + " (\(project.sessions))") {
                     store.sessionFilter.projectCwd = project.cwd
                 }
             }
         } label: {
             SessionChip(
-                title: store.sessionFilter.projectCwd.map { UsagePath.shorten($0) } ?? "Projet",
+                title: store.sessionFilter.projectCwd.map { UsagePath.shorten($0) } ?? String(localized: "Project"),
                 systemImage: "folder",
                 active: store.sessionFilter.projectCwd != nil,
                 tint: Theme.blue)
@@ -237,10 +237,10 @@ struct SessionsBrowserView: View {
                 if store.sessionsTruncated {
                     Section {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Affichage limité à \(FRFormat.plural(store.sessions.count, "session")) · il y en a d'autres")
+                            Text("Showing only \(store.sessions.count) sessions · there are more")
                                 .font(.system(size: 11))
                                 .foregroundStyle(Theme.slate)
-                            Button("Afficher 200 sessions de plus") {
+                            Button("Show 200 More Sessions") {
                                 Task { await store.loadMoreSessions() }
                             }
                             .controlSize(.small)
@@ -303,9 +303,9 @@ struct SessionsBrowserView: View {
     }
 
     private func dayTitle(_ day: Date, calendar: Calendar) -> String {
-        if calendar.isDateInToday(day) { return "Aujourd'hui" }
-        if calendar.isDateInYesterday(day) { return "Hier" }
-        return FRFormat.shortDate(day)
+        if calendar.isDateInToday(day) { return String(localized: "Today") }
+        if calendar.isDateInYesterday(day) { return String(localized: "Yesterday") }
+        return AppFormat.shortDate(day)
     }
 
     private var projectGroups: [SessionGroupRows] {
@@ -329,10 +329,10 @@ struct SessionsBrowserView: View {
         VStack(spacing: 10) {
             if store.sessionIndex.isRunning {
                 ProgressView().controlSize(.small)
-                Text("Indexation des transcripts…")
+                Text("Indexing Transcripts…")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("\(FRFormat.plural(store.sessionIndex.filesDone, "fichier")) sur \(store.sessionIndex.filesTotal). La liste se remplit au fur et à mesure.")
+                Text("\(String(localized: "\(store.sessionIndex.filesDone) files", locale: AppFormat.locale)) out of \(store.sessionIndex.filesTotal). The list fills in as it goes.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .multilineTextAlignment(.center)
@@ -348,7 +348,7 @@ struct SessionsBrowserView: View {
                     .foregroundStyle(Theme.slate)
                     .multilineTextAlignment(.center)
                 if store.sessionIndex.lastRun == nil {
-                    Button("Indexer maintenant") { Task { await store.indexSessions() } }
+                    Button("Index Now") { Task { await store.indexSessions() } }
                         .controlSize(.small)
                 }
             }
@@ -369,19 +369,19 @@ struct SessionsBrowserView: View {
     }
 
     private var emptyTitle: String {
-        if store.sessionIndex.lastRun == nil { return "Index non construit" }
-        if hasActiveFilter { return "Aucun résultat" }
-        return "Aucune session indexée"
+        if store.sessionIndex.lastRun == nil { return String(localized: "Index not built") }
+        if hasActiveFilter { return String(localized: "No results") }
+        return String(localized: "No sessions indexed")
     }
 
     private var emptyMessage: String {
         if store.sessionIndex.lastRun == nil {
-            return "Les transcripts de ~/.claude/projects n'ont pas encore été lus."
+            return String(localized: "The transcripts in ~/.claude/projects have not been read yet.")
         }
         if hasActiveFilter {
-            return "Aucune session ne correspond à ce filtre. Élargissez la période ou retirez un critère."
+            return String(localized: "No session matches this filter. Widen the period or remove a criterion.")
         }
-        return "Aucun transcript trouvé dans ~/.claude/projects."
+        return String(localized: "No transcripts found in ~/.claude/projects.")
     }
 
     // MARK: - Detail
@@ -396,10 +396,10 @@ struct SessionsBrowserView: View {
                 Image(systemName: "text.bubble")
                     .font(.system(size: 28, weight: .light))
                     .foregroundStyle(Theme.mist)
-                Text("Sélectionnez une session")
+                Text("Select a Session")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("Le transcript complet s'affiche ici : tours, appels d'outils, diffs et sous-agents.")
+                Text("The full transcript shows here: turns, tool calls, diffs and sub-agents.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .multilineTextAlignment(.center)
@@ -443,7 +443,9 @@ private struct SessionRowView: View {
             statsLine
             ForEach(Array(hits.prefix(3))) { hit in
                 Button { onSelectHit(hit) } label: {
-                    Text(SessionsPalette.oneLine(hit.snippet, limit: 180))
+                    Text(SessionsPalette.oneLine(hit.snippet(
+                        open: AppFormat.locale.quotationBeginDelimiter ?? "“",
+                        close: AppFormat.locale.quotationEndDelimiter ?? "”"), limit: 180))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .lineLimit(2)
@@ -455,7 +457,7 @@ private struct SessionRowView: View {
                         .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("Ouvrir ce message dans le transcript")
+                .help("Open this message in the transcript")
             }
         }
         .padding(.vertical, 4)
@@ -471,7 +473,7 @@ private struct SessionRowView: View {
                     .foregroundStyle(session.isStarred ? Theme.accent : Theme.mist)
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(session.isStarred ? "Retirer des favoris" : "Mettre en favori")
+            .accessibilityLabel(session.isStarred ? Text("Remove from Favorites") : Text("Add to Favorites"))
 
             Text(session.title)
                 .font(.system(size: 12, weight: .semibold))
@@ -483,14 +485,14 @@ private struct SessionRowView: View {
                 Circle()
                     .fill(Theme.emerald)
                     .frame(width: 6, height: 6)
-                    .help("Session active à l'instant")
-                    .accessibilityLabel("Session active")
+                    .help("Session active right now")
+                    .accessibilityLabel("Active session")
             }
             if session.isSubagent {
                 Image(systemName: "person.2")
                     .font(.system(size: 9))
                     .foregroundStyle(Theme.violet)
-                    .help("Transcript de sous-agent")
+                    .help("Sub-agent transcript")
             }
             Spacer(minLength: 4)
             HealthBadge(grade: session.healthGrade, compact: true)
@@ -499,11 +501,11 @@ private struct SessionRowView: View {
 
     private var statsLine: some View {
         HStack(spacing: 8) {
-            Text(FRFormat.time(session.firstTimestamp))
-            Text(FRFormat.duration(session.duration))
-            Text(FRFormat.plural(session.userTurns + session.assistantTurns, "tour"))
+            Text(AppFormat.time(session.firstTimestamp))
+            Text(AppFormat.duration(session.duration))
+            Text("\(session.userTurns + session.assistantTurns) turns")
             if session.toolErrors > 0 {
-                Text("\(FRFormat.integer(session.toolErrors)) err.").foregroundStyle(.red)
+                Text("\(AppFormat.integer(session.toolErrors)) err.").foregroundStyle(.red)
             }
             Spacer(minLength: 4)
             // `~` marks a cost priced from tokens rather than read from the

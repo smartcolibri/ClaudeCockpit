@@ -175,7 +175,7 @@ struct DisclosureCard<Content: View>: View {
     }
 }
 
-/// "Libellé ……… valeur" row.
+/// "Label ……… value" row.
 struct InfoRow: View {
     let label: String
     let value: String
@@ -242,7 +242,7 @@ struct SourceBanner: View {
     let kind: Kind
     let message: String
     var action: (() -> Void)? = nil
-    var actionTitle: String = "Réessayer"
+    var actionTitle: String = String(localized: "Retry")
 
     private var tint: Color {
         switch kind {

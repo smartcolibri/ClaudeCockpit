@@ -8,7 +8,7 @@ import SkillsKit
 /// Left: the resources of the selected kind at the selected level. Right: the
 /// detail pane with the markdown content and the copy / move / import /
 /// reveal / delete actions. Skills additionally expose the read-only plugin
-/// catalogue through the « Plugins » toggle.
+/// catalogue through the "Plugins" toggle.
 struct ResourcesView: View {
     let kind: ResourceKind
     @Environment(CockpitStore.self) private var store
@@ -68,7 +68,7 @@ struct ResourcesView: View {
                     .padding(.top, 12)
             }
             if !store.homeAccess {
-                AccessRequiredBanner(message: "seul \(store.displayPath(store.paths.claudeDir)) est autorisé. Les éléments liés hors de ce dossier et les projets ne sont pas listés.")
+                AccessRequiredBanner(message: String(localized: "only \(store.displayPath(store.paths.claudeDir)) is allowed. Items linked outside this folder and projects are not listed.", locale: AppFormat.locale))
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
             }
@@ -101,7 +101,7 @@ struct ResourcesView: View {
                     .font(.display(15))
                     .foregroundStyle(Theme.ink)
 
-                Picker("Niveau", selection: $levelID) {
+                Picker("Level", selection: $levelID) {
                     ForEach(levels, id: \.id) { level in
                         Text(level.label).tag(level.id)
                     }
@@ -119,7 +119,7 @@ struct ResourcesView: View {
                         Label("Plugins", systemImage: "puzzlepiece.extension.fill")
                     }
                     .toggleStyle(.button)
-                    .help("Afficher le catalogue de skills fourni par les plugins (lecture seule)")
+                    .help("Show the skills catalog provided by plugins (read-only)")
                 }
 
                 Button {
@@ -128,8 +128,8 @@ struct ResourcesView: View {
                     Image(systemName: "arrow.clockwise")
                 }
                 .buttonStyle(.plain)
-                .help("Relire les ressources")
-                .accessibilityLabel("Relire les ressources")
+                .help("Reload the resources")
+                .accessibilityLabel("Reload the resources")
             }
             levelBadges
         }
@@ -143,7 +143,7 @@ struct ResourcesView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
-            TextField("Rechercher", text: $search)
+            TextField("Search", text: $search)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12))
             if !search.isEmpty {
@@ -152,7 +152,7 @@ struct ResourcesView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.mist)
-                .accessibilityLabel("Effacer la recherche")
+                .accessibilityLabel("Clear the search")
             }
         }
         .padding(.horizontal, 8)
@@ -184,7 +184,7 @@ struct ResourcesView: View {
                     } label: {
                         HStack(spacing: 5) {
                             Text(level.label).font(.label(11))
-                            Text("\(inventory?.count(kind: kind, level: level) ?? 0)")
+                            Text(verbatim: "\(inventory?.count(kind: kind, level: level) ?? 0)")
                                 .font(.data(10))
                                 .monospacedDigit()
                                 .opacity(0.8)
@@ -203,7 +203,7 @@ struct ResourcesView: View {
                     Button { showPlugins = true } label: {
                         HStack(spacing: 5) {
                             Text("Plugins").font(.label(11))
-                            Text("\(count)").font(.data(10)).monospacedDigit().opacity(0.8)
+                            Text(verbatim: "\(count)").font(.data(10)).monospacedDigit().opacity(0.8)
                         }
                         .padding(.horizontal, 9)
                         .padding(.vertical, 4)
@@ -246,14 +246,14 @@ struct ResourcesView: View {
     }
 
     private var emptyText: String {
-        if store.skillsState.isLoading && inventory == nil { return "Lecture des ressources…" }
-        if !query.isEmpty { return "Aucun résultat pour « \(search) »." }
-        return "Aucune ressource de type « \(kind.pluralLabel.lowercased()) » dans \(level.label)."
+        if store.skillsState.isLoading && inventory == nil { return String(localized: "Reading resources…") }
+        if !query.isEmpty { return String(localized: "No results for “\(search)”.", locale: AppFormat.locale) }
+        return String(localized: "No \(kind.pluralLabel.lowercased()) in \(level.label).", locale: AppFormat.locale)
     }
 
     private var pluginEmptyText: String {
-        if !query.isEmpty { return "Aucun résultat pour « \(search) »." }
-        return "Aucun plugin installé."
+        if !query.isEmpty { return String(localized: "No results for “\(search)”.", locale: AppFormat.locale) }
+        return String(localized: "No plugins installed.")
     }
 
     private func emptyState(text: String) -> some View {
@@ -279,7 +279,7 @@ struct ResourcesView: View {
                 }
                 .id(plugin.id)
             } else {
-                placeholder("Sélectionnez un plugin pour voir son contenu.")
+                placeholder("Select a plugin to see its content.")
             }
         } else if let resource = selectedResource {
             ResourceDetailView(
@@ -292,11 +292,11 @@ struct ResourcesView: View {
                 onDeleted: { selectionID = nil })
             .id(resource.id)
         } else {
-            placeholder("Sélectionnez un élément dans la liste.")
+            placeholder("Select an item in the list.")
         }
     }
 
-    private func placeholder(_ text: String) -> some View {
+    private func placeholder(_ text: LocalizedStringKey) -> some View {
         VStack(spacing: 10) {
             Image(systemName: "doc.text")
                 .font(.system(size: 26))
@@ -326,7 +326,7 @@ private struct ResourceRow: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            Text(FRFormat.relative(resource.modifiedAt))
+            Text(AppFormat.relative(resource.modifiedAt, standalone: true))
                 .font(.label(10))
                 .foregroundStyle(Theme.mist)
         }
@@ -351,7 +351,7 @@ private struct PluginRow: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            Text("\(plugin.org) · \(plugin.version)")
+            Text(verbatim: "\(plugin.org) · \(plugin.version)")
                 .font(.label(10))
                 .foregroundStyle(Theme.mist)
         }

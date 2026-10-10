@@ -12,9 +12,9 @@ struct ModelMixCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "Répartition par modèle")
+            SectionLabel(text: String(localized: "Breakdown by model"))
             if rows.isEmpty || total <= 0 {
-                Text("Aucune donnée sur cette période.")
+                Text("No data in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .center)
@@ -52,7 +52,7 @@ struct ModelMixCard: View {
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(row.family.color)
                         .frame(width: 9, height: 9)
-                    Text("\(row.family.label) · \(FRFormat.percent(row.costUSD / total))")
+                    Text(verbatim: "\(row.family.label) · \(AppFormat.percent(row.costUSD / total))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                     Spacer(minLength: 4)

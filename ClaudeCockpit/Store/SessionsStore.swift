@@ -11,7 +11,7 @@ extension CockpitStore {
     /// Brings the index up to date and refreshes the visible list.
     ///
     /// Incremental by default: only transcripts whose size or mtime moved are read.
-    /// `full` drops the database and rebuilds it, which is the "Reconstruire l'index"
+    /// `full` drops the database and rebuilds it, which is the "Rebuild Index"
     /// button and the only way to recover from a corrupted file.
     /// What a session cost, and whether that number was measured or estimated.
     ///
@@ -178,7 +178,7 @@ extension CockpitStore {
             try await sessionService.setStarred(starred, sessionId: sessionId)
             await refreshSessionList()
         } catch {
-            notice = "Impossible de modifier le favori : \(error.localizedDescription)"
+            notice = String(localized: "Could not change the favorite: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 
@@ -188,19 +188,19 @@ extension CockpitStore {
             try await sessionService.rename(sessionId: sessionId, customName: (trimmed?.isEmpty ?? true) ? nil : trimmed)
             await refreshSessionList()
         } catch {
-            notice = "Renommage impossible : \(error.localizedDescription)"
+            notice = String(localized: "Rename failed: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 
     /// Hides a session from the list. This is a flag in the index: the transcript on
-    /// disk is never modified, and "Reconstruire l'index" brings it back.
+    /// disk is never modified, and "Rebuild Index" brings it back.
     func hideSession(_ sessionId: String) async {
         do {
             try await sessionService.hide(sessionId: sessionId)
             await refreshSessionList()
-            notice = "Session masquée. Elle réapparaîtra après une reconstruction de l'index."
+            notice = String(localized: "Session hidden. It will reappear after the index is rebuilt.")
         } catch {
-            notice = "Impossible de masquer la session : \(error.localizedDescription)"
+            notice = String(localized: "Could not hide the session: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 
@@ -221,11 +221,11 @@ extension CockpitStore {
         // A sample session has nothing to resume: copying the command would hand the
         // reviewer one that fails in a terminal.
         guard !isDemo else {
-            notice = "Mode démo : les sessions d'exemple ne peuvent pas être reprises dans Claude Code."
+            notice = String(localized: "Demo mode: sample sessions cannot be resumed in Claude Code.")
             return
         }
         guard canResume(session) else {
-            notice = "Dossier de travail inconnu pour cette session."
+            notice = String(localized: "Unknown working folder for this session.")
             return
         }
         let command = "cd \(shellQuoted(session.cwd)) && claude --resume \(shellQuoted(session.id))"
@@ -237,9 +237,9 @@ extension CockpitStore {
         let cwd = URL(fileURLWithPath: session.cwd, isDirectory: true)
         var isDir: ObjCBool = false
         if isCovered(cwd), !(FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDir) && isDir.boolValue) {
-            notice = "Commande copiée, mais le dossier \(session.cwd) n'existe plus."
+            notice = String(localized: "Command copied, but the folder \(session.cwd) no longer exists.", locale: AppFormat.locale)
         } else {
-            notice = "Commande copiée : collez-la dans un terminal."
+            notice = String(localized: "Command copied: paste it into a terminal.")
         }
     }
 
@@ -250,7 +250,7 @@ extension CockpitStore {
 
     func revealTranscript(_ session: SessionRef) async {
         guard let url = try? await sessionService.transcriptURL(sessionId: session.id) else {
-            notice = "Transcript introuvable pour cette session."
+            notice = String(localized: "Transcript not found for this session.")
             return
         }
         NSWorkspace.shared.activateFileViewerSelecting([url])
@@ -282,9 +282,9 @@ extension CockpitStore {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try text.write(to: url, atomically: true, encoding: .utf8)
-            notice = "Session exportée : \(url.lastPathComponent)"
+            notice = String(localized: "Session exported: \(url.lastPathComponent)", locale: AppFormat.locale)
         } catch {
-            notice = "Export impossible : \(error.localizedDescription)"
+            notice = String(localized: "Export failed: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 

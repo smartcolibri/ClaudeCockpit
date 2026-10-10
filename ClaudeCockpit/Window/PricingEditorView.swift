@@ -34,13 +34,13 @@ struct PricingEditorView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Tarifs par famille de modèle")
+                Text("Pricing by Model Family")
                     .font(.system(size: 15, weight: .semibold))
                 Spacer()
-                Button("Rétablir les tarifs par défaut") { draft = .default }
+                Button("Restore Default Pricing") { draft = .default }
                     .disabled(draft == .default)
             }
-            Text("Dollars par million de tokens. Toute modification s'applique immédiatement au coût estimé, partout dans l'application.")
+            Text("Dollars per million tokens. Any change applies at once to the estimated cost, everywhere in the app.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
                 .fixedSize(horizontal: false, vertical: true)
@@ -53,10 +53,10 @@ struct PricingEditorView: View {
         Grid(alignment: .trailing, horizontalSpacing: 14, verticalSpacing: 10) {
             GridRow {
                 Text("")
-                columnHeader("Entrée")
-                columnHeader("Sortie")
-                columnHeader("Création cache")
-                columnHeader("Lecture cache")
+                columnHeader("Input")
+                columnHeader("Output")
+                columnHeader("Cache Write")
+                columnHeader("Cache Read")
             }
             Divider().gridCellColumns(5).gridCellUnsizedAxes(.horizontal)
             ForEach(ModelFamily.allCases) { family in
@@ -77,7 +77,7 @@ struct PricingEditorView: View {
         .panelStyle()
     }
 
-    private func columnHeader(_ title: String) -> some View {
+    private func columnHeader(_ title: LocalizedStringKey) -> some View {
         Text(title)
             .font(.label(10))
             .foregroundStyle(Theme.slate)
@@ -85,7 +85,7 @@ struct PricingEditorView: View {
 
     private func rateCell(_ value: Binding<Double>) -> some View {
         HStack(spacing: 2) {
-            Text("$").foregroundStyle(Theme.slate)
+            Text(verbatim: "$").foregroundStyle(Theme.slate)
             TextField("", value: value, format: .number.precision(.fractionLength(0...2)))
                 .textFieldStyle(.roundedBorder)
                 .multilineTextAlignment(.trailing)
@@ -100,9 +100,9 @@ struct PricingEditorView: View {
     private var explanation: some View {
         DisclosureGroup {
             VStack(alignment: .leading, spacing: 6) {
-                Text("Les compteurs de tokens viennent des transcripts de Claude Code (~/.claude/projects) : ce sont les vrais chiffres renvoyés par l'API, pas une estimation.")
-                Text("Le coût, lui, est estimé : seul le tarif « Entrée » est publié par modèle. Sortie ≈ 5 × Entrée, Création cache (TTL 5 min) ≈ 1,25 × Entrée, Lecture cache ≈ 0,1 × Entrée.")
-                Text("« Rétablir les tarifs par défaut » restaure les valeurs codées dans PricingSettings.default, qui ne sont pas forcément les tarifs du jour.")
+                Text("Token counts come from the Claude Code transcripts (~/.claude/projects): they are the real figures returned by the API, not an estimate.")
+                Text("The cost, however, is estimated: only the “Input” rate is published per model. Output ≈ 5 × Input, Cache Write (5 min TTL) ≈ 1.25 × Input, Cache Read ≈ 0.1 × Input.")
+                Text("“Restore Default Pricing” brings back the values coded in PricingSettings.default, which are not necessarily today's rates.")
             }
             .font(.system(size: 11))
             .foregroundStyle(Theme.slate)
@@ -110,7 +110,7 @@ struct PricingEditorView: View {
             .padding(.top, 8)
             .frame(maxWidth: .infinity, alignment: .leading)
         } label: {
-            Text("Comment le coût est calculé")
+            Text("How the Cost Is Calculated")
                 .font(.system(size: 12, weight: .semibold))
         }
         .frame(maxWidth: .infinity, alignment: .leading)

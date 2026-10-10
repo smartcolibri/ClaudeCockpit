@@ -1,4 +1,4 @@
-// Building blocks of the "Activité" tab — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
+// Building blocks of the "Activity" tab — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
 import SwiftUI
 import Charts
 import CockpitShared
@@ -6,7 +6,7 @@ import SessionsKit
 
 // MARK: - Range
 
-/// The range the "Activité" tab reports on. `custom` carries its own two dates,
+/// The range the "Activity" tab reports on. `custom` carries its own two dates,
 /// held by the view; the others are computed against a stable anchor date so the
 /// reload key does not change on every redraw.
 enum ActivityRange: String, CaseIterable, Identifiable {
@@ -16,20 +16,20 @@ enum ActivityRange: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .day: "Jour"
-        case .week: "Semaine"
-        case .month: "Mois"
-        case .custom: "Personnalisé"
+        case .day: String(localized: "Day")
+        case .week: String(localized: "Week")
+        case .month: String(localized: "Month")
+        case .custom: String(localized: "Custom")
         }
     }
 
-    /// Sentence fragment used under the totals, e.g. "sur les 30 derniers jours".
+    /// Sentence fragment used under the totals, e.g. "over the last 30 days".
     var note: String {
         switch self {
-        case .day: "depuis minuit"
-        case .week: "sur les 7 derniers jours"
-        case .month: "sur les 30 derniers jours"
-        case .custom: "sur la période choisie"
+        case .day: String(localized: "since midnight")
+        case .week: String(localized: "over the last 7 days")
+        case .month: String(localized: "over the last 30 days")
+        case .custom: String(localized: "over the chosen period")
         }
     }
 }
@@ -83,15 +83,15 @@ struct ActivityHeatmapCard: View {
     private static let cellSpacing: CGFloat = 2
     private static let cellHeight: CGFloat = 16
 
-    /// French weekday names, from the shared locale rather than a hardcoded list.
+    /// Weekday names in the app's language, from the shared locale rather than a hardcoded list.
     private static let shortWeekdays: [String] = {
         let formatter = DateFormatter()
-        formatter.locale = FRFormat.locale
+        formatter.locale = AppFormat.locale
         return formatter.shortWeekdaySymbols
     }()
     private static let standaloneWeekdays: [String] = {
         let formatter = DateFormatter()
-        formatter.locale = FRFormat.locale
+        formatter.locale = AppFormat.locale
         return formatter.standaloneWeekdaySymbols
     }()
 
@@ -109,17 +109,17 @@ struct ActivityHeatmapCard: View {
         let peak = peak
         return VStack(alignment: .leading, spacing: 10) {
             HStack(alignment: .firstTextBaseline) {
-                SectionLabel(text: "Activité par heure")
+                SectionLabel(text: String(localized: "Activity by hour"))
                 Spacer()
                 if peak > 0 {
-                    Text("pic : " + FRFormat.plural(peak, "tour"))
+                    Text("peak: \(String(localized: "\(peak) turns", locale: AppFormat.locale))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .monospacedDigit()
                 }
             }
             if peak == 0 {
-                Text("Aucun tour assistant sur cette période.")
+                Text("No assistant turns in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
@@ -158,7 +158,7 @@ struct ActivityHeatmapCard: View {
         HStack(spacing: Self.cellSpacing) {
             Spacer().frame(width: Self.labelWidth)
             ForEach(0..<24, id: \.self) { hour in
-                Text(hour % 3 == 0 ? "\(hour)" : "")
+                Text(verbatim: hour % 3 == 0 ? "\(hour)" : "")
                     .font(.label(9))
                     .foregroundStyle(Theme.mist)
                     .frame(maxWidth: .infinity)
@@ -169,13 +169,13 @@ struct ActivityHeatmapCard: View {
     private func legend(peak: Int) -> some View {
         HStack(spacing: 6) {
             Spacer()
-            Text("moins").font(.label(9)).foregroundStyle(Theme.mist)
+            Text("less").font(.label(9)).foregroundStyle(Theme.mist)
             ForEach(0..<5, id: \.self) { step in
                 RoundedRectangle(cornerRadius: 2, style: .continuous)
                     .fill(Self.intensity(turns: step * peak / 4, peak: peak))
                     .frame(width: 12, height: 12)
             }
-            Text("plus").font(.label(9)).foregroundStyle(Theme.mist)
+            Text("more").font(.label(9)).foregroundStyle(Theme.mist)
         }
     }
 
@@ -197,13 +197,8 @@ struct ActivityHeatmapCard: View {
         let day = Self.standaloneWeekdays.indices.contains(weekday - 1)
             ? Self.standaloneWeekdays[weekday - 1]
             : ""
-        let count: String
-        switch turns {
-        case 0: count = "aucun tour"
-        case 1: count = "1 tour"
-        default: count = FRFormat.plural(turns, "tour")
-        }
-        return "\(day) \(hour) h · \(count)"
+        let count = turns == 0 ? String(localized: "no turns") : String(localized: "\(turns) turns", locale: AppFormat.locale)
+        return "\(day) \(AppFormat.hour(hour)) · \(count)"
     }
 }
 
@@ -224,7 +219,7 @@ struct ActivityCostChart: View {
         VStack(alignment: .leading, spacing: 12) {
             header
             if days.isEmpty {
-                Text("Aucun coût enregistré sur cette période.")
+                Text("No cost recorded in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 180, alignment: .center)
@@ -238,10 +233,10 @@ struct ActivityCostChart: View {
 
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
-            SectionLabel(text: "Coût par jour")
+            SectionLabel(text: String(localized: "Cost per day"))
             Spacer()
             if let day = hoveredDay {
-                Text("\(FRFormat.shortDate(day.day)) · \(money(day.costUSD))")
+                Text(verbatim: "\(AppFormat.shortDate(day.day)) · \(money(day.costUSD))")
                     .font(.system(size: 11, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Theme.blue)
@@ -257,8 +252,8 @@ struct ActivityCostChart: View {
     private var chart: some View {
         Chart(days) { day in
             BarMark(
-                x: .value("Jour", day.day, unit: .day),
-                y: .value("Coût", day.costUSD),
+                x: .value("Day", day.day, unit: .day),
+                y: .value("Cost", day.costUSD),
                 width: .ratio(0.6))
             .cornerRadius(3)
             .foregroundStyle(Theme.blue.opacity(hovered == nil || hovered == day.id ? 1 : 0.35))
@@ -301,7 +296,7 @@ struct ActivityCostChart: View {
         }
         .frame(height: 200)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Coût par jour")
+        .accessibilityLabel("Cost per day")
         .accessibilityValue(summary)
     }
 
@@ -312,7 +307,7 @@ struct ActivityCostChart: View {
     }
 
     private var summary: String {
-        days.map { "\(FRFormat.shortDate($0.day)) : \(money($0.costUSD))" }.joined(separator: ", ")
+        days.map { String(localized: "\(AppFormat.shortDate($0.day)): \(money($0.costUSD))", locale: AppFormat.locale) }.joined(separator: ", ")
     }
 }
 
@@ -334,16 +329,16 @@ struct ActivityToolMix: View {
         let peak = max(1, top.first?.calls ?? 1)
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .firstTextBaseline) {
-                SectionLabel(text: "Outils")
+                SectionLabel(text: String(localized: "Tools"))
                 Spacer()
                 if rows.count > top.count {
-                    Text("\(FRFormat.integer(top.count)) sur \(FRFormat.integer(rows.count))")
+                    Text("\(AppFormat.integer(top.count)) of \(AppFormat.integer(rows.count))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
             }
             if top.isEmpty {
-                Text("Aucun appel d'outil sur cette période.")
+                Text("No tool calls in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .center)
@@ -389,17 +384,17 @@ struct ActivityToolMix: View {
                 }
             }
             .frame(height: 12)
-            Text(FRFormat.integer(row.calls))
+            Text(AppFormat.integer(row.calls))
                 .font(.system(size: 11, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(Theme.ink)
                 .frame(width: 52, alignment: .trailing)
-            Text(row.errors > 0 ? FRFormat.percent(row.errorRate) : "")
+            Text(row.errors > 0 ? AppFormat.percent(row.errorRate) : "")
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .foregroundStyle(.red)
                 .frame(width: 46, alignment: .trailing)
-                .help(row.errors > 0 ? "\(FRFormat.integer(row.errors)) appels en erreur" : "")
+                .help(row.errors > 0 ? Text("\(row.errors) failed calls") : Text(verbatim: ""))
         }
     }
 }
@@ -419,9 +414,9 @@ struct ActivityModelShare: View {
         let sorted = sorted
         let total = total
         return VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "Modèles")
+            SectionLabel(text: String(localized: "Models"))
             if sorted.isEmpty || total == 0 {
-                Text("Aucun modèle identifié sur cette période.")
+                Text("No model identified in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 60, alignment: .center)
@@ -461,11 +456,11 @@ struct ActivityModelShare: View {
                         .lineLimit(1)
                         .help(row.model)
                     Spacer(minLength: 4)
-                    Text(FRFormat.percent(Double(row.turns) / Double(total)))
+                    Text(AppFormat.percent(Double(row.turns) / Double(total)))
                         .font(.system(size: 11))
                         .monospacedDigit()
                         .foregroundStyle(Theme.slate)
-                    Text(FRFormat.plural(row.turns, "tour"))
+                    Text("\(row.turns) turns")
                         .font(.system(size: 11, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(Theme.ink)

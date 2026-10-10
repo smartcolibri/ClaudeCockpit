@@ -1,4 +1,5 @@
 import SwiftUI
+import CockpitShared
 
 @main
 struct CockpitApp: App {
@@ -11,12 +12,14 @@ struct CockpitApp: App {
         Window(MainWindowView.windowTitle, id: MainWindowView.windowID) {
             MainWindowView()
                 .environment(store)
+                .environment(\.locale, AppFormat.locale)
         }
         .defaultSize(width: 1160, height: 760)
 
         MenuBarExtra {
             MenuBarPanelView()
                 .environment(store)
+                .environment(\.locale, AppFormat.locale)
         } label: {
             // The label lives as long as the status item, so it is the one place
             // guaranteed to exist at launch: it bridges `openWindow` to the store
@@ -28,6 +31,7 @@ struct CockpitApp: App {
         Settings {
             SettingsView()
                 .environment(store)
+                .environment(\.locale, AppFormat.locale)
         }
     }
 }

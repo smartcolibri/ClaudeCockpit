@@ -23,7 +23,7 @@ final class SessionHealthTests: XCTestCase {
         let health = evaluate()
         XCTAssertEqual(health.score, 100)
         XCTAssertEqual(health.grade, .a)
-        XCTAssertEqual(health.evidence, ["Aucune erreur détectée."])
+        XCTAssertEqual(health.evidence, [.noErrors])
         XCTAssertEqual(SessionHealthRule.evaluate(.clean).grade, .a)
     }
 
@@ -74,7 +74,7 @@ final class SessionHealthTests: XCTestCase {
         let health = evaluate(toolCalls: 0, toolErrors: 0, assistantTurns: 12)
         XCTAssertEqual(health.score, 100)
         XCTAssertEqual(health.grade, .a)
-        XCTAssertEqual(health.evidence, ["Aucune erreur détectée."])
+        XCTAssertEqual(health.evidence, [.noErrors])
     }
 
     func testApiErrorsAreWeighedAgainstTheTurnsTheyInterrupted() {
@@ -86,7 +86,7 @@ final class SessionHealthTests: XCTestCase {
     func testEndingOnAnErrorCostsFifteen() {
         XCTAssertEqual(evaluate(endedOnError: true).score, 85)
         XCTAssertTrue(evaluate(endedOnError: true).evidence
-            .contains("La session se termine sur une erreur."))
+            .contains(.endedOnError))
     }
 
     func testInterruptionsCostMoreWhenTheyAreAHabit() {
@@ -98,23 +98,23 @@ final class SessionHealthTests: XCTestCase {
         XCTAssertEqual(evaluate(repeatedFailures: 2).score, 100, "deux fois n'est pas une boucle")
         let loop = evaluate(repeatedFailures: 3)
         XCTAssertEqual(loop.score, 90)
-        XCTAssertTrue(loop.evidence.contains("Le même appel d'outil a échoué 3 fois de suite."))
+        XCTAssertTrue(loop.evidence.contains(.repeatedFailure(times: 3)))
     }
 
     /// Evidence has to carry the rate, or the sentence looks like it contradicts the grade.
-    func testEvidenceCitesRatesAndAgreesInFrench() {
+    func testEvidenceCarriesCountsAndRates() {
         let many = evaluate(toolCalls: 325, toolErrors: 14, assistantTurns: 1_281)
-        XCTAssertEqual(many.evidence.first, "14 erreurs d'outil sur 325 appels, soit 4,3 %.")
+        XCTAssertEqual(many.evidence.first, .toolErrors(count: 14, calls: 325, rate: 14.0 / 325.0))
 
         let one = evaluate(toolCalls: 32, toolErrors: 1, assistantTurns: 10)
-        XCTAssertEqual(one.evidence.first, "1 erreur d'outil sur 32 appels, soit 3,1 %.")
+        XCTAssertEqual(one.evidence.first, .toolErrors(count: 1, calls: 32, rate: 1.0 / 32.0))
 
         XCTAssertEqual(evaluate(apiErrors: 1, assistantTurns: 200).evidence.first,
-                       "1 erreur d'API sur 200 tours assistant, soit 0,5 %.")
+                       .apiErrors(count: 1, turns: 200, rate: 1.0 / 200.0))
         XCTAssertEqual(evaluate(assistantTurns: 20, abortedTurns: 4).evidence.first,
-                       "4 tours interrompus sur 20 tours assistant.")
+                       .abortedTurns(count: 4, turns: 20))
         XCTAssertEqual(evaluate(assistantTurns: 20, abortedTurns: 1).evidence.first,
-                       "1 tour interrompu sur 20 tours assistant.")
+                       .abortedTurns(count: 1, turns: 20))
     }
 
     /// Every rule at once. Because each is capped, the worst reachable score is 10 rather
@@ -205,9 +205,9 @@ final class SessionHealthTests: XCTestCase {
         // 17 % and caps at 25. 100 − 3 − 25 − 15 (ends on an error) = 57.
         XCTAssertEqual(health.score, 57)
         XCTAssertEqual(health.grade, .d)
-        XCTAssertTrue(health.evidence.contains("1 erreur d'outil sur 5 appels, soit 20,0 %."),
+        XCTAssertTrue(health.evidence.contains(.toolErrors(count: 1, calls: 5, rate: 1.0 / 5.0)),
                       "\(health.evidence)")
-        XCTAssertTrue(health.evidence.contains("1 erreur d'API sur 6 tours assistant, soit 16,7 %."),
+        XCTAssertTrue(health.evidence.contains(.apiErrors(count: 1, turns: 6, rate: 1.0 / 6.0)),
                       "\(health.evidence)")
     }
 
@@ -239,7 +239,7 @@ final class SessionHealthTests: XCTestCase {
         try await service.index()
 
         let health = try await service.health(sessionId: Line.stuckSession)
-        XCTAssertTrue(health.evidence.contains("Le même appel d'outil a échoué 3 fois de suite."),
+        XCTAssertTrue(health.evidence.contains(.repeatedFailure(times: 3)),
                       "\(health.evidence)")
         // Three calls, three failures: the rate would cap at 30, but three failures cost at
         // most 9. What the grade rests on is the loop itself. 100 − 9 − 10 = 81.
@@ -255,13 +255,13 @@ final class SessionHealthTests: XCTestCase {
         let service = fixture.service()
         try await service.index()
         var health = try await service.health(sessionId: Line.stuckSession)
-        XCTAssertFalse(health.evidence.contains { $0.contains("fois de suite") })
+        XCTAssertFalse(health.evidence.contains { if case .repeatedFailure = $0 { true } else { false } })
 
         for line in Line.stuckFailure(index: 2) { try fixture.append(line, to: path) }
         try await service.index()
 
         health = try await service.health(sessionId: Line.stuckSession)
-        XCTAssertTrue(health.evidence.contains("Le même appel d'outil a échoué 3 fois de suite."),
+        XCTAssertTrue(health.evidence.contains(.repeatedFailure(times: 3)),
                       "\(health.evidence)")
     }
 

@@ -3,7 +3,7 @@ import Charts
 import CockpitShared
 import UsageKit
 
-/// "Cette semaine vs la semaine dernière", one point per weekday. Last week is context (mist),
+/// "This week vs last week", one point per weekday. Last week is context (mist),
 /// this week is the emphasis series. Independent of the range filter: a week-over-week
 /// comparison against an arbitrary range would mean nothing.
 struct SessionsPerWeekCard: View {
@@ -14,9 +14,15 @@ struct SessionsPerWeekCard: View {
     let lastWeekTotal: Int
     let thisWeekTotal: Int
 
-    private static let weekdays = ["lun.", "mar.", "mer.", "jeu.", "ven.", "sam.", "dim."]
-    private static let lastWeekSeries = "Semaine dernière"
-    private static let thisWeekSeries = "Cette semaine"
+    /// Monday first, in the app's language.
+    private static let weekdays: [String] = {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.locale = AppFormat.locale
+        let symbols = calendar.shortWeekdaySymbols
+        return Array(symbols.dropFirst()) + symbols.prefix(1)
+    }()
+    private static let lastWeekSeries = String(localized: "Last week")
+    private static let thisWeekSeries = String(localized: "This week")
 
     private struct Point: Identifiable {
         let weekday: String
@@ -42,16 +48,16 @@ struct SessionsPerWeekCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                SectionLabel(text: "Sessions par semaine")
+                SectionLabel(text: String(localized: "Sessions per week"))
                 Spacer()
                 legendChip(Self.lastWeekSeries, color: UsagePalette.context)
                 legendChip(Self.thisWeekSeries, color: Theme.blue)
             }
             Chart(points) { point in
                 LineMark(
-                    x: .value("Jour", point.weekday),
+                    x: .value("Day", point.weekday),
                     y: .value("Sessions", point.value))
-                .foregroundStyle(by: .value("Série", point.series))
+                .foregroundStyle(by: .value("Series", point.series))
                 .interpolationMethod(.catmullRom)
             }
             .chartForegroundStyleScale([
@@ -70,9 +76,9 @@ struct SessionsPerWeekCard: View {
             }
             .frame(minHeight: 160)
             HStack(alignment: .bottom) {
-                total("Semaine dernière", lastWeekTotal, color: Theme.ink)
+                total(Self.lastWeekSeries, lastWeekTotal, color: Theme.ink)
                 Spacer()
-                total("Cette semaine", thisWeekTotal, color: Theme.blue, alignment: .trailing)
+                total(Self.thisWeekSeries, thisWeekTotal, color: Theme.blue, alignment: .trailing)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -94,7 +100,7 @@ struct SessionsPerWeekCard: View {
     ) -> some View {
         VStack(alignment: alignment, spacing: 2) {
             SectionLabel(text: label)
-            Text(FRFormat.integer(value))
+            Text(AppFormat.integer(value))
                 .font(.display(20))
                 .monospacedDigit()
                 .foregroundStyle(color)

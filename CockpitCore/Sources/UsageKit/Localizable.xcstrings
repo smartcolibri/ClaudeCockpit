@@ -1,0 +1,22 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "No Claude Code transcripts: the folder %@ was not found." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No Claude Code transcripts: the folder %@ was not found."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucun transcript Claude Code : le dossier %@ est introuvable."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

@@ -3,6 +3,9 @@ import PackageDescription
 
 let package = Package(
     name: "CockpitCore",
+    // English is the source language; each module that words something ships a String
+    // Catalog with its French translation.
+    defaultLocalization: "en",
     platforms: [.macOS(.v14)],
     products: [
         .library(name: "CockpitShared", targets: ["CockpitShared"]),

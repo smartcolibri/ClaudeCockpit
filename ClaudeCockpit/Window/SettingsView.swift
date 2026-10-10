@@ -15,22 +15,22 @@ struct SettingsView: View {
     var body: some View {
         TabView(selection: $selection) {
             GeneralSettingsTab()
-                .tabItem { Label("Général", systemImage: "gearshape") }
+                .tabItem { Label("General", systemImage: "gearshape") }
                 .tag(Tab.general)
             AccessSettingsTab()
-                .tabItem { Label("Accès", systemImage: "lock.open") }
+                .tabItem { Label("Access", systemImage: "lock.open") }
                 .tag(Tab.access)
             PricingEditorView()
-                .tabItem { Label("Tarifs", systemImage: "dollarsign.circle") }
+                .tabItem { Label("Pricing", systemImage: "dollarsign.circle") }
                 .tag(Tab.pricing)
             RTKSettingsTab()
                 .tabItem { Label("RTK", systemImage: "leaf.fill") }
                 .tag(Tab.rtk)
             ProjectsSettingsTab()
-                .tabItem { Label("Projets", systemImage: "folder") }
+                .tabItem { Label("Projects", systemImage: "folder") }
                 .tag(Tab.projects)
             AboutSettingsTab()
-                .tabItem { Label("À propos", systemImage: "info.circle") }
+                .tabItem { Label("About", systemImage: "info.circle") }
                 .tag(Tab.about)
         }
         .frame(
@@ -39,7 +39,7 @@ struct SettingsView: View {
     }
 }
 
-// MARK: - Général
+// MARK: - General
 
 private struct GeneralSettingsTab: View {
     @Environment(CockpitStore.self) private var store
@@ -57,50 +57,44 @@ private struct GeneralSettingsTab: View {
     @State private var loginError: String?
     @State private var confirmRebuild = false
 
-    private static let byteFormatter: ByteCountFormatter = {
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        return formatter
-    }()
-
     var body: some View {
         Form {
-            Section("Démarrage") {
-                Toggle("Lancer à la connexion", isOn: $launchAtLogin)
+            Section("Startup") {
+                Toggle("Launch at Login", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, newValue in setLaunchAtLogin(newValue) }
                     .disabled(store.isDemo)
-                Toggle("Barre de menus seulement (masquer l'icône du Dock)", isOn: $menuBarOnly)
+                Toggle("Menu Bar Only (Hide Dock Icon)", isOn: $menuBarOnly)
                     .onChange(of: menuBarOnly) { _, newValue in store.setMenuBarOnly(newValue) }
-                Text("L'icône de la barre de menus reste visible dans tous les cas.")
+                Text("The menu bar icon stays visible in every case.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
             }
 
-            Section("Données") {
-                Picker("Rafraîchissement de l'usage local", selection: $refreshSeconds) {
-                    Text("10 secondes").tag(10)
-                    Text("30 secondes").tag(30)
-                    Text("60 secondes").tag(60)
-                    Text("120 secondes").tag(120)
+            Section("Data") {
+                Picker("Local usage refresh", selection: $refreshSeconds) {
+                    Text("10 seconds").tag(10)
+                    Text("30 seconds").tag(30)
+                    Text("60 seconds").tag(60)
+                    Text("120 seconds").tag(120)
                 }
-                Text("Le nouvel intervalle s'applique après le cycle en cours.")
+                Text("The new interval applies after the current cycle.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
             }
 
-            Section("Affichage") {
-                Picker("Devise", selection: $currency) {
-                    Text("Dollar (USD)").tag("USD")
+            Section("Display") {
+                Picker("Currency", selection: $currency) {
+                    Text("US Dollar (USD)").tag("USD")
                     Text("Euro (EUR)").tag("EUR")
                 }
                 if currency == "EUR" {
                     TextField(
-                        "Taux USD → EUR",
+                        "USD → EUR rate",
                         value: $eurRate,
                         format: .number.precision(.fractionLength(0...4)))
                         .multilineTextAlignment(.trailing)
                         .monospacedDigit()
-                    Text("Les montants sont calculés en dollars puis convertis avec ce taux.")
+                    Text("Amounts are computed in dollars, then converted with this rate.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -111,20 +105,20 @@ private struct GeneralSettingsTab: View {
         .formStyle(.grouped)
         .onAppear { launchAtLogin = store.launchAtLogin }
         .alert(
-            "Lancement à la connexion",
+            "Launch at Login",
             isPresented: Binding(get: { loginError != nil }, set: { if !$0 { loginError = nil } })
         ) {
             Button("OK", role: .cancel) { loginError = nil }
         } message: {
             Text(loginError ?? "")
         }
-        .alert("Reconstruire l'index des sessions ?", isPresented: $confirmRebuild) {
-            Button("Annuler", role: .cancel) { confirmRebuild = false }
-            Button("Reconstruire", role: .destructive) {
+        .alert("Rebuild the Sessions Index?", isPresented: $confirmRebuild) {
+            Button("Cancel", role: .cancel) { confirmRebuild = false }
+            Button("Rebuild", role: .destructive) {
                 Task { await store.rebuildSessionIndex() }
             }
         } message: {
-            Text("Tous les transcripts de ~/.claude/projects seront relus depuis le début, ce qui peut prendre plusieurs minutes. Les transcripts eux-mêmes ne sont jamais modifiés.")
+            Text("Every transcript in ~/.claude/projects will be read again from the start, which can take several minutes. The transcripts themselves are never changed.")
         }
     }
 
@@ -132,22 +126,22 @@ private struct GeneralSettingsTab: View {
 
     private var sessionsSection: some View {
         Section("Sessions") {
-            Toggle("Indexer les transcripts", isOn: $sessionsIndexEnabled)
+            Toggle("Index Transcripts", isOn: $sessionsIndexEnabled)
                 // Restarts indexing and arms the FSEvents watcher, or stops both when the
                 // toggle goes off. The store reads the flag itself.
                 .onChange(of: sessionsIndexEnabled) { _, _ in store.sessionsIndexingDidChange() }
-            Text("La section Sessions ne fonctionne qu'avec cet index. Il est reconstructible à tout moment et ne modifie jamais les transcripts.")
+            Text("The Sessions section only works with this index. It can be rebuilt at any time and never changes the transcripts.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Toggle("Afficher les lignes système dans les transcripts", isOn: $sessionsShowSystemLines)
-            Text("Hooks, méta-lignes et pièces jointes, masqués par défaut.")
+            Toggle("Show System Lines in Transcripts", isOn: $sessionsShowSystemLines)
+            Text("Hooks, meta lines and attachments, hidden by default.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
                 .fixedSize(horizontal: false, vertical: true)
 
-            LabeledContent("État de l'index") {
+            LabeledContent("Index status") {
                 Text(indexStateLabel)
                     .font(.system(size: 11))
                     .monospacedDigit()
@@ -155,13 +149,13 @@ private struct GeneralSettingsTab: View {
                     .multilineTextAlignment(.trailing)
             }
             HStack {
-                Button("Reconstruire l'index") { confirmRebuild = true }
+                Button("Rebuild Index") { confirmRebuild = true }
                     .disabled(store.sessionIndex.isRunning)
                 if store.sessionIndex.isRunning {
                     ProgressView().controlSize(.small)
                 }
                 Spacer()
-                Text("Taille : \(Self.byteFormatter.string(fromByteCount: store.sessionIndex.dbSizeBytes))")
+                Text("Size: \(AppFormat.bytes(store.sessionIndex.dbSizeBytes))")
                     .font(.system(size: 11))
                     .monospacedDigit()
                     .foregroundStyle(Theme.slate)
@@ -172,22 +166,22 @@ private struct GeneralSettingsTab: View {
     private var indexStateLabel: String {
         let progress = store.sessionIndex
         if progress.isRunning {
-            return "\(FRFormat.integer(progress.filesDone)) / \(FRFormat.integer(progress.filesTotal)) transcripts"
+            return String(localized: "\(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) transcripts", locale: AppFormat.locale)
         }
-        guard let last = progress.lastRun else { return "jamais indexé" }
+        guard let last = progress.lastRun else { return String(localized: "never indexed") }
         // `filesDone` counts the files the last pass actually read, which is a handful
         // on an incremental tick — so it is shown against `filesTotal`, never alone.
-        return "dernier passage : \(FRFormat.integer(progress.filesDone)) / \(FRFormat.integer(progress.filesTotal)) · \(FRFormat.relative(last))"
+        return String(localized: "last pass: \(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) · \(AppFormat.relative(last, standalone: true))", locale: AppFormat.locale)
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
         do {
             try store.setLaunchAtLogin(enabled)
         } catch let error as NSError {
-            // Code 3 = l'app doit être installée dans /Applications ; fréquent en debug.
+            // Code 3 = the app must be installed in /Applications; common in debug builds.
             loginError = error.code == 3
-                ? "L'application doit se trouver dans /Applications pour être lancée à la connexion."
-                : "Impossible de modifier le réglage : \(error.localizedDescription)"
+                ? String(localized: "The app must be in /Applications to launch at login.")
+                : String(localized: "Could not change the setting: \(error.localizedDescription)", locale: AppFormat.locale)
             launchAtLogin = store.launchAtLogin
         }
     }
@@ -201,32 +195,32 @@ private struct RTKSettingsTab: View {
 
     var body: some View {
         Form {
-            Section("Base de données RTK") {
-                LabeledContent("Base utilisée") {
-                    Text(store.rtkDatabaseURL?.path ?? "introuvable")
+            Section("RTK Database") {
+                LabeledContent("Database in use") {
+                    Text(store.rtkDatabaseURL?.path ?? String(localized: "not found"))
                         .font(.data(11))
                         .foregroundStyle(store.rtkDatabaseURL == nil ? Color.orange : Theme.slate)
                         .textSelection(.enabled)
                         .multilineTextAlignment(.trailing)
                 }
                 Group {
-                    TextField("Chemin personnalisé", text: $rtkPath, prompt: Text("Automatique"))
+                    TextField("Custom path", text: $rtkPath, prompt: Text("Automatic"))
                         .font(.data(11))
                         .onSubmit { store.rtkPathDidChange() }
                 }
                 .disabled(store.isDemo)
                 HStack {
-                    Button("Choisir…") { chooseDatabase() }
+                    Button("Choose…") { chooseDatabase() }
                         .disabled(store.isDemo)
-                    Button("Automatique") {
+                    Button("Automatic") {
                         rtkPath = ""
                         store.rtkPathDidChange()
                     }
                     .disabled(rtkPath.isEmpty || store.isDemo)
                     Spacer()
-                    Button("Recharger") { Task { await store.refreshRTK() } }
+                    Button("Reload") { Task { await store.refreshRTK() } }
                 }
-                Text("Laisser vide pour la détection automatique (Application Support, puis ~/.local/share/rtk).")
+                Text("Leave empty for automatic detection (Application Support, then ~/.local/share/rtk).")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .fixedSize(horizontal: false, vertical: true)
@@ -246,8 +240,8 @@ private struct RTKSettingsTab: View {
             ?? store.paths.home.appendingPathComponent("Library/Application Support/rtk", isDirectory: true)
         guard let picked = store.access.runPanel(
             directory: start,
-            message: "Choisissez history.db, ou le dossier qui le contient (recommandé).",
-            prompt: "Choisir",
+            message: String(localized: "Choose history.db, or the folder that contains it (recommended)."),
+            prompt: String(localized: "Choose"),
             chooseFiles: true) else { return }
         var isDir: ObjCBool = false
         let pickedFolder = FileManager.default.fileExists(atPath: picked.path, isDirectory: &isDir) && isDir.boolValue
@@ -262,10 +256,10 @@ private struct RTKSettingsTab: View {
         if !pickedFolder {
             guard let confirmed = store.access.runPanel(
                 directory: folder,
-                message: "Autorisez aussi le dossier de la base : SQLite y lit son journal (-wal)."),
+                message: String(localized: "Also allow the database folder: SQLite reads its journal (-wal) there.")),
                 AccessCoverage.isPath(folder.path, inside: confirmed.path)
             else {
-                store.notice = "Base RTK non enregistrée : l'accès au dossier \(store.displayPath(folder)) est nécessaire, car SQLite y lit son journal (-wal). Sans lui, les chiffres affichés seraient périmés."
+                store.notice = String(localized: "RTK database not saved: access to the folder \(store.displayPath(folder)) is needed, because SQLite reads its journal (-wal) there. Without it, the figures shown would be stale.", locale: AppFormat.locale)
                 return
             }
             grantTarget = confirmed
@@ -276,7 +270,7 @@ private struct RTKSettingsTab: View {
     }
 }
 
-// MARK: - Projets
+// MARK: - Projects
 
 private struct ProjectsSettingsTab: View {
     @Environment(CockpitStore.self) private var store
@@ -284,18 +278,18 @@ private struct ProjectsSettingsTab: View {
 
     var body: some View {
         Form {
-            Section("Racines de projets") {
+            Section("Project Roots") {
                 TextEditor(text: $projectRoots)
                     .font(.data(11))
                     .frame(minHeight: 140)
                     .disabled(store.isDemo)
-                Text("Une racine par ligne, le « ~ » est accepté. Vide = ~/DevApps et ~/Documents/GitHub.")
+                Text("One root per line; “~” is accepted. Empty = ~/DevApps and ~/Documents/GitHub.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .fixedSize(horizontal: false, vertical: true)
                 if !store.inaccessibleProjectRoots.isEmpty {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("Racines non accessibles (hors des dossiers autorisés, ignorées) :")
+                        Text("Roots not accessible (outside the allowed folders, ignored):")
                             .font(.system(size: 11, weight: .medium))
                             .foregroundStyle(.orange)
                         ForEach(store.inaccessibleProjectRoots, id: \.path) { root in
@@ -304,11 +298,11 @@ private struct ProjectsSettingsTab: View {
                     }
                 }
                 HStack {
-                    Button("Ajouter une racine…") { addRoot() }
+                    Button("Add Root…") { addRoot() }
                         .disabled(store.isDemo)
-                    Button("Rescanner") { Task { await store.refreshSkills() } }
+                    Button("Rescan") { Task { await store.refreshSkills() } }
                     Spacer()
-                    Text(FRFormat.plural(store.projectRoots.count - store.inaccessibleProjectRoots.count, "racine analysée"))
+                    Text("\(store.projectRoots.count - store.inaccessibleProjectRoots.count) roots scanned")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -321,7 +315,7 @@ private struct ProjectsSettingsTab: View {
     /// Picks a folder, grants it when needed and appends it to the list.
     private func addRoot() {
         guard let url = store.access.runPanel(
-            directory: store.paths.home, message: "Choisissez un dossier contenant vos projets.", prompt: "Ajouter")
+            directory: store.paths.home, message: String(localized: "Choose a folder that contains your projects."), prompt: String(localized: "Add"))
         else { return }
         if !store.isCovered(url) { store.grant(url) }
         var lines = projectRoots.split(whereSeparator: \.isNewline).map(String.init).filter {
@@ -336,7 +330,7 @@ private struct ProjectsSettingsTab: View {
     }
 }
 
-// MARK: - Accès
+// MARK: - Access
 
 private struct AccessSettingsTab: View {
     @Environment(CockpitStore.self) private var store
@@ -348,14 +342,14 @@ private struct AccessSettingsTab: View {
 
     var body: some View {
         Form {
-            Section("Dossiers autorisés") {
+            Section("Allowed Folders") {
                 if !store.access.isSandboxed {
-                    Text("Cette version n'est pas isolée (sandbox) : elle lit tous vos dossiers sans autorisation.")
+                    Text("This version is not sandboxed: it reads all your folders without permission.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
                 if store.access.grants.isEmpty {
-                    Text("Aucun dossier autorisé.")
+                    Text("No allowed folders.")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.slate)
                 }
@@ -368,15 +362,15 @@ private struct AccessSettingsTab: View {
                             Text(statusLabel(grant.status)).font(.system(size: 10)).foregroundStyle(Theme.slate)
                         }
                         Spacer()
-                        Button("Réautoriser") { store.reauthorize(grant) }
+                        Button("Reauthorize") { store.reauthorize(grant) }
                             .disabled(store.isDemo)
-                        Button("Retirer", role: .destructive) { store.revoke(grant) }
+                        Button("Remove", role: .destructive) { store.revoke(grant) }
                             .disabled(store.isDemo)
                     }
                 }
                 HStack {
-                    Button("Ajouter…") {
-                        store.grantFolder(startingAt: store.paths.home, message: "Choisissez un dossier à autoriser.")
+                    Button("Add…") {
+                        store.grantFolder(startingAt: store.paths.home, message: String(localized: "Choose a folder to allow."))
                     }
                     .disabled(store.isDemo)
                     Spacer()
@@ -384,19 +378,19 @@ private struct AccessSettingsTab: View {
                 if store.isDemo { DemoLockedNote() }
             }
 
-            Section("Couverture") {
-                coverageRow("Données Claude (\(store.displayPath(store.paths.claudeDir)))", store.claudeAccess)
-                coverageRow("Dossier personnel (skills liés, projets)", store.homeAccess)
-                coverageRow("Base RTK", store.rtkAccess)
+            Section("Coverage") {
+                coverageRow("Claude data (\(store.displayPath(store.paths.claudeDir)))", store.claudeAccess)
+                coverageRow("Home folder (linked skills, projects)", store.homeAccess)
+                coverageRow("RTK database", store.rtkAccess)
                 coverageRow(
-                    "Racines de projets",
+                    "Project roots",
                     store.inaccessibleProjectRoots.isEmpty,
                     detail: store.inaccessibleProjectRoots.isEmpty ? nil
-                        : "\(FRFormat.plural(store.inaccessibleProjectRoots.count, "racine")) non accessible(s)")
+                        : String(localized: "\(store.inaccessibleProjectRoots.count) roots not accessible", locale: AppFormat.locale))
             }
 
-            Section("Dossier de configuration Claude") {
-                TextField("Dossier", text: $configDraft, prompt: Text("~/.claude"))
+            Section("Claude Configuration Folder") {
+                TextField("Folder", text: $configDraft, prompt: Text(verbatim: "~/.claude"))
                     .font(.data(11))
                     .disabled(store.isDemo)
                     .onSubmit { applyConfigDraft() }
@@ -412,19 +406,19 @@ private struct AccessSettingsTab: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
                 HStack {
-                    Button("Choisir…") { chooseConfigDir() }
+                    Button("Choose…") { chooseConfigDir() }
                         .disabled(store.isDemo)
-                    Button("Par défaut") {
+                    Button("Default") {
                         configDraft = ""
                         applyConfigDraft()
                     }
                     .disabled(configDir.isEmpty || store.isDemo)
                     Spacer()
-                    Text("Utilisé : \(store.displayPath(store.paths.claudeDir))")
+                    Text("In use: \(store.displayPath(store.paths.claudeDir))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
-                Text("Équivalent de la variable CLAUDE_CONFIG_DIR, qu'une app ouverte depuis le Finder ne voit pas. Vide = la variable si elle est définie, sinon ~/.claude.")
+                Text("Equivalent to the CLAUDE_CONFIG_DIR variable, which an app opened from the Finder does not see. Empty = the variable if it is set, otherwise ~/.claude.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .fixedSize(horizontal: false, vertical: true)
@@ -439,7 +433,7 @@ private struct AccessSettingsTab: View {
         guard !store.isDemo else { return }
         let value = configDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard ClaudePaths.isUsableConfigDirSetting(value) else {
-            configError = "Chemin relatif refusé : indiquez un chemin absolu (/…) ou commençant par ~/."
+            configError = String(localized: "Relative path refused: enter an absolute path (/…) or one starting with ~/.")
             return
         }
         configError = nil
@@ -450,16 +444,16 @@ private struct AccessSettingsTab: View {
 
     private func statusLabel(_ status: AccessStore.Grant.Status) -> String {
         switch status {
-        case .active: "Actif"
-        case .renewed: "Actif (autorisation renouvelée)"
-        case .broken(let reason): "Introuvable : \(reason)"
-        case .denied: "Accès refusé par macOS : réautorisez ce dossier"
+        case .active: String(localized: "Active")
+        case .renewed: String(localized: "Active (permission renewed)")
+        case .broken(let reason): String(localized: "Not found: \(reason)", locale: AppFormat.locale)
+        case .denied: String(localized: "Access denied by macOS: reauthorize this folder")
         }
     }
 
-    private func coverageRow(_ label: String, _ ok: Bool, detail: String? = nil) -> some View {
+    private func coverageRow(_ label: LocalizedStringKey, _ ok: Bool, detail: String? = nil) -> some View {
         LabeledContent(label) {
-            Text(detail ?? (ok ? "autorisé" : "non autorisé"))
+            Text(detail ?? (ok ? String(localized: "allowed") : String(localized: "not allowed")))
                 .font(.system(size: 11))
                 .foregroundStyle(ok ? Theme.emerald : .orange)
         }
@@ -468,7 +462,7 @@ private struct AccessSettingsTab: View {
     private func chooseConfigDir() {
         let start = store.paths.claudeDir
         guard let picked = store.access.runPanel(
-            directory: start, message: "Choisissez le dossier de configuration de Claude Code.", prompt: "Choisir")
+            directory: start, message: String(localized: "Choose the Claude Code configuration folder."), prompt: String(localized: "Choose"))
         else { return }
         configDir = store.displayPath(picked)
         configDraft = configDir
@@ -484,14 +478,14 @@ private struct AccessSettingsTab: View {
 /// Why a control is greyed out while the demo runs.
 private struct DemoLockedNote: View {
     var body: some View {
-        Text("Indisponible en mode démo : ces réglages concernent vos propres données.")
+        Text("Unavailable in demo mode: these settings concern your own data.")
             .font(.system(size: 11))
             .foregroundStyle(Theme.slate)
             .fixedSize(horizontal: false, vertical: true)
     }
 }
 
-// MARK: - À propos
+// MARK: - About
 
 private struct AboutSettingsTab: View {
     private var currentVersion: String {
@@ -500,17 +494,17 @@ private struct AboutSettingsTab: View {
 
     var body: some View {
         Form {
-            Section("À propos") {
-                LabeledContent("Version installée") {
+            Section("About") {
+                LabeledContent("Installed version") {
                     Text(currentVersion).monospacedDigit().foregroundStyle(Theme.slate)
                 }
-                Text("Cockpit for Claude — tableau de bord local pour Claude Code.")
+                Text("Cockpit for Claude — a local dashboard for Claude Code.")
                     .font(.system(size: 12))
-                Text("© 2026 Smart Colibri. Tous droits réservés.")
+                Text("© 2026 Smart Colibri. All rights reserved.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
-                Link("lauriat.fr", destination: URL(string: "https://lauriat.fr")!)
-                Link("Site du projet", destination: URL(string: "https://smartcolibri.github.io/ClaudeCockpit/")!)
+                Link(destination: URL(string: "https://lauriat.fr")!) { Text(verbatim: "lauriat.fr") }
+                Link("Project Website", destination: URL(string: "https://smartcolibri.github.io/ClaudeCockpit/")!)
             }
         }
         .formStyle(.grouped)

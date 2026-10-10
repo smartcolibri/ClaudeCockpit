@@ -10,7 +10,7 @@ import CockpitShared
 /// of the process: the watchers on `~/.claude/projects` and rtk's database are
 /// long-lived, and stopping access between reads would cut them off. A stale
 /// bookmark is recreated while its scope is open; one that no longer resolves is
-/// kept, flagged, so the user sees it in Réglages › Accès instead of losing it.
+/// kept, flagged, so the user sees it in Settings › Access instead of losing it.
 ///
 /// Outside the sandbox (unsigned Debug builds) every path counts as covered and
 /// grants are not needed.
@@ -128,7 +128,7 @@ final class AccessStore {
     func runPanel(
         directory: URL,
         message: String,
-        prompt: String = "Autoriser",
+        prompt: String = String(localized: "Allow"),
         chooseFiles: Bool = false
     ) -> URL? {
         let panel = NSOpenPanel()

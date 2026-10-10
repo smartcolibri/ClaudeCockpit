@@ -102,7 +102,7 @@ enum SessionsPalette {
 
     /// Collapses a value onto one line and cuts it to a header-sized tag.
     static func oneLine(_ raw: String, limit: Int = 140) -> String {
-        let flattened = raw
+        let flattened = displayable(raw)
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "\t", with: " ")
             .split(separator: " ", omittingEmptySubsequences: true)
@@ -117,12 +117,19 @@ enum SessionsPalette {
     /// Markdown-lite: inline syntax only, so the source line breaks of a transcript
     /// survive. Bodies over ``markdownCap`` are left as plain text.
     static func markdown(_ raw: String) -> AttributedString {
+        let raw = displayable(raw)
         guard raw.utf8.count <= markdownCap else { return AttributedString(raw) }
         let options = AttributedString.MarkdownParsingOptions(
             allowsExtendedAttributes: true,
             interpretedSyntax: .inlineOnlyPreservingWhitespace,
             failurePolicy: .returnPartiallyParsedIfPossible)
         return (try? AttributedString(markdown: raw, options: options)) ?? AttributedString(raw)
+    }
+
+    /// A capped body ends with ``ContentBlock/truncationMarker``, which is stored in the index
+    /// and matched there, so it stays as it is; the reader sees it in the app's language.
+    static func displayable(_ text: String) -> String {
+        ContentBlock.displayable(text, truncated: String(localized: "truncated"))
     }
 
     /// `sonnet-4-5` out of `claude-sonnet-4-5-20250929`.
@@ -202,7 +209,7 @@ struct HealthBadge: View {
             .foregroundStyle(.white)
             .frame(width: compact ? 16 : 20, height: compact ? 16 : 20)
             .background(Circle().fill(SessionsPalette.color(for: grade)))
-            .accessibilityLabel("Santé de la session : \(grade.rawValue)")
+            .accessibilityLabel("Session health: \(grade.rawValue)")
     }
 }
 
@@ -219,8 +226,9 @@ struct SessionChip: View {
             if let systemImage {
                 Image(systemName: systemImage).font(.system(size: 10, weight: .semibold))
             }
-            Text(title).font(.label(11))
+            Text(title).font(.label(11)).lineLimit(1)
         }
+        .fixedSize()
         .padding(.horizontal, 9)
         .padding(.vertical, 4)
         .foregroundStyle(active ? Color.white : Theme.slate)
@@ -245,7 +253,7 @@ struct MonospacedBox: View {
 
     var body: some View {
         ScrollView([.vertical, .horizontal]) {
-            Text(text)
+            Text(SessionsPalette.displayable(text))
                 .font(.data(11))
                 .foregroundStyle(tint)
                 .textSelection(.enabled)

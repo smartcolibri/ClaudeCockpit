@@ -233,10 +233,31 @@ final class ExportSafetyTests: XCTestCase {
         }
     }
 
-    func testAttachmentNoteAgreesInFrenchAndNamesTheFiles() {
-        XCTAssertEqual(SessionExporter.attachmentNote(["api.go"]), "1 pièce jointe : api.go")
-        XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"]),
+    func testAttachmentNoteAgreesAndNamesTheFiles() {
+        let fr = SessionExporter.Words(locale: Locale(identifier: "fr_FR"))
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go"], words: fr), "1 pièce jointe : api.go")
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"], words: fr),
                        "2 pièces jointes : api.go, store.go")
-        XCTAssertEqual(SessionExporter.attachmentNote([]), "")
+        XCTAssertEqual(SessionExporter.attachmentNote([], words: fr), "")
+
+        let en = SessionExporter.Words(locale: Locale(identifier: "en_US"))
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go"], words: en), "1 attachment: api.go")
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"], words: en),
+                       "2 attachments: api.go, store.go")
+        XCTAssertEqual(SessionExporter.attachmentNote([], words: en), "")
+        // A zero count: French singular, English plural.
+        XCTAssertEqual(fr("\(0) attachments"), "0 pièce jointe")
+        XCTAssertEqual(en("\(0) attachments"), "0 attachments")
+    }
+
+    /// A count in a plural string keeps its locale's grouping: the plural variant picks the
+    /// word from the integer, the locale writes the digits.
+    func testPluralCountsKeepTheirGrouping() {
+        let names = Array(repeating: "a", count: 1_234)
+        let fr = Locale(identifier: "fr_FR"), en = Locale(identifier: "en_US")
+        XCTAssertTrue(SessionExporter.attachmentNote(names, words: .init(locale: fr))
+            .hasPrefix("\(AppFormat.integer(1_234, locale: fr)) pièces jointes"))
+        XCTAssertTrue(SessionExporter.attachmentNote(names, words: .init(locale: en))
+            .hasPrefix("1,234 attachments"))
     }
 }

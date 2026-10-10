@@ -367,18 +367,22 @@ public enum SessionExporter {
     public static func markdown(
         session: SessionRef,
         messages: [SessionMessage],
-        subagents: [String: [SessionMessage]] = [:]
+        subagents: [String: [SessionMessage]] = [:],
+        locale: Locale = AppFormat.locale
     ) -> String {
-        renderMarkdown(session: session, messages: messages, subagents: subagents)
+        renderMarkdown(session: session, messages: messages, subagents: subagents,
+                       words: Words(locale: locale))
     }
 
     /// Self-contained HTML: inline CSS, `<details>` for tool calls and thinking, everything escaped.
     public static func html(
         session: SessionRef,
         messages: [SessionMessage],
-        subagents: [String: [SessionMessage]] = [:]
+        subagents: [String: [SessionMessage]] = [:],
+        locale: Locale = AppFormat.locale
     ) -> String {
-        renderHTML(session: session, messages: messages, subagents: subagents)
+        renderHTML(session: session, messages: messages, subagents: subagents,
+                   words: Words(locale: locale))
     }
 }
 
@@ -386,7 +390,7 @@ public enum SessionExporter {
 
 /// The scoring rules behind ``SessionHealth``. Pure, so they are tested directly.
 public enum SessionHealthRule {
-    /// The grade, the score and the French evidence, from counters alone.
+    /// The grade, the score and the evidence, from counters alone.
     public static func evaluate(_ counters: SessionHealthCounters) -> SessionHealth {
         evaluateCounters(counters)
     }

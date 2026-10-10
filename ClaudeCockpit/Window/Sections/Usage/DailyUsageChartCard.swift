@@ -83,7 +83,7 @@ struct DailyUsageChartCard: View {
         return VStack(alignment: .leading, spacing: 16) {
             header
             if daily.isEmpty {
-                Text("Aucune donnée sur cette période.")
+                Text("No data in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 280, alignment: .center)
@@ -97,13 +97,13 @@ struct DailyUsageChartCard: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            SectionLabel(text: "Usage quotidien — \(range.frenchLabel)")
+            SectionLabel(text: String(localized: "Daily usage — \(range.displayName)", locale: AppFormat.locale))
             Spacer()
             if !daily.isEmpty {
                 ForEach(UsageSeries.allCases) { series in
-                    legendChip(series.frenchLabel, color: series.color)
+                    legendChip(series.displayName, color: series.color)
                 }
-                legendChip("Coût — max \(money(costMax))", color: UsagePalette.cost)
+                legendChip(String(localized: "Cost — max \(money(costMax))", locale: AppFormat.locale), color: UsagePalette.cost)
             }
         }
     }
@@ -114,22 +114,22 @@ struct DailyUsageChartCard: View {
         return Chart {
             ForEach(barPoints) { point in
                 BarMark(
-                    x: .value("Jour", point.day, unit: .day),
+                    x: .value("Day", point.day, unit: .day),
                     y: .value("Tokens", point.normalized))
-                .foregroundStyle(by: .value("Série", point.series.frenchLabel))
+                .foregroundStyle(by: .value("Series", point.series.displayName))
             }
             ForEach(costPoints) { point in
                 LineMark(
-                    x: .value("Jour", point.day, unit: .day),
-                    y: .value("Coût", point.normalized))
+                    x: .value("Day", point.day, unit: .day),
+                    y: .value("Cost", point.normalized))
                 .foregroundStyle(UsagePalette.cost)
                 .lineStyle(StrokeStyle(lineWidth: 2))
                 .interpolationMethod(.monotone)
             }
             if let peak, peak.cost > 0 {
                 PointMark(
-                    x: .value("Jour", peak.day, unit: .day),
-                    y: .value("Coût", peak.normalized))
+                    x: .value("Day", peak.day, unit: .day),
+                    y: .value("Cost", peak.normalized))
                 .foregroundStyle(UsagePalette.cost)
                 .symbolSize(40)
                 .annotation(position: .top, alignment: .center) {
@@ -148,7 +148,7 @@ struct DailyUsageChartCard: View {
                 AxisGridLine().foregroundStyle(Theme.cardStroke)
                 AxisValueLabel {
                     if let fraction = value.as(Double.self) {
-                        Text(FRFormat.tokens(Int((fraction - Self.groupShare) / Self.groupShare * cacheMax)))
+                        Text(AppFormat.tokens(Int((fraction - Self.groupShare) / Self.groupShare * cacheMax)))
                             .foregroundStyle(UsagePalette.cacheRead)
                     }
                 }
@@ -157,7 +157,7 @@ struct DailyUsageChartCard: View {
                 AxisGridLine().foregroundStyle(Theme.cardStroke)
                 AxisValueLabel {
                     if let fraction = value.as(Double.self) {
-                        Text(FRFormat.tokens(Int(fraction / Self.groupShare * ioMax)))
+                        Text(AppFormat.tokens(Int(fraction / Self.groupShare * ioMax)))
                             .foregroundStyle(UsagePalette.input)
                     }
                 }

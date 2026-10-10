@@ -12,11 +12,11 @@ struct UsageBreakdownTable: View {
         let rows = snapshot.breakdown(for: dimension)
         return VStack(alignment: .leading, spacing: 16) {
             HStack {
-                SectionLabel(text: "Répartition")
+                SectionLabel(text: String(localized: "Breakdown"))
                 Spacer()
                 Picker("", selection: $dimension) {
                     ForEach(BreakdownDimension.allCases) { dimension in
-                        Text(dimension.frenchLabel).tag(dimension)
+                        Text(dimension.displayName).tag(dimension)
                     }
                 }
                 .pickerStyle(.segmented)
@@ -24,7 +24,7 @@ struct UsageBreakdownTable: View {
                 .frame(width: 260)
             }
             if rows.isEmpty {
-                Text("Aucune donnée sur cette période.")
+                Text("No data in this period.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .frame(maxWidth: .infinity, minHeight: 80, alignment: .center)
@@ -46,11 +46,11 @@ struct UsageBreakdownTable: View {
 
     private var header: some View {
         HStack {
-            Text(dimension.frenchLabel.uppercased())
+            Text(dimension.displayName.uppercased())
             Spacer()
-            Text("TOURS").frame(width: 70, alignment: .trailing)
-            Text("TOKENS").frame(width: 90, alignment: .trailing)
-            Text("COÛT").frame(width: 90, alignment: .trailing)
+            Text(String(localized: "Turns").uppercased()).frame(width: 70, alignment: .trailing)
+            Text(String(localized: "Tokens").uppercased()).frame(width: 90, alignment: .trailing)
+            Text(String(localized: "Cost").uppercased()).frame(width: 90, alignment: .trailing)
         }
         .font(.label(10))
         .tracking(1.2)
@@ -60,14 +60,14 @@ struct UsageBreakdownTable: View {
 
     private func rowView(_ row: BreakdownRow) -> some View {
         HStack {
-            Text(dimension.frenchRowLabel(row.label))
+            Text(dimension.displayRowLabel(row.label))
                 .foregroundStyle(Theme.ink)
                 .lineLimit(1)
                 .truncationMode(.middle)
             Spacer(minLength: 12)
-            Text(FRFormat.integer(row.turnCount))
+            Text(AppFormat.integer(row.turnCount))
                 .frame(width: 70, alignment: .trailing)
-            Text(FRFormat.tokens(row.totalTokens))
+            Text(AppFormat.tokens(row.totalTokens))
                 .frame(width: 90, alignment: .trailing)
             Text(money(row.estimatedCostUSD))
                 .foregroundStyle(Theme.blue)

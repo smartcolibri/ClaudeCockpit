@@ -434,7 +434,7 @@ extension SessionStore {
 
         var sql = """
             SELECT m.session_id, m.uuid,
-                   snippet(blocks_fts, 0, '«', '»', '…', 14) AS excerpt, m.ts
+                   snippet(blocks_fts, 0, char(57344), char(57345), '…', 14) AS excerpt, m.ts
             FROM blocks_fts
             JOIN blocks b ON b.id = blocks_fts.rowid
             JOIN messages m ON m.id = b.message_id

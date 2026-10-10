@@ -180,11 +180,11 @@ public enum RTKError: Error, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .databaseNotFound:
-            return "Base rtk introuvable. Installez rtk ou indiquez le chemin de history.db dans les réglages."
+            return String(localized: "rtk database not found. Install rtk or set the path to history.db in Settings.", bundle: .module)
         case .invalidSchema:
-            return "La table commands de la base rtk n'a pas le schéma attendu."
+            return String(localized: "The commands table in the rtk database does not have the expected schema.", bundle: .module)
         case .sqlite(let message):
-            return "Erreur SQLite : \(message)"
+            return String(localized: "SQLite error: \(message)", bundle: .module)
         }
     }
 }

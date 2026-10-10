@@ -1,4 +1,5 @@
 import SwiftUI
+import CockpitShared
 
 struct MainWindowView: View {
     static let windowID = "main"
@@ -16,10 +17,10 @@ struct MainWindowView: View {
     var body: some View {
         NavigationSplitView {
             List(selection: selection) {
-                Section("Tableau de bord") {
+                Section("Dashboard") {
                     row(.overview); row(.usage); row(.sessions); row(.rtk)
                 }
-                Section("Atelier") {
+                Section("Workshop") {
                     row(.skills); row(.agents); row(.commands)
                 }
                 Section {
@@ -49,9 +50,9 @@ struct MainWindowView: View {
                 Button {
                     Task { await store.refreshAll() }
                 } label: {
-                    Label("Rafraîchir", systemImage: "arrow.clockwise")
+                    Label("Refresh", systemImage: "arrow.clockwise")
                 }
-                .help("Rafraîchir toutes les sources")
+                .help("Refresh all sources")
             }
         }
         .overlay(alignment: .bottom) { NoticeToast() }
@@ -76,19 +77,19 @@ struct MainWindowView: View {
             if store.claudeAccess { OverviewView() } else { OnboardingView() }
         case .usage:
             if store.claudeAccess { UsageView() } else {
-                NoAccessView(title: "Usage local", message: "L'usage est calculé à partir des transcripts de \(claude)/projects, que l'app n'est pas autorisée à lire.")
+                NoAccessView(title: String(localized: "Local Usage"), message: String(localized: "Usage is computed from the transcripts in \(claude)/projects, which the app is not allowed to read.", locale: AppFormat.locale))
             }
         case .sessions:
             if store.claudeAccess { SessionsView() } else {
-                NoAccessView(title: "Sessions", message: "Les sessions sont indexées à partir des transcripts de \(claude)/projects, que l'app n'est pas autorisée à lire.")
+                NoAccessView(title: String(localized: "Sessions"), message: String(localized: "Sessions are indexed from the transcripts in \(claude)/projects, which the app is not allowed to read.", locale: AppFormat.locale))
             }
         case .rtk:
             if store.rtkAccess { RTKView() } else {
-                NoAccessView(title: "RTK", message: "La base de RTK (~/Library/Application Support/rtk ou ~/.local/share/rtk) est hors des dossiers autorisés. Autorisez votre dossier personnel, ou choisissez la base dans Réglages › RTK.")
+                NoAccessView(title: "RTK", message: String(localized: "The RTK database (~/Library/Application Support/rtk or ~/.local/share/rtk) is outside the allowed folders. Allow your home folder, or choose the database in Settings › RTK."))
             }
         case .skills, .agents, .commands:
             if store.claudeAccess { ResourcesView(kind: section.resourceKind ?? .skill) } else {
-                NoAccessView(title: section.title, message: "Les ressources sont lues dans \(claude), que l'app n'est pas autorisée à lire.")
+                NoAccessView(title: section.title, message: String(localized: "Resources are read from \(claude), which the app is not allowed to read.", locale: AppFormat.locale))
             }
         case .settings: SettingsView()
         }
@@ -114,13 +115,13 @@ private struct DemoBanner: View {
     var body: some View {
         HStack(spacing: 10) {
             Image(systemName: "play.rectangle.fill").foregroundStyle(Theme.accent)
-            Text("Mode démo — données fictives").font(.system(size: 12, weight: .semibold))
-            Text("Projets, sessions et statistiques inventés pour découvrir l'app.")
+            Text("Demo mode — sample data").font(.system(size: 12, weight: .semibold))
+            Text("Made-up projects, sessions and statistics to explore the app.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
                 .lineLimit(1)
             Spacer()
-            Button("Quitter la démo", action: exit).controlSize(.small)
+            Button("Exit Demo", action: exit).controlSize(.small)
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

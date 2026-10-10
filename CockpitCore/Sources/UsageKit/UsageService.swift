@@ -8,7 +8,7 @@ public enum UsageServiceError: Error, LocalizedError, Sendable {
     public var errorDescription: String? {
         switch self {
         case .projectsDirectoryMissing(let url):
-            "Aucun transcript Claude Code : le dossier \(url.path) est introuvable."
+            String(localized: "No Claude Code transcripts: the folder \(url.path) was not found.", bundle: .module)
         }
     }
 }

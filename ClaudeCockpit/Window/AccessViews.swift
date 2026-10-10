@@ -11,18 +11,18 @@ struct OnboardingView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Bienvenue dans Cockpit for Claude").font(.display(24, weight: .bold))
-                    Text("Une autorisation est nécessaire avant d'afficher vos données.")
+                    Text("Welcome to Cockpit for Claude").font(.display(24, weight: .bold))
+                    Text("Permission is needed before your data can be shown.")
                         .font(.system(size: 13))
                         .foregroundStyle(Theme.slate)
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Pourquoi cet accès ?").font(.system(size: 14, weight: .semibold))
-                    explanation("Cockpit for Claude lit ce que Claude Code enregistre dans \(store.displayPath(store.paths.claudeDir)) : transcripts des sessions, skills, agents et commandes.")
-                    explanation("macOS isole les apps du Mac App Store : elles ne voient que les dossiers que vous leur ouvrez explicitement.")
-                    explanation("Le dossier \(store.displayPath(store.paths.claudeDir)) est seulement lu. Seuls les transferts de skills que vous lancez vous-même y écrivent, après une sauvegarde dans \(store.displayPath(store.paths.backupsDir)).")
-                    explanation("Rien ne quitte votre Mac : l'app n'a pas accès au réseau.")
+                    Text("Why this access?").font(.system(size: 14, weight: .semibold))
+                    explanation("Cockpit for Claude reads what Claude Code saves in \(store.displayPath(store.paths.claudeDir)): session transcripts, skills, agents and commands.")
+                    explanation("macOS isolates Mac App Store apps: they only see the folders you explicitly open to them.")
+                    explanation("The folder \(store.displayPath(store.paths.claudeDir)) is only read. Only the skill transfers you start yourself write to it, after a backup in \(store.displayPath(store.paths.backupsDir)).")
+                    explanation("Nothing leaves your Mac: the app has no network access.")
                 }
                 .padding(18)
                 .card()
@@ -31,22 +31,22 @@ struct OnboardingView: View {
                     Button {
                         handle(store.requestAccess(.home))
                     } label: {
-                        Label("Autoriser l'accès à mon dossier personnel", systemImage: "house.fill")
+                        Label("Allow Access to My Home Folder", systemImage: "house.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .controlSize(.large)
                     .buttonStyle(.borderedProminent)
-                    Text("Recommandé. Couvre \(store.displayPath(store.paths.claudeDir)), les skills liés ailleurs dans votre dossier (par exemple ~/.agents), la base RTK et l'analyse de vos dossiers de projets. Dans la fenêtre qui s'ouvre, votre dossier personnel est déjà sélectionné : cliquez sur « Autoriser ».")
+                    Text("Recommended. Covers \(store.displayPath(store.paths.claudeDir)), skills linked elsewhere in your folder (for example ~/.agents), the RTK database and the scan of your project folders. In the window that opens, your home folder is already selected: click “Allow”.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 VStack(alignment: .leading, spacing: 8) {
-                    Button("Autoriser seulement \(store.displayPath(store.paths.claudeDir))") {
+                    Button("Allow Only \(store.displayPath(store.paths.claudeDir))") {
                         handle(store.requestAccess(.claudeOnly))
                     }
-                    Text("Usage, sessions, skills, agents et commandes fonctionnent. Restent indisponibles : les skills liés hors de \(store.displayPath(store.paths.claudeDir)), les statistiques RTK et l'analyse des dossiers de projets. Vous pourrez élargir l'accès dans Réglages › Accès.")
+                    Text("Usage, sessions, skills, agents and commands work. Still unavailable: skills linked outside \(store.displayPath(store.paths.claudeDir)), RTK statistics and the scan of project folders. You can widen the access in Settings › Access.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -58,9 +58,9 @@ struct OnboardingView: View {
                     Button {
                         store.enterDemo()
                     } label: {
-                        Label("Explorer avec des données d'exemple", systemImage: "play.rectangle")
+                        Label("Explore with Sample Data", systemImage: "play.rectangle")
                     }
-                    Text("Trois projets, des sessions, des statistiques RTK et des skills fictifs, pour découvrir l'app sans autoriser aucun dossier. Vos propres données ne sont ni lues ni modifiées.")
+                    Text("Three made-up projects with sessions, RTK statistics and skills, to explore the app without allowing any folder. Your own data is neither read nor changed.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .fixedSize(horizontal: false, vertical: true)
@@ -77,7 +77,7 @@ struct OnboardingView: View {
         .background(Theme.background)
     }
 
-    private func explanation(_ text: String) -> some View {
+    private func explanation(_ text: LocalizedStringKey) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
             Image(systemName: "checkmark.circle.fill").foregroundStyle(Theme.emerald).font(.system(size: 11))
             Text(text).font(.system(size: 12)).fixedSize(horizontal: false, vertical: true)
@@ -106,7 +106,7 @@ struct NoAccessView: View {
             Image(systemName: "lock.fill")
                 .font(.system(size: 30, weight: .light))
                 .foregroundStyle(Theme.mist)
-            Text("Accès non autorisé").font(.system(size: 15, weight: .semibold))
+            Text("Access Not Granted").font(.system(size: 15, weight: .semibold))
             Text(title).font(.system(size: 13)).foregroundStyle(Theme.ink)
             Text(message)
                 .font(.system(size: 12))
@@ -114,7 +114,7 @@ struct NoAccessView: View {
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
                 .frame(maxWidth: 460)
-            Button("Autoriser l'accès à mon dossier personnel…") { store.requestAccess(.home) }
+            Button("Allow Access to My Home Folder…") { store.requestAccess(.home) }
                 .buttonStyle(.borderedProminent)
                 .padding(.top, 4)
         }
@@ -132,8 +132,8 @@ struct AccessRequiredBanner: View {
     var body: some View {
         SourceBanner(
             kind: .warning,
-            message: "Accès non autorisé : \(message)",
+            message: String(localized: "Access not granted: \(message)", locale: AppFormat.locale),
             action: { store.requestAccess(.home) },
-            actionTitle: "Autoriser…")
+            actionTitle: String(localized: "Allow…"))
     }
 }

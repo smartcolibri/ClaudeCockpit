@@ -1,6 +1,8 @@
 name: ClaudeCockpit
 options:
   bundleIdPrefix: fr.smartcolibri
+  # English is the source language; French ships as a translation in the String Catalogs.
+  developmentLanguage: en
   deploymentTarget:
     macOS: "14.0"
 
@@ -51,10 +53,13 @@ targets:
         CODE_SIGNING_REQUIRED: NO
         CODE_SIGNING_ALLOWED: NO
         SWIFT_STRICT_CONCURRENCY: minimal
+        SWIFT_EMIT_LOC_STRINGS: YES
+        LOCALIZATION_PREFERS_STRING_CATALOGS: YES
     info:
       path: ClaudeCockpit/Resources/Info.plist
       properties:
         CFBundleName: Cockpit for Claude
+        CFBundleDevelopmentRegion: en
         CFBundleDisplayName: Cockpit for Claude
         CFBundleIdentifier: fr.smartcolibri.cockpitforclaude
         CFBundleShortVersionString: "$(MARKETING_VERSION)"

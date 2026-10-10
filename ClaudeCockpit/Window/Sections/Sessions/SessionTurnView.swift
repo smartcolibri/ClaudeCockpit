@@ -61,12 +61,12 @@ struct SessionTurnView: View {
 
     private var userTurn: some View {
         VStack(alignment: .leading, spacing: 8) {
-            turnHeader(role: "Vous", icon: "person.crop.circle", tint: Theme.accent)
+            turnHeader(role: String(localized: "You"), icon: "person.crop.circle", tint: Theme.accent)
             ForEach(message.blocks.filter { $0.kind == .text || $0.kind == .image }) { block in
                 blockView(block)
             }
             if message.attachmentCount > 0 {
-                Label(FRFormat.plural(message.attachmentCount, "pièce jointe"),
+                Label("\(message.attachmentCount) attachments",
                       systemImage: "paperclip")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
@@ -83,7 +83,7 @@ struct SessionTurnView: View {
     private var assistantTurn: some View {
         VStack(alignment: .leading, spacing: 8) {
             turnHeader(
-                role: message.isApiError ? "Assistant — erreur API" : "Assistant",
+                role: message.isApiError ? String(localized: "Assistant — API error") : String(localized: "Assistant"),
                 icon: message.isApiError ? "exclamationmark.triangle.fill" : "sparkle",
                 tint: message.isApiError ? .red : Theme.violet)
             ForEach(message.blocks) { block in
@@ -103,14 +103,14 @@ struct SessionTurnView: View {
         HStack(spacing: 10) {
             Text(SessionsPalette.modelLabel(message.model))
             if message.totalTokens > 0 {
-                Text("\(FRFormat.tokens(message.totalTokens)) jetons")
+                Text("\(AppFormat.tokens(message.totalTokens)) tokens")
             }
             let cost = SessionsPalette.turnCost(message, pricing: store.pricing)
             if cost > 0 {
                 Text(store.money(cost, digits: 4)).foregroundStyle(Theme.blue)
             }
             if let elapsed, elapsed > 0 {
-                Text("+\(FRFormat.duration(elapsed))")
+                Text(verbatim: "+\(AppFormat.duration(elapsed))")
             }
             Spacer(minLength: 0)
         }
@@ -145,7 +145,7 @@ struct SessionTurnView: View {
     private var compactDivider: some View {
         HStack(spacing: 10) {
             Rectangle().fill(Theme.cardStroke).frame(height: 1)
-            Label("Contexte compacté", systemImage: "arrow.down.right.and.arrow.up.left")
+            Label("Context Compacted", systemImage: "arrow.down.right.and.arrow.up.left")
                 .font(.label(10))
                 .tracking(0.8)
                 .foregroundStyle(Theme.slate)
@@ -180,7 +180,7 @@ struct SessionTurnView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.top, 4)
             } label: {
-                Label("Réflexion", systemImage: "brain")
+                Label("Thinking", systemImage: "brain")
                     .font(.label(11))
                     .foregroundStyle(Theme.violet)
             }
@@ -190,7 +190,7 @@ struct SessionTurnView: View {
             // Shown inside the card of the call it answers.
             EmptyView()
         case .image:
-            Label("Image (\(block.imageMediaType ?? "type inconnu"))", systemImage: "photo")
+            Label("Image (\(block.imageMediaType ?? String(localized: "unknown type")))", systemImage: "photo")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
                 .padding(.horizontal, 9)
@@ -217,7 +217,7 @@ struct SessionTurnView: View {
             Image(systemName: icon).font(.system(size: 11)).foregroundStyle(tint)
             Text(role).font(.label(11)).tracking(0.6).foregroundStyle(tint)
             Spacer(minLength: 8)
-            Text(FRFormat.time(message.timestamp))
+            Text(AppFormat.time(message.timestamp))
                 .font(.data(10))
                 .foregroundStyle(Theme.mist)
         }
