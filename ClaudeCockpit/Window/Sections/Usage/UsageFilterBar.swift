@@ -19,42 +19,60 @@ struct UsageFilterBar: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .center, spacing: 20) {
-                VStack(alignment: .leading, spacing: 6) {
-                    SectionLabel(text: String(localized: "Models"))
-                    HStack(spacing: 6) {
-                        ForEach(families) { family in
-                            chip(family)
-                        }
-                    }
-                }
-                Divider().frame(height: 32)
-                VStack(alignment: .leading, spacing: 6) {
-                    SectionLabel(text: String(localized: "Project"))
-                    Picker("", selection: projectBinding) {
-                        Text("All Projects").tag(String?.none)
-                        ForEach(availableProjects, id: \.self) { project in
-                            Text(UsagePath.shorten(project)).tag(String?.some(project))
-                        }
-                    }
-                    .labelsHidden()
-                    .frame(minWidth: 220, maxWidth: 320)
-                }
+        // One line when it fits; otherwise the period moves under the models and project.
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                chips
+                projectPicker
                 Spacer(minLength: 0)
+                rangePicker
             }
-            VStack(alignment: .leading, spacing: 6) {
-                SectionLabel(text: String(localized: "Period"))
-                Picker("", selection: rangeBinding) {
-                    ForEach(DateRangeFilter.allCases) { range in
-                        Text(range.displayName).tag(range)
-                    }
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(spacing: 12) {
+                    chips
+                    projectPicker
+                    Spacer(minLength: 0)
                 }
-                .pickerStyle(.segmented)
-                .labelsHidden()
+                rangePicker
             }
         }
-        .panelStyle()
+        .padding(.horizontal, 12)
+        .padding(.vertical, 9)
+        .card()
+    }
+
+    private var chips: some View {
+        HStack(spacing: 6) {
+            ForEach(families) { family in
+                chip(family)
+            }
+        }
+        .fixedSize()
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel(String(localized: "Models"))
+    }
+
+    private var projectPicker: some View {
+        Picker(String(localized: "Project"), selection: projectBinding) {
+            Text("All Projects").tag(String?.none)
+            ForEach(availableProjects, id: \.self) { project in
+                Text(UsagePath.shorten(project)).tag(String?.some(project))
+            }
+        }
+        .labelsHidden()
+        .frame(minWidth: 150, idealWidth: 200, maxWidth: 240)
+        .fixedSize()
+    }
+
+    private var rangePicker: some View {
+        Picker(String(localized: "Period"), selection: rangeBinding) {
+            ForEach(DateRangeFilter.allCases) { range in
+                Text(range.shortName).tag(range)
+            }
+        }
+        .pickerStyle(.segmented)
+        .labelsHidden()
+        .fixedSize()
     }
 
     private func chip(_ family: ModelFamily) -> some View {
