@@ -254,7 +254,7 @@ struct SessionDetailView: View {
             .disabled(!store.canResume(session))
             .help(store.canResume(session)
                   ? "Copier la commande de reprise (cd + claude --resume) pour la coller dans un terminal"
-                  : "Le dossier de travail de cette session n'existe plus")
+                  : "Dossier de travail inconnu pour cette session")
             .accessibilityLabel("Copier la commande de reprise")
 
             Button {

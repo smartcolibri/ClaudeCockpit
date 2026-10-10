@@ -196,11 +196,11 @@ extension CockpitStore {
 
     // MARK: Actions
 
-    /// True when `claude --resume` can be offered: the working directory the session
-    /// ran in must still exist, or the copied `cd` would fail.
+    /// True when `claude --resume` can be offered: the session is known with its working
+    /// directory. Copying text needs no file access, so the folder is not required to be
+    /// visible — under the sandbox it usually is not.
     func canResume(_ session: SessionRef) -> Bool {
-        var isDir: ObjCBool = false
-        return FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDir) && isDir.boolValue
+        !session.cwd.isEmpty
     }
 
     /// Copies `cd <cwd> && claude --resume <id>` to the pasteboard for the user to
@@ -209,14 +209,22 @@ extension CockpitStore {
     /// was checked against the installed binary before being wired here.
     func resumeSession(_ session: SessionRef) {
         guard canResume(session) else {
-            notice = "Le dossier de cette session n'existe plus : \(session.cwd)"
+            notice = "Dossier de travail inconnu pour cette session."
             return
         }
         let command = "cd \(shellQuoted(session.cwd)) && claude --resume \(shellQuoted(session.id))"
         let pasteboard = NSPasteboard.general
         pasteboard.clearContents()
         pasteboard.setString(command, forType: .string)
-        notice = "Commande copiée : collez-la dans un terminal."
+        // A missing folder can only be told where the app may look; elsewhere the
+        // command is copied as is.
+        let cwd = URL(fileURLWithPath: session.cwd, isDirectory: true)
+        var isDir: ObjCBool = false
+        if isCovered(cwd), !(FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDir) && isDir.boolValue) {
+            notice = "Commande copiée, mais le dossier \(session.cwd) n'existe plus."
+        } else {
+            notice = "Commande copiée : collez-la dans un terminal."
+        }
     }
 
     /// Single-quote for `zsh`, closing and reopening around any embedded quote.
