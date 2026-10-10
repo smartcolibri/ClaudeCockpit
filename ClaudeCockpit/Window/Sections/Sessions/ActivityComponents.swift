@@ -394,7 +394,7 @@ struct ActivityToolMix: View {
                 .monospacedDigit()
                 .foregroundStyle(.red)
                 .frame(width: 46, alignment: .trailing)
-                .help(row.errors > 0 ? Text("\(AppFormat.integer(row.errors)) failed calls") : Text(verbatim: ""))
+                .help(row.errors > 0 ? Text("\(row.errors) failed calls") : Text(verbatim: ""))
         }
     }
 }

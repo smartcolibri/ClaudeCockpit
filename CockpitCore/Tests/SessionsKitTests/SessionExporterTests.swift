@@ -137,6 +137,21 @@ final class SessionExporterTests: XCTestCase {
         XCTAssertEqual(ContentBlock.displayable(body, truncated: "x"), "début\n… [x]")
     }
 
+    /// Each count agrees with its own noun; French treats 0 and 1 as singular.
+    func testToolCountsAgreeWithTheirNoun() {
+        let french = SessionExporter.Words(locale: fr), english = SessionExporter.Words(locale: en)
+        XCTAssertEqual(english("\(1) calls"), "1 call")
+        XCTAssertEqual(english("\(0) calls"), "0 calls")
+        XCTAssertEqual(english("\(1_234) calls"), "1,234 calls")
+        XCTAssertEqual(french("\(0) calls"), "0 appel")
+        XCTAssertEqual(french("\(2) calls"), "2 appels")
+        XCTAssertEqual(french("\(1_234) calls"), "\(AppFormat.integer(1_234, locale: fr)) appels")
+        XCTAssertEqual(english("\(3) failed"), "3 failed")
+        XCTAssertEqual(french("\(3) failed"), "3 en erreur")
+        let fields = Dictionary(uniqueKeysWithValues: SessionExporter.header(session, words: english))
+        XCTAssertEqual(fields["Tools"], "\(english("\(session.toolCalls) calls")) · \(english("\(session.toolErrors) failed"))")
+    }
+
     func testExportsAnEmptySessionWithoutCrashing() {
         XCTAssertFalse(SessionExporter.markdown(session: session, messages: []).isEmpty)
         XCTAssertFalse(SessionExporter.html(session: session, messages: []).isEmpty)

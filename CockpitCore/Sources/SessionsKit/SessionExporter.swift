@@ -42,7 +42,7 @@ extension SessionExporter {
             (words("Started"), words.date(session.firstTimestamp)),
             (words("Duration"), duration(session.duration, locale: words.locale)),
             (words("Turns"), words("\(session.userTurns) user · \(session.assistantTurns) assistant")),
-            (words("Tools"), words("\(session.toolCalls) calls · \(session.toolErrors) failed")),
+            (words("Tools"), "\(words("\(session.toolCalls) calls")) · \(words("\(session.toolErrors) failed"))"),
             (words("Tokens"), "\(session.totalTokens)"),
         ]
         if let branch = session.gitBranch { fields.append((words("Branch"), branch)) }

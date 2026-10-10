@@ -202,7 +202,7 @@ struct CommandImpactRow: View {
         .padding(.vertical, 7)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(stat.name)
-        .accessibilityValue("\(AppFormat.integer(stat.count)) runs, \(AppFormat.tokens(stat.savedTokens)) saved, \(AppFormat.percent(stat.savingsPct, fraction: false))")
+        .accessibilityValue("\(String(localized: "\(stat.count) runs", locale: AppFormat.locale)), \(AppFormat.tokens(stat.savedTokens)) saved, \(AppFormat.percent(stat.savingsPct, fraction: false))")
     }
 
     /// The top three get an emerald halo, the rest stay neutral mist.

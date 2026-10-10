@@ -81,22 +81,6 @@
         }
       }
     },
-    "%@ failed calls" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ failed calls"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ appels en erreur"
-          }
-        }
-      }
-    },
     "%@ has no dedicated pricing — the default Sonnet rate is applied." : {
       "localizations" : {
         "en" : {
@@ -177,18 +161,18 @@
         }
       }
     },
-    "%@ of %@ tokens, across %@ filtered commands" : {
+    "%@ of %@ tokens, across %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ of %@ tokens, across %@ filtered commands"
+            "value" : "%@ of %@ tokens, across %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ de %2$@ tokens, sur %3$@ commandes filtrées"
+            "value" : "%1$@ de %2$@ tokens, sur %3$@"
           }
         }
       }
@@ -289,22 +273,6 @@
         }
       }
     },
-    "%@ runs, %@ saved, %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ runs, %@ saved, %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ exécutions, %2$@ économisés, %3$@"
-          }
-        }
-      }
-    },
     "%@ saved" : {
       "localizations" : {
         "en" : {
@@ -321,18 +289,18 @@
         }
       }
     },
-    "%@ saved across %@ commands" : {
+    "%@ saved across %@" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ saved across %@ commands"
+            "value" : "%@ saved across %@"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%1$@ économisés sur %2$@ commandes"
+            "value" : "%1$@ économisés sur %2$@"
           }
         }
       }
@@ -429,6 +397,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ · version %2$@ · lecture seule"
+          }
+        }
+      }
+    },
+    "%@, %@ saved, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@, %@ saved, %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@, %2$@ économisés, %3$@"
           }
         }
       }
@@ -625,6 +609,46 @@
         }
       }
     },
+    "%lld commands" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld command"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld commands"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld commande"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld commandes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld edits" : {
       "localizations" : {
         "en" : {
@@ -745,6 +769,46 @@
         }
       }
     },
+    "%lld failed calls" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld failed call"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld failed calls"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld appel en erreur"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld appels en erreur"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "%lld files" : {
       "localizations" : {
         "en" : {
@@ -778,6 +842,46 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld fichiers"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld filtered commands" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld filtered command"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld filtered commands"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld commande filtrée"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld commandes filtrées"
                 }
               }
             }
@@ -986,6 +1090,46 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld racines analysées"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld runs" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld run"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld runs"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld exécution"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld exécutions"
                 }
               }
             }

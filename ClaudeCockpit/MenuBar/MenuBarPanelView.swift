@@ -137,7 +137,7 @@ struct MenuBarPanelView: View {
                 InfoRow(
                     label: String(localized: "Tokens saved today"), value: AppFormat.tokens(rtk.today.savedTokens),
                     tint: Theme.emerald,
-                    note: String(localized: "\(AppFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) of \(AppFormat.tokens(rtk.today.inputTokens)) tokens, across \(AppFormat.integer(rtk.today.count)) filtered commands", locale: AppFormat.locale))
+                    note: String(localized: "\(AppFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) of \(AppFormat.tokens(rtk.today.inputTokens)) tokens, across \(String(localized: "\(rtk.today.count) filtered commands", locale: AppFormat.locale))"))
                 Divider().opacity(0.4)
                 InfoRow(
                     label: String(localized: "Last 7 days"), value: AppFormat.tokens(week),
@@ -145,7 +145,7 @@ struct MenuBarPanelView: View {
                 Divider().opacity(0.4)
                 InfoRow(
                     label: String(localized: "Since install"), value: AppFormat.tokens(rtk.allTime.savedTokens),
-                    note: String(localized: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) saved across \(AppFormat.integer(rtk.allTime.count)) commands", locale: AppFormat.locale))
+                    note: String(localized: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) saved across \(String(localized: "\(rtk.allTime.count) commands", locale: AppFormat.locale))"))
             } else if store.rtkState.isUnauthorized {
                 InfoRow(
                     label: String(localized: "rtk savings"), value: String(localized: "access not granted"),
