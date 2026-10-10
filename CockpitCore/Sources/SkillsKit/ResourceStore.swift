@@ -32,9 +32,11 @@ public actor ResourceStore {
             if order != .orderedSame { return order == .orderedAscending }
             return left.id < right.id
         }
+        let (plugins, installed) = scanPlugins()
         return SkillsInventory(
             resources: resources,
-            plugins: scanPlugins(),
+            plugins: plugins,
+            installedPlugins: installed,
             projects: projects,
             generatedAt: Date()
         )
@@ -218,14 +220,17 @@ public actor ResourceStore {
         return result
     }
 
-    private func scanPlugins() -> [PluginResource] {
+    /// The plugin skills, and the installed plugins as `org/plugin`.
+    private func scanPlugins() -> ([PluginResource], [String]) {
         let cache = paths.pluginsCacheDir
         var result: [PluginResource] = []
+        var installed = Set<String>()
         for org in subdirectories(of: cache) {
             for plugin in subdirectories(of: org) {
                 for version in subdirectories(of: plugin) {
                     let orphaned = version.appendingPathComponent(".orphaned_at")
                     if fileManager.fileExists(atPath: orphaned.path) { continue }
+                    installed.insert("\(org.lastPathComponent)/\(plugin.lastPathComponent)")
                     let skillsDirectory = version.appendingPathComponent("skills", isDirectory: true)
                     let fallback = pluginDescription(versionDirectory: version)
                     for skill in subdirectories(of: skillsDirectory) {
@@ -245,11 +250,12 @@ public actor ResourceStore {
                 }
             }
         }
-        return result.sorted { left, right in
+        let sorted = result.sorted { left, right in
             let order = left.name.localizedStandardCompare(right.name)
             if order != .orderedSame { return order == .orderedAscending }
             return left.id < right.id
         }
+        return (sorted, installed.sorted())
     }
 
     private func pluginDescription(versionDirectory: URL) -> String? {

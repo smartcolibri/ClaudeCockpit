@@ -210,18 +210,24 @@ public struct PluginResource: Identifiable, Hashable, Sendable {
 /// Immutable snapshot of every resource reachable from the three levels.
 public struct SkillsInventory: Sendable, Equatable {
     public let resources: [ClaudeResource]
+    /// Skills offered by the plugins in the cache, one per skill and version.
     public let plugins: [PluginResource]
+    /// The installed plugins themselves, `org/plugin`, sorted: each counted once whatever its
+    /// skills or cached versions, those with only orphaned versions left out.
+    public let installedPlugins: [String]
     public let projects: [ProjectRef]
     public let generatedAt: Date
 
     public init(
         resources: [ClaudeResource] = [],
         plugins: [PluginResource] = [],
+        installedPlugins: [String] = [],
         projects: [ProjectRef] = [],
         generatedAt: Date = Date()
     ) {
         self.resources = resources
         self.plugins = plugins
+        self.installedPlugins = installedPlugins
         self.projects = projects
         self.generatedAt = generatedAt
     }

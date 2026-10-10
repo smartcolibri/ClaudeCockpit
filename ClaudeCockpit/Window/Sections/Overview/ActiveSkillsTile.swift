@@ -24,7 +24,7 @@ struct ActiveSkillsTile: View {
                     VStack(alignment: .leading, spacing: 4) {
                         TileValue(text: AppFormat.integer(skills.count(kind: .skill, level: .global)), tint: Theme.violet)
                         TileCaption(text: String(localized: "\(AppFormat.integer(skills.count(kind: .skill))) in total, all levels", locale: AppFormat.locale))
-                        TileCaption(text: String(localized: "\(skills.plugins.count) plugins", locale: AppFormat.locale))
+                        TileCaption(text: String(localized: "\(skills.installedPlugins.count) plugins", locale: AppFormat.locale))
                     }
                 }
             }
@@ -35,6 +35,6 @@ struct ActiveSkillsTile: View {
         guard let skills = store.skills else { return "" }
         return [AppFormat.integer(skills.count(kind: .skill, level: .global)),
                 String(localized: "\(AppFormat.integer(skills.count(kind: .skill))) in total, all levels", locale: AppFormat.locale),
-                String(localized: "\(skills.plugins.count) plugins", locale: AppFormat.locale)].joined(separator: ", ")
+                String(localized: "\(skills.installedPlugins.count) plugins", locale: AppFormat.locale)].joined(separator: ", ")
     }
 }
