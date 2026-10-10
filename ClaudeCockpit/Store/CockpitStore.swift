@@ -15,8 +15,12 @@ enum SourceState: Equatable {
     case loading
     case ready(Date)
     case failed(String)
+    /// The sandbox grants do not cover what this source reads. Not an error: the
+    /// views offer the grant flow instead of a retry.
+    case unauthorized
 
     var isLoading: Bool { self == .loading }
+    var isUnauthorized: Bool { self == .unauthorized }
     var errorMessage: String? { if case .failed(let m) = self { return m } else { return nil } }
     var lastSuccess: Date? { if case .ready(let d) = self { return d } else { return nil } }
 }
@@ -66,11 +70,14 @@ enum CockpitSection: String, CaseIterable, Identifiable {
 @MainActor @Observable
 final class CockpitStore {
     // MARK: Services
-    let paths: ClaudePaths
-    private let usageService: UsageService
+    /// Rebuilt when the Claude config directory setting changes.
+    private(set) var paths: ClaudePaths
+    /// Folders granted to the sandboxed app; every source checks it before reading.
+    let access: AccessStore
+    private var usageService: UsageService
     private var rtkService: RTKService
-    let sessionService: SessionService
-    private let skillsStore: ResourceStore
+    private(set) var sessionService: SessionService
+    private var skillsStore: ResourceStore
     private let defaults = UserDefaults.standard
 
     // MARK: Snapshots & states
@@ -142,18 +149,124 @@ final class CockpitStore {
     }
 
     // MARK: Init
-    init(paths: ClaudePaths = .live) {
+    init() {
         SettingsKey.registerDefaults()
+        let paths = ClaudePaths.live(configDirSetting: UserDefaults.standard.string(forKey: SettingsKey.claudeConfigDir))
         self.paths = paths
+        access = AccessStore()
         usageService = UsageService(paths: paths)
-        let override = UserDefaults.standard.string(forKey: SettingsKey.rtkDBPath).flatMap {
-            $0.isEmpty ? nil : URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath)
-        }
-        rtkService = RTKService(paths: paths, overridePath: override)
+        rtkService = RTKService(paths: paths, overridePath: Self.rtkOverride(paths: paths))
         sessionService = SessionService(paths: paths)
         skillsStore = ResourceStore(paths: paths)
         pricing = UserDefaults.standard.string(forKey: SettingsKey.pricingJSON)
             .map(PricingSettings.decoded(fromJSONString:)) ?? .default
+        access.onChange = { [weak self] in self?.accessDidChange() }
+    }
+
+    private static func rtkOverride(paths: ClaudePaths) -> URL? {
+        let raw = UserDefaults.standard.string(forKey: SettingsKey.rtkDBPath) ?? ""
+        return raw.isEmpty ? nil : URL(fileURLWithPath: paths.expandTilde(raw))
+    }
+
+    // MARK: Access
+
+    /// `~/.claude` (or the configured directory) is readable: usage, sessions, skills.
+    var claudeAccess: Bool { access.covers(paths.claudeDir) }
+    /// The whole home is readable: skills linked outside `~/.claude` resolve.
+    var homeAccess: Bool { access.covers(paths.home) }
+    /// rtk's database can be read: the chosen one, or any automatic candidate.
+    var rtkAccess: Bool {
+        if let override = Self.rtkOverride(paths: paths) {
+            return access.covers(override.deletingLastPathComponent()) || access.covers(override)
+        }
+        return paths.rtkDatabaseCandidates.contains { access.covers($0.deletingLastPathComponent()) }
+    }
+    func isCovered(_ url: URL) -> Bool { access.covers(url) }
+
+    /// Result of a grant request, for the onboarding and the settings to word.
+    enum AccessRequestResult: Equatable {
+        case cancelled
+        case granted(full: Bool)
+        case rejected(String)
+    }
+
+    enum AccessTarget { case home, claudeOnly }
+
+    /// Runs the open panel for the recommended (home) or minimal (`~/.claude`) grant,
+    /// checks the selection and stores it. Everything reloads through `accessDidChange`.
+    @discardableResult
+    func requestAccess(_ target: AccessTarget) -> AccessRequestResult {
+        let expected = target == .home ? paths.home : paths.claudeDir
+        let message = target == .home
+            ? "Sélectionnez votre dossier personnel « \(paths.home.lastPathComponent) » puis cliquez sur Autoriser."
+            : "Sélectionnez le dossier \(displayPath(paths.claudeDir)) puis cliquez sur Autoriser."
+        // The home folder is the panel's start either way: `.claude` is visible in it
+        // (hidden files are shown) and a click on Autoriser picks the home itself.
+        guard let url = access.runPanel(directory: target == .home ? paths.home : paths.claudeDir, message: message) else {
+            return .cancelled
+        }
+        let result: AccessRequestResult
+        switch AccessCoverage.evaluate(selection: url, expected: expected, required: paths.claudeDir) {
+        case .unrelated:
+            result = .rejected("Le dossier choisi (\(displayPath(url))) ne contient pas \(displayPath(paths.claudeDir)). Aucun accès n'a été enregistré.")
+        case .partial, .full:
+            do {
+                try access.add(url)
+                result = .granted(full: access.covers(paths.home))
+            } catch {
+                result = .rejected("Impossible d'enregistrer l'accès : \(error.localizedDescription)")
+            }
+        }
+        if case .rejected(let text) = result { notice = text }
+        return result
+    }
+
+    /// Grants any folder (or file) the user picks, starting the panel at `directory`.
+    @discardableResult
+    func grantFolder(startingAt directory: URL, message: String, chooseFiles: Bool = false) -> URL? {
+        guard let url = access.runPanel(directory: directory, message: message, chooseFiles: chooseFiles) else { return nil }
+        grant(url)
+        return url
+    }
+
+    /// Stores a grant for a URL just picked in an open panel; a failure becomes a notice.
+    func grant(_ url: URL) {
+        do {
+            try access.add(url)
+        } catch {
+            notice = "Impossible d'enregistrer l'accès : \(error.localizedDescription)"
+        }
+    }
+
+    /// `~/…` form of a path under the real home.
+    func displayPath(_ url: URL) -> String {
+        let path = url.standardizedFileURL.path
+        let home = paths.home.standardizedFileURL.path
+        if path == home { return "~" }
+        if path.hasPrefix(home + "/") { return "~" + path.dropFirst(home.count) }
+        return path
+    }
+
+    /// Reloads every source after a grant changed or the config directory moved. Paths are
+    /// rebuilt only when they differ; watchers restart only on what is now covered.
+    func accessDidChange() {
+        let fresh = ClaudePaths.live(configDirSetting: defaults.string(forKey: SettingsKey.claudeConfigDir))
+        if fresh != paths {
+            sessionsWatchTask?.cancel()
+            sessionsWatcher?.stop()
+            paths = fresh
+            usageService = UsageService(paths: fresh)
+            sessionService = SessionService(paths: fresh)
+            skillsStore = ResourceStore(paths: fresh)
+            sessions = []
+        }
+        usage = nil
+        skills = nil
+        guard loopsStarted else { return }
+        Task { await refreshUsage() }
+        startSessionsWatch()
+        startSkillsWatch()
+        rtkPathDidChange()
     }
 
     // MARK: Loops
@@ -166,8 +279,11 @@ final class CockpitStore {
         loopsStarted = true
 
         // Housekeeping: drop skill backups older than 30 days (off the main thread).
-        let paths = paths
-        Task.detached(priority: .background) { BackupPruner.prune(paths: paths) }
+        // Only where it may write: the pruner deletes inside `~/.claude/backups`.
+        if claudeAccess {
+            let paths = paths
+            Task.detached(priority: .background) { BackupPruner.prune(paths: paths) }
+        }
 
         loopTasks.append(Task { [weak self] in
             while !Task.isCancelled {
@@ -186,9 +302,21 @@ final class CockpitStore {
             }
         })
         startSessionsWatch()
-        loopTasks.append(Task { [weak self] in
+        startSkillsWatch()
+    }
+    private var skillsWatcher: DirectoryWatcher?
+    private var skillsWatchTask: Task<Void, Never>?
+
+    /// Inventories the skills, then follows their directories. Restartable: a new grant
+    /// (or a moved config directory) re-arms it; no watcher is started without access.
+    private func startSkillsWatch() {
+        skillsWatchTask?.cancel()
+        skillsWatchTask = nil
+        skillsWatcher = nil
+        skillsWatchTask = Task { [weak self] in
             await self?.refreshSkills()
-            guard let self else { return }
+            guard let self, !Task.isCancelled, self.claudeAccess else { return }
+            let paths = self.paths
             let watcher = DirectoryWatcher(directories: [
                 paths.skillsDir, paths.agentsDir, paths.commandsDir,
                 paths.libraryDir.appendingPathComponent("skills"),
@@ -197,11 +325,11 @@ final class CockpitStore {
             ])
             self.skillsWatcher = watcher
             for await _ in watcher.changes {
+                if Task.isCancelled { return }
                 await self.refreshSkills()
             }
-        })
+        }
     }
-    private var skillsWatcher: DirectoryWatcher?
 
     /// The task consuming `rtkService.changes`, kept apart from `loopTasks` because it is
     /// bound to one `RTKService` instance: when the user changes the database path a new
@@ -216,6 +344,12 @@ final class CockpitStore {
     private func startRTKWatch() {
         rtkWatchTask?.cancel()
         rtkWatchEnded = false
+        guard rtkAccess else {
+            // Nothing to watch without a grant; the next refresh after one re-arms it.
+            rtkWatchEnded = true
+            Task { await refreshRTK() }
+            return
+        }
         // Captured now, so the loop can never end up awaiting a stream from a service the
         // store has since replaced.
         let service = rtkService
@@ -238,6 +372,11 @@ final class CockpitStore {
         sessionsWatcher?.stop()
         sessionsWatcher = nil
         guard defaults.bool(forKey: SettingsKey.sessionsIndexEnabled) else { return }
+        guard claudeAccess else {
+            sessions = []
+            sessionsState = .unauthorized
+            return
+        }
         sessionsWatchTask = Task { [weak self] in
             // The first index walks ~900 MB, so it starts right away and reports its
             // progress; everything after it is driven by the watcher. That is why the
@@ -271,6 +410,11 @@ final class CockpitStore {
 
     // MARK: Usage
     func refreshUsage(rescan: Bool = false) async {
+        guard claudeAccess else {
+            usage = nil
+            usageState = .unauthorized
+            return
+        }
         if usage == nil { usageState = .loading }
         do {
             if rescan { try await usageService.rescan() } else { try await usageService.refresh() }
@@ -291,6 +435,11 @@ final class CockpitStore {
 
     // MARK: RTK
     func refreshRTK() async {
+        guard rtkAccess else {
+            rtk = nil
+            rtkState = .unauthorized
+            return
+        }
         if rtk == nil { rtkState = .loading }
         let service = rtkService
         do {
@@ -310,9 +459,7 @@ final class CockpitStore {
         rtkWatchTask?.cancel()
         rtkWatchTask = nil
         rtkService.stop()
-        let raw = defaults.string(forKey: SettingsKey.rtkDBPath) ?? ""
-        let override = raw.isEmpty ? nil : URL(fileURLWithPath: (raw as NSString).expandingTildeInPath)
-        rtkService = RTKService(paths: paths, overridePath: override)
+        rtkService = RTKService(paths: paths, overridePath: Self.rtkOverride(paths: paths))
         rtk = nil
         // Refreshes once and re-subscribes, this time to the new service.
         startRTKWatch()
@@ -324,8 +471,10 @@ final class CockpitStore {
         let raw = defaults.string(forKey: SettingsKey.projectRoots) ?? ""
         let lines = raw.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         if lines.isEmpty { return paths.defaultProjectRoots }
-        return lines.map { URL(fileURLWithPath: ($0 as NSString).expandingTildeInPath, isDirectory: true) }
+        return lines.map { URL(fileURLWithPath: paths.expandTilde($0), isDirectory: true) }
     }
+    /// Roots the sandbox grants do not cover: skipped by the scan, listed in Réglages.
+    var inaccessibleProjectRoots: [URL] { projectRoots.filter { !access.covers($0) } }
 
     private static let projectsCacheKey = "cache.projects"
 
@@ -341,6 +490,11 @@ final class CockpitStore {
     }
 
     func refreshSkills() async {
+        guard claudeAccess else {
+            skills = nil
+            skillsState = .unauthorized
+            return
+        }
         if skills == nil { skillsState = .loading }
         do {
             // 1. Fast path: inventory with the cached project list.
@@ -353,7 +507,7 @@ final class CockpitStore {
                 }
             }
             // 2. Full path: rescan roots (bounded walk) then rebuild the inventory.
-            let roots = projectRoots
+            let roots = projectRoots.filter { access.covers($0) }
             let projects = await Task.detached(priority: .utility) { ProjectScanner().scan(roots: roots) }.value
             cachedProjects = projects
             let inventory = try await skillsStore.inventory(projects: projects)

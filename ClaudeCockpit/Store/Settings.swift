@@ -7,6 +7,8 @@ enum SettingsKey {
     static let usageRefreshSeconds = "settings.usageRefreshSeconds"   // Int, default 30
     static let rtkDBPath = "settings.rtkDBPath"                       // String, empty = auto
     static let projectRoots = "settings.projectRoots"                 // String, newline-separated
+    static let claudeConfigDir = "settings.claudeConfigDir"           // String, empty = CLAUDE_CONFIG_DIR or ~/.claude
+    static let settingsTab = "settings.tab"                           // last selected settings tab
     static let pricingJSON = "settings.pricingJSON"                   // PricingSettings JSON
     static let currency = "settings.currency"                         // "USD" | "EUR"
     static let eurRate = "settings.eurRate"                           // Double, USD→EUR

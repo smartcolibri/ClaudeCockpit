@@ -58,14 +58,28 @@ struct MainWindowView: View {
 
     @ViewBuilder
     private func detail(for section: CockpitSection) -> some View {
+        // Under the sandbox a source the grants do not cover shows why, with the way
+        // to grant it, rather than an empty screen.
+        let claude = store.displayPath(store.paths.claudeDir)
         switch section {
-        case .overview: OverviewView()
-        case .usage: UsageView()
-        case .sessions: SessionsView()
-        case .rtk: RTKView()
-        case .skills: ResourcesView(kind: .skill)
-        case .agents: ResourcesView(kind: .agent)
-        case .commands: ResourcesView(kind: .command)
+        case .overview:
+            if store.claudeAccess { OverviewView() } else { OnboardingView() }
+        case .usage:
+            if store.claudeAccess { UsageView() } else {
+                NoAccessView(title: "Usage local", message: "L'usage est calculé à partir des transcripts de \(claude)/projects, que l'app n'est pas autorisée à lire.")
+            }
+        case .sessions:
+            if store.claudeAccess { SessionsView() } else {
+                NoAccessView(title: "Sessions", message: "Les sessions sont indexées à partir des transcripts de \(claude)/projects, que l'app n'est pas autorisée à lire.")
+            }
+        case .rtk:
+            if store.rtkAccess { RTKView() } else {
+                NoAccessView(title: "RTK", message: "La base de RTK (~/Library/Application Support/rtk ou ~/.local/share/rtk) est hors des dossiers autorisés. Autorisez votre dossier personnel, ou choisissez la base dans Réglages › RTK.")
+            }
+        case .skills, .agents, .commands:
+            if store.claudeAccess { ResourcesView(kind: section.resourceKind ?? .skill) } else {
+                NoAccessView(title: section.title, message: "Les ressources sont lues dans \(claude), que l'app n'est pas autorisée à lire.")
+            }
         case .settings: SettingsView()
         }
     }

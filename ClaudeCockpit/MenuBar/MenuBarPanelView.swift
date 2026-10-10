@@ -61,6 +61,8 @@ struct MenuBarPanelView: View {
             showsSavingsSection.description,
             (store.usage != nil).description,
             (store.usageState.errorMessage != nil).description,
+            store.usageState.isUnauthorized.description,
+            store.rtkState.isUnauthorized.description,
         ].joined(separator: "|")
     }
 
@@ -111,6 +113,9 @@ struct MenuBarPanelView: View {
                 InfoRow(
                     label: "Sessions cette semaine", value: FRFormat.integer(usage.sessionsThisWeekTotal),
                     note: "\(FRFormat.integer(usage.sessionsLastWeekTotal)) la semaine précédente")
+            } else if store.usageState.isUnauthorized {
+                AccessRequiredBanner(message: "ouvrez le cockpit pour autoriser la lecture de vos transcripts.")
+                    .padding(.vertical, 6)
             } else if let message = store.usageState.errorMessage {
                 SourceBanner(kind: .error, message: message, action: { Task { await store.refreshUsage() } })
                     .padding(.vertical, 6)
@@ -141,6 +146,10 @@ struct MenuBarPanelView: View {
                 InfoRow(
                     label: "Depuis l'installation", value: FRFormat.tokens(rtk.allTime.savedTokens),
                     note: "\(FRFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) économisés sur \(FRFormat.integer(rtk.allTime.count)) commandes")
+            } else if store.rtkState.isUnauthorized {
+                InfoRow(
+                    label: "Économies rtk", value: "accès non autorisé",
+                    note: "base RTK hors des dossiers autorisés (Réglages › Accès)")
             } else {
                 InfoRow(
                     label: "Économies rtk", value: "aucune donnée",

@@ -134,7 +134,9 @@ struct OverviewView: View {
 
     private var sessionsTodayCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let message = store.sessionsState.errorMessage {
+            if store.sessionsState.isUnauthorized {
+                AccessRequiredBanner(message: "les transcripts ne sont pas lisibles.")
+            } else if let message = store.sessionsState.errorMessage {
                 SourceBanner(
                     kind: .info,
                     message: "Index des sessions indisponible : \(message)",
@@ -210,7 +212,9 @@ struct OverviewView: View {
 
     private var insightsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let message = store.usageState.errorMessage {
+            if store.usageState.isUnauthorized {
+                AccessRequiredBanner(message: "les transcripts ne sont pas lisibles.")
+            } else if let message = store.usageState.errorMessage {
                 SourceBanner(kind: .error, message: message, action: { Task { await store.refreshUsage() } })
             } else if let insights = store.usage?.insights, !notable(insights).isEmpty {
                 let rows = notable(insights)
@@ -285,7 +289,9 @@ struct OverviewView: View {
 
     private var rtkWeekCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let message = store.rtkState.errorMessage {
+            if store.rtkState.isUnauthorized {
+                AccessRequiredBanner(message: "la base RTK est hors des dossiers autorisés.")
+            } else if let message = store.rtkState.errorMessage {
                 SourceBanner(kind: .info, message: message, action: { Task { await store.refreshRTK() } })
             } else if let days = store.rtk?.last7Days, !days.isEmpty {
                 let peak = max(1, days.map(\.savedTokens).max() ?? 1)
