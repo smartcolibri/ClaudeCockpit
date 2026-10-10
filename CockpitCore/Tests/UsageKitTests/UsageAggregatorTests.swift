@@ -95,6 +95,9 @@ final class UsageAggregatorTests: XCTestCase {
                      snapshot(.today, models: [.haiku], project: projB)] {
             XCTAssertEqual(snap.costTodayUnfilteredUSD, 28.0, accuracy: 1e-9)
             XCTAssertEqual(snap.tokensTodayUnfiltered, 2_000_000)
+            XCTAssertEqual(snap.costThisWeekUnfilteredUSD, reference.costThisWeekUSD, accuracy: 1e-9)
+            XCTAssertEqual(snap.sessionsThisWeekUnfilteredTotal, reference.sessionsThisWeekTotal)
+            XCTAssertEqual(snap.sessionsLastWeekUnfilteredTotal, reference.sessionsLastWeekTotal)
         }
         // The filtered figure still follows the pickers, as the Usage screen expects.
         XCTAssertEqual(snapshot(.all, models: [.opus]).costTodayUSD, reference.costTodayUSD - snapshot(.all, models: [.sonnet, .haiku]).costTodayUSD, accuracy: 1e-9)

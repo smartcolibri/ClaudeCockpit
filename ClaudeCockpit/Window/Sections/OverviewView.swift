@@ -77,7 +77,7 @@ struct OverviewView: View {
             StatTile(
                 label: "Coût du jour",
                 value: store.usage.map { store.money($0.costTodayUnfilteredUSD) } ?? "—",
-                note: store.usage.map { "\(store.money($0.costThisWeekUSD)) depuis lundi" },
+                note: store.usage.map { "\(store.money($0.costThisWeekUnfilteredUSD)) depuis lundi" },
                 tint: Theme.blue,
                 icon: "eurosign.circle")
             StatTile(

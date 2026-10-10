@@ -111,8 +111,8 @@ struct MenuBarPanelView: View {
                     note: "entrée + sortie + cache, tous modèles confondus")
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Sessions cette semaine", value: FRFormat.integer(usage.sessionsThisWeekTotal),
-                    note: "\(FRFormat.integer(usage.sessionsLastWeekTotal)) la semaine précédente")
+                    label: "Sessions cette semaine", value: FRFormat.integer(usage.sessionsThisWeekUnfilteredTotal),
+                    note: "\(FRFormat.integer(usage.sessionsLastWeekUnfilteredTotal)) la semaine précédente")
             } else if store.usageState.isUnauthorized {
                 AccessRequiredBanner(message: "ouvrez le cockpit pour autoriser la lecture de vos transcripts.")
                     .padding(.vertical, 6)

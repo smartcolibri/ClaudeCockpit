@@ -144,6 +144,9 @@ public enum UsageAggregator {
         let allTodayEvents = allEvents.filter { $0.timestamp >= todayStart && $0.timestamp < todayEnd }
         let costTodayUnfilteredUSD = PricingCalculator.estimatedCostUSD(for: allTodayEvents, pricing: pricing)
         let tokensTodayUnfiltered = allTodayEvents.reduce(0) { $0 + $1.totalTokens }
+        let costThisWeekUnfiltered = weeklyCost(events: allEvents, weekStart: thisWeekStart, calendar: isoCalendar, pricing: pricing)
+        let sessionsThisWeekUnfiltered = weeklySessionTotal(events: allEvents, weekStart: thisWeekStart, calendar: isoCalendar)
+        let sessionsLastWeekUnfiltered = weeklySessionTotal(events: allEvents, weekStart: lastWeekStart, calendar: isoCalendar)
 
         let insights = InsightEngine.derive(
             events: filtered,
@@ -184,6 +187,9 @@ public enum UsageAggregator {
             tokensToday: tokensToday,
             costTodayUnfilteredUSD: costTodayUnfilteredUSD,
             tokensTodayUnfiltered: tokensTodayUnfiltered,
+            costThisWeekUnfilteredUSD: costThisWeekUnfiltered,
+            sessionsThisWeekUnfilteredTotal: sessionsThisWeekUnfiltered,
+            sessionsLastWeekUnfilteredTotal: sessionsLastWeekUnfiltered,
             availableProjects: availableProjects,
             availableModels: availableModels,
             availableModelFamilies: availableModelFamilies)
