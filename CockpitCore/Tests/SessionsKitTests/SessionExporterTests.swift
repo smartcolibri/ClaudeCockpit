@@ -128,6 +128,15 @@ final class SessionExporterTests: XCTestCase {
         XCTAssertEqual(SessionExporter.duration(7_800, locale: en), "2h 10 min")
     }
 
+    /// A capped body keeps its stored marker in the index; the export words it in its language.
+    func testTruncatedBodyIsWordedInTheExportLanguage() {
+        let body = "début" + ContentBlock.truncationMarker
+        XCTAssertEqual(SessionExporter.Words(locale: fr).body(body), "début\n… [tronqué]")
+        XCTAssertEqual(SessionExporter.Words(locale: en).body(body), "début\n… [truncated]")
+        XCTAssertEqual(SessionExporter.Words(locale: en).body("intact"), "intact")
+        XCTAssertEqual(ContentBlock.displayable(body, truncated: "x"), "début\n… [x]")
+    }
+
     func testExportsAnEmptySessionWithoutCrashing() {
         XCTAssertFalse(SessionExporter.markdown(session: session, messages: []).isEmpty)
         XCTAssertFalse(SessionExporter.html(session: session, messages: []).isEmpty)

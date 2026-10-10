@@ -102,7 +102,7 @@ enum SessionsPalette {
 
     /// Collapses a value onto one line and cuts it to a header-sized tag.
     static func oneLine(_ raw: String, limit: Int = 140) -> String {
-        let flattened = raw
+        let flattened = displayable(raw)
             .replacingOccurrences(of: "\n", with: " ")
             .replacingOccurrences(of: "\t", with: " ")
             .split(separator: " ", omittingEmptySubsequences: true)
@@ -129,9 +129,7 @@ enum SessionsPalette {
     /// A capped body ends with ``ContentBlock/truncationMarker``, which is stored in the index
     /// and matched there, so it stays as it is; the reader sees it in the app's language.
     static func displayable(_ text: String) -> String {
-        guard text.hasSuffix(ContentBlock.truncationMarker) else { return text }
-        return String(text.dropLast(ContentBlock.truncationMarker.count))
-            + "\n… [\(String(localized: "truncated"))]"
+        ContentBlock.displayable(text, truncated: String(localized: "truncated"))
     }
 
     /// `sonnet-4-5` out of `claude-sonnet-4-5-20250929`.
@@ -255,7 +253,7 @@ struct MonospacedBox: View {
 
     var body: some View {
         ScrollView([.vertical, .horizontal]) {
-            Text(text)
+            Text(SessionsPalette.displayable(text))
                 .font(.data(11))
                 .foregroundStyle(tint)
                 .textSelection(.enabled)

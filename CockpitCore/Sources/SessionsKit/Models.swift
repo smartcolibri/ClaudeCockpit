@@ -240,6 +240,13 @@ public struct ContentBlock: Identifiable, Hashable, Sendable, Codable {
 
     public var isTruncated: Bool { text.hasSuffix(Self.truncationMarker) }
 
+    /// `text` as a reader sees it: the stored marker, which is matched in the index and so
+    /// never changes, becomes `… [word]` with `word` in the reader's language.
+    public static func displayable(_ text: String, truncated word: String) -> String {
+        guard text.hasSuffix(truncationMarker) else { return text }
+        return String(text.dropLast(truncationMarker.count)) + "\n… [\(word)]"
+    }
+
     public init(
         id: String,
         index: Int,

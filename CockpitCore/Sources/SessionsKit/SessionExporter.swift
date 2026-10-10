@@ -27,6 +27,11 @@ extension SessionExporter {
 
         func date(_ date: Date) -> String { AppFormat.dateTime(date, locale: locale) }
 
+        /// A block's body with the stored truncation marker in the export's language.
+        func body(_ text: String) -> String {
+            ContentBlock.displayable(text, truncated: self("truncated"))
+        }
+
         /// `Label: value` — French sets a space before the colon.
         func field(_ label: String, _ value: String) -> String { self("\(label): \(value)") }
     }
@@ -128,11 +133,11 @@ extension SessionExporter {
         for block in message.blocks {
             switch block.kind {
             case .text:
-                out += block.text + "\n\n"
+                out += words.body(block.text) + "\n\n"
             case .thinking:
-                out += "<details><summary>\(words("Thinking"))</summary>\n\n```\n\(block.text)\n```\n\n</details>\n\n"
+                out += "<details><summary>\(words("Thinking"))</summary>\n\n```\n\(words.body(block.text))\n```\n\n</details>\n\n"
             case .toolUse:
-                out += "**\(words("Tool: \(block.toolName ?? "?")"))**\n\n```json\n\(block.text)\n```\n\n"
+                out += "**\(words("Tool: \(block.toolName ?? "?")"))**\n\n```json\n\(words.body(block.text))\n```\n\n"
                 if let agentId = block.subagentId, let transcript = subagents[agentId] {
                     out += "<details><summary>\(words("Sub-agent \(agentId)"))</summary>\n\n"
                     for sub in transcript { out += markdownTurn(sub, subagents: [:], depth: depth + 1, words: words) }
@@ -140,7 +145,7 @@ extension SessionExporter {
                 }
             case .toolResult:
                 let label = block.isError ? words("Result (error)") : words("Result")
-                out += "<details><summary>\(label)</summary>\n\n```\n\(block.text)\n```\n\n</details>\n\n"
+                out += "<details><summary>\(label)</summary>\n\n```\n\(words.body(block.text))\n```\n\n</details>\n\n"
             case .image:
                 out += "_[image \(block.imageMediaType ?? "")]_\n\n"
             }
@@ -225,11 +230,11 @@ extension SessionExporter {
         for block in message.blocks {
             switch block.kind {
             case .text:
-                out += "<div class=\"text\">\(escape(block.text))</div>"
+                out += "<div class=\"text\">\(escape(words.body(block.text)))</div>"
             case .thinking:
-                out += "<details><summary>\(words("Thinking"))</summary><pre>\(escape(block.text))</pre></details>"
+                out += "<details><summary>\(words("Thinking"))</summary><pre>\(escape(words.body(block.text)))</pre></details>"
             case .toolUse:
-                out += "<details><summary>\(escape(words("Tool: \(block.toolName ?? "?")")))</summary><pre>\(escape(block.text))</pre>"
+                out += "<details><summary>\(escape(words("Tool: \(block.toolName ?? "?")")))</summary><pre>\(escape(words.body(block.text)))</pre>"
                 if let agentId = block.subagentId, let transcript = subagents[agentId] {
                     out += "<div class=\"sub\"><p><strong>\(escape(words("Sub-agent \(agentId)")))</strong></p>"
                     for sub in transcript { out += htmlTurn(sub, subagents: [:], words: words) }
@@ -239,7 +244,7 @@ extension SessionExporter {
             case .toolResult:
                 let label = block.isError ? words("Result (error)") : words("Result")
                 out += "<details class=\"\(block.isError ? "error" : "")\">"
-                out += "<summary>\(label)</summary><pre>\(escape(block.text))</pre></details>"
+                out += "<summary>\(label)</summary><pre>\(escape(words.body(block.text)))</pre></details>"
             case .image:
                 out += "<p><em>[image \(escape(block.imageMediaType ?? ""))]</em></p>"
             }

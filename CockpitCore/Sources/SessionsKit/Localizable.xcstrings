@@ -393,6 +393,22 @@
         }
       }
     },
+    "truncated" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "truncated"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "tronqué"
+          }
+        }
+      }
+    },
     "Turns" : {
       "localizations" : {
         "en" : {
