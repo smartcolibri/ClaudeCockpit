@@ -356,19 +356,31 @@ aucun droit réseau). Dans la sandbox, `homeDirectoryForCurrentUser`, `NSHomeDir
 - `AccessStore` (cible app) conserve les autorisations sous forme de signets à portée de sécurité
   (portée app) dans UserDefaults (`access.bookmarks`), les résout au lancement, recrée ceux qui sont périmés et
   garde chaque portée ouverte pendant toute la vie du processus (les observateurs sont durables). Un signet
-  qui ne se résout plus reste listé comme introuvable dans Réglages › Accès.
+  qui ne se résout plus reste listé comme introuvable dans Réglages › Accès ; un signet dont macOS refuse
+  d'ouvrir la portée est listé comme refusé et ne couvre rien. « Réautoriser » remplace une autorisation en
+  une seule étape et refuse un dossier qui ferait perdre le dossier de configuration Claude.
 - `AccessCoverage` (CockpitShared, pur) décide si un chemin est couvert (préfixe par composant entier,
-  sans résolution des liens) et juge le dossier choisi dans le panneau (`full` / `partial` / `unrelated`).
-  Hors sandbox tout est couvert : les builds Debug non signés se comportent comme avant.
+  sans résolution des liens) et juge le dossier choisi dans le panneau (`full` / `partial` /
+  `requiredElsewhere` / `unrelated` ; le dossier de configuration Claude est vérifié en premier, si bien
+  qu'une autorisation du dossier personnel n'est jamais jugée complète quand ce dossier est sur un autre
+  volume). Hors sandbox tout est couvert : les builds Debug non signés se comportent comme avant. La
+  couverture est lexicale : un dossier de configuration qui est un lien symbolique pointant hors de
+  l'autorisation apparaît couvert, et ses sources échouent alors à la lecture (`failed`, pas `unauthorized`).
 - `CockpitStore` vérifie la couverture avant toute lecture ou observation : une source non couverte est
   `SourceState.unauthorized`, que les vues affichent en « Accès non autorisé » avec le bouton d'autorisation.
   La vue d'ensemble devient l'écran d'accueil tant que `claudeDir` n'est pas couvert. Tout changement
   d'autorisation appelle `accessDidChange()`, qui reconstruit les services si le dossier de configuration a
-  changé et relance usage, sessions, skills et RTK.
+  changé et relance usage, sessions, skills et RTK, en gardant les instantanés affichés sauf si l'archive a
+  changé. Il incrémente `accessGeneration` : un rafraîchissement commencé avant abandonne son résultat au lieu
+  d'écraser le nouvel état. L'unique `SessionService` suit un dossier déplacé via `setPaths` (sérialisé sur son
+  acteur, une seule connexion à `sessions.db`, `busy_timeout` de 5 s), et `TranscriptScanner` ignore les entrées
+  en cache hors du `projectsDir` courant. Les sauvegardes sont élaguées une fois par lancement, dès que
+  `claudeDir` est couvert.
 - L'autorisation recommandée est le dossier personnel : les liens symboliques qui sortent d'une arborescence
   autorisée sont refusés (`~/.claude/skills/x -> ~/.agents/skills/x`), et RTK comme les racines de projets
   sont ailleurs dans le dossier personnel. Le sélecteur RTK enregistre un signet sur le dossier de la base,
-  car le WAL de SQLite a besoin des fichiers `-wal`/`-shm` ; la lecture d'une copie écrit dans
+  car le WAL de SQLite a besoin des fichiers `-wal`/`-shm`, et n'enregistre rien si ce dossier est refusé
+  (un accès au seul fichier afficherait des données périmées) ; la lecture d'une copie écrit dans
   `FileManager.temporaryDirectory`, le `tmp` du conteneur.
 
 ## Gestion des erreurs

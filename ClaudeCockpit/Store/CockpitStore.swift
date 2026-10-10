@@ -317,6 +317,7 @@ final class CockpitStore {
             skills = nil
         }
         guard loopsStarted else { return }
+        pruneBackupsOnce()
         Task { await refreshUsage() }
         startSessionsWatch()
         startSkillsWatch()
@@ -332,12 +333,7 @@ final class CockpitStore {
         guard !loopsStarted else { return }
         loopsStarted = true
 
-        // Housekeeping: drop skill backups older than 30 days (off the main thread).
-        // Only where it may write: the pruner deletes inside `~/.claude/backups`.
-        if claudeAccess {
-            let paths = paths
-            Task.detached(priority: .background) { BackupPruner.prune(paths: paths) }
-        }
+        pruneBackupsOnce()
 
         loopTasks.append(Task { [weak self] in
             while !Task.isCancelled {
@@ -360,12 +356,24 @@ final class CockpitStore {
     }
     private var skillsWatcher: DirectoryWatcher?
     private var skillsWatchTask: Task<Void, Never>?
+    private var didPruneBackups = false
+
+    /// Housekeeping: drops skill backups older than 30 days (off the main thread), once per
+    /// launch, as soon as the grants let the pruner delete inside `~/.claude/backups`: at
+    /// launch, or after the first grant on a fresh install.
+    private func pruneBackupsOnce() {
+        guard !didPruneBackups, claudeAccess else { return }
+        didPruneBackups = true
+        let paths = paths
+        Task.detached(priority: .background) { BackupPruner.prune(paths: paths) }
+    }
 
     /// Inventories the skills, then follows their directories. Restartable: a new grant
     /// (or a moved config directory) re-arms it; no watcher is started without access.
     private func startSkillsWatch() {
         skillsWatchTask?.cancel()
         skillsWatchTask = nil
+        skillsWatcher?.stop()
         skillsWatcher = nil
         skillsWatchTask = Task { [weak self] in
             await self?.refreshSkills()
