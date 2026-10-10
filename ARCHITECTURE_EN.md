@@ -394,19 +394,23 @@ French ships as a translation and any other language falls back to English.
 - **Core strings** live in one catalog per module (`defaultLocalization: "en"` in `Package.swift`)
   and use `String(localized:bundle: .module)` — errors and labels of SkillsKit, RTKKit, UsageKit,
   CockpitShared and SessionsKit. Where the core only needs to say *what* happened, it returns a
-  value and the app words it: `HealthEvidence` for the health grade, `Insight.Kind`,
-  `DateRangeFilter`. QuotaKit is not linked into the app and stays French.
+  value and the app words it: `Insight.Kind`, `DateRangeFilter`. `HealthEvidence` is a value
+  too, worded by SessionsKit itself (`sentence(locale:)`) so its sentences are tested per
+  language. QuotaKit is not linked into the app and stays French.
 - **`AppFormat`** (CockpitShared) formats numbers, money, percentages, dates, durations and
   relative times in `AppFormat.locale`: the formatting locale of the language the app resolved
   (`Bundle.main.preferredLocalizations`), whatever the Mac's region — English is `en_US`
   ("$0.36", "Oct 10", "1,234"), French `fr_FR` ("0,36 $US", "10 oct.", "1 234"). Every function
-  takes an explicit locale, which tests pin. Its few
+  takes an explicit locale, which tests pin; formatters for the app's own locale are built once
+  per style and reused. `relative(_:standalone:)` drops the "on"/"le" before an older date for
+  columns and after a separator. Its few
   words ("just now", "2 h 05") switch on the locale's language rather than on a catalog, because
   a catalog follows the process language and could not be pinned.
 - **`SessionExporter`** writes in the app's language: it looks its words up in the module's
   `<language>.lproj` for the locale (`Bundle.localization(for:)`) and sets `<html lang>`.
 - `ContentBlock.truncationMarker` is stored and matched in `sessions.db`, so it stays as it is;
-  the transcript view swaps it for the localised word. FTS `snippet()` marks matches with
+  the transcript views and the export swap it for the localised word
+  (`ContentBlock.displayable(_:truncated:)`). FTS `snippet()` marks matches with
   private-use characters, which the list replaces with the locale's quotes.
 - Counts in plural strings are formatted by the locale passed to `String(localized:…, locale:)`
   (`AppFormat.locale` in the app), so "1,234 turns" / "1 234 tours" keep their grouping.
@@ -415,7 +419,10 @@ French ships as a translation and any other language falls back to English.
   charts and `LocalizedStringKey` interpolations follow the same locale.
 - `Scripts/check-l10n.py`, run after a Debug build, compares each catalog with the keys the
   compiler extracted (`*.stringsdata`): nothing missing, nothing stale, every French value
-  translated, plurals complete, format specifiers matching.
+  translated, plurals complete, format specifiers matching. It reads the DerivedData whose
+  `info.plist` names this checkout's project (or the folder passed as argument), Debug only,
+  skips `.stringsdata` of deleted files, and fails when a Swift file or a catalog is newer than
+  the build.
 
 ## Error handling
 

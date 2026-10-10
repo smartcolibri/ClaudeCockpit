@@ -427,19 +427,23 @@ le français est livré comme traduction et toute autre langue retombe sur l'ang
 - **Les chaînes du cœur** vivent dans un catalogue par module (`defaultLocalization: "en"` dans
   `Package.swift`) et utilisent `String(localized:bundle: .module)` — erreurs et libellés de SkillsKit,
   RTKKit, UsageKit, CockpitShared et SessionsKit. Quand le cœur n'a besoin de dire que *ce qui* s'est
-  passé, il renvoie une valeur et l'app la formule : `HealthEvidence` pour la note de santé,
-  `Insight.Kind`, `DateRangeFilter`. QuotaKit n'est pas lié à l'app et reste en français.
+  passé, il renvoie une valeur et l'app la formule : `Insight.Kind`, `DateRangeFilter`. `HealthEvidence`
+  est aussi une valeur, formulée par SessionsKit lui-même (`sentence(locale:)`) pour que ses
+  phrases soient testées dans chaque langue. QuotaKit n'est pas lié à l'app et reste en français.
 - **`AppFormat`** (CockpitShared) formate nombres, montants, pourcentages, dates, durées et temps
   relatifs dans `AppFormat.locale` : la locale de formatage de la langue résolue par l'app
   (`Bundle.main.preferredLocalizations`), quelle que soit la région du Mac — l'anglais donne `en_US`
   (« $0.36 », « Oct 10 », « 1,234 »), le français `fr_FR` (« 0,36 $US », « 10 oct. », « 1 234 »).
-  Chaque fonction prend une locale explicite, que les tests fixent. Ses
+  Chaque fonction prend une locale explicite, que les tests fixent ; les formateurs de la locale de
+  l'app sont construits une fois par style puis réutilisés. `relative(_:standalone:)` retire le
+  « on »/« le » devant une date ancienne, pour les colonnes et après un séparateur. Ses
   quelques mots (« à l'instant », « 2 h 05 ») dépendent de la langue de la locale et non d'un
   catalogue, car un catalogue suit la langue du processus et ne pourrait pas être fixé.
 - **`SessionExporter`** écrit dans la langue de l'app : il cherche ses mots dans le `<langue>.lproj`
   du module pour la locale (`Bundle.localization(for:)`) et renseigne `<html lang>`.
 - `ContentBlock.truncationMarker` est stocké et comparé dans `sessions.db`, il reste donc tel quel ;
-  la vue du transcript le remplace par le mot localisé. Le `snippet()` FTS encadre les
+  les vues du transcript et l'export le remplacent par le mot localisé
+  (`ContentBlock.displayable(_:truncated:)`). Le `snippet()` FTS encadre les
   correspondances de caractères à usage privé, que la liste remplace par les guillemets de la locale.
 - Les nombres des chaînes au pluriel sont formatés par la locale passée à
   `String(localized:…, locale:)` (`AppFormat.locale` dans l'app), si bien que « 1,234 turns » /
@@ -450,7 +454,10 @@ le français est livré comme traduction et toute autre langue retombe sur l'ang
   pour que les graphiques et les interpolations de `LocalizedStringKey` suivent la même locale.
 - `Scripts/check-l10n.py`, lancé après un build Debug, compare chaque catalogue aux clés extraites par
   le compilateur (`*.stringsdata`) : rien de manquant, rien d'obsolète, chaque valeur française
-  traduite, pluriels complets, spécificateurs de format identiques.
+  traduite, pluriels complets, spécificateurs de format identiques. Il lit le DerivedData dont
+  l'`info.plist` désigne le projet de ce checkout (ou le dossier passé en argument), en Debug
+  seulement, ignore les `.stringsdata` de fichiers supprimés, et échoue si un fichier Swift ou un
+  catalogue est plus récent que le build.
 
 ## Gestion des erreurs
 
