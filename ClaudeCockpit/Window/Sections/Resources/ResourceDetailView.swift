@@ -128,7 +128,7 @@ struct ResourceDetailView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .disabled(otherLevels.isEmpty || busy || resource.isSymlink)
+            .disabled(otherLevels.isEmpty || busy || resource.isSymlink || store.isDemo)
 
             Menu("Déplacer vers…") {
                 ForEach(otherLevels, id: \.id) { level in
@@ -137,7 +137,7 @@ struct ResourceDetailView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .disabled(otherLevels.isEmpty || busy || resource.isSymlink)
+            .disabled(otherLevels.isEmpty || busy || resource.isSymlink || store.isDemo)
 
             Spacer(minLength: 8)
 
@@ -154,7 +154,7 @@ struct ResourceDetailView: View {
                 Label("Supprimer", systemImage: "trash")
             }
             .controlSize(.small)
-            .disabled(busy || resource.isSymlink)
+            .disabled(busy || resource.isSymlink || store.isDemo)
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
@@ -295,7 +295,7 @@ struct PluginDetailView: View {
             }
             .menuStyle(.borderlessButton)
             .fixedSize()
-            .disabled(levels.isEmpty || busy)
+            .disabled(levels.isEmpty || busy || store.isDemo)
 
             Spacer(minLength: 8)
 

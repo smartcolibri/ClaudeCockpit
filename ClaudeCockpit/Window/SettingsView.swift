@@ -68,6 +68,7 @@ private struct GeneralSettingsTab: View {
             Section("Démarrage") {
                 Toggle("Lancer à la connexion", isOn: $launchAtLogin)
                     .onChange(of: launchAtLogin) { _, newValue in setLaunchAtLogin(newValue) }
+                    .disabled(store.isDemo)
                 Toggle("Barre de menus seulement (masquer l'icône du Dock)", isOn: $menuBarOnly)
                     .onChange(of: menuBarOnly) { _, newValue in store.setMenuBarOnly(newValue) }
                 Text("L'icône de la barre de menus reste visible dans tous les cas.")
@@ -208,16 +209,20 @@ private struct RTKSettingsTab: View {
                         .textSelection(.enabled)
                         .multilineTextAlignment(.trailing)
                 }
-                TextField("Chemin personnalisé", text: $rtkPath, prompt: Text("Automatique"))
-                    .font(.data(11))
-                    .onSubmit { store.rtkPathDidChange() }
+                Group {
+                    TextField("Chemin personnalisé", text: $rtkPath, prompt: Text("Automatique"))
+                        .font(.data(11))
+                        .onSubmit { store.rtkPathDidChange() }
+                }
+                .disabled(store.isDemo)
                 HStack {
                     Button("Choisir…") { chooseDatabase() }
+                        .disabled(store.isDemo)
                     Button("Automatique") {
                         rtkPath = ""
                         store.rtkPathDidChange()
                     }
-                    .disabled(rtkPath.isEmpty)
+                    .disabled(rtkPath.isEmpty || store.isDemo)
                     Spacer()
                     Button("Recharger") { Task { await store.refreshRTK() } }
                 }
@@ -225,6 +230,7 @@ private struct RTKSettingsTab: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .fixedSize(horizontal: false, vertical: true)
+                if store.isDemo { DemoLockedNote() }
             }
         }
         .formStyle(.grouped)
@@ -282,6 +288,7 @@ private struct ProjectsSettingsTab: View {
                 TextEditor(text: $projectRoots)
                     .font(.data(11))
                     .frame(minHeight: 140)
+                    .disabled(store.isDemo)
                 Text("Une racine par ligne, le « ~ » est accepté. Vide = ~/DevApps et ~/Documents/GitHub.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
@@ -298,12 +305,14 @@ private struct ProjectsSettingsTab: View {
                 }
                 HStack {
                     Button("Ajouter une racine…") { addRoot() }
+                        .disabled(store.isDemo)
                     Button("Rescanner") { Task { await store.refreshSkills() } }
                     Spacer()
                     Text(FRFormat.plural(store.projectRoots.count - store.inaccessibleProjectRoots.count, "racine analysée"))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
+                if store.isDemo { DemoLockedNote() }
             }
         }
         .formStyle(.grouped)
@@ -360,15 +369,19 @@ private struct AccessSettingsTab: View {
                         }
                         Spacer()
                         Button("Réautoriser") { store.reauthorize(grant) }
-                        Button("Retirer", role: .destructive) { store.access.remove(grant) }
+                            .disabled(store.isDemo)
+                        Button("Retirer", role: .destructive) { store.revoke(grant) }
+                            .disabled(store.isDemo)
                     }
                 }
                 HStack {
                     Button("Ajouter…") {
                         store.grantFolder(startingAt: store.paths.home, message: "Choisissez un dossier à autoriser.")
                     }
+                    .disabled(store.isDemo)
                     Spacer()
                 }
+                if store.isDemo { DemoLockedNote() }
             }
 
             Section("Couverture") {
@@ -385,6 +398,7 @@ private struct AccessSettingsTab: View {
             Section("Dossier de configuration Claude") {
                 TextField("Dossier", text: $configDraft, prompt: Text("~/.claude"))
                     .font(.data(11))
+                    .disabled(store.isDemo)
                     .onSubmit { applyConfigDraft() }
                     .task(id: configDraft) {
                         try? await Task.sleep(for: .milliseconds(800))
@@ -399,11 +413,12 @@ private struct AccessSettingsTab: View {
                 }
                 HStack {
                     Button("Choisir…") { chooseConfigDir() }
+                        .disabled(store.isDemo)
                     Button("Par défaut") {
                         configDraft = ""
                         applyConfigDraft()
                     }
-                    .disabled(configDir.isEmpty)
+                    .disabled(configDir.isEmpty || store.isDemo)
                     Spacer()
                     Text("Utilisé : \(store.displayPath(store.paths.claudeDir))")
                         .font(.system(size: 11))
@@ -421,6 +436,7 @@ private struct AccessSettingsTab: View {
 
     /// Stores the field's value when it is usable and differs from the setting, then reloads.
     private func applyConfigDraft() {
+        guard !store.isDemo else { return }
         let value = configDraft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard ClaudePaths.isUsableConfigDirSetting(value) else {
             configError = "Chemin relatif refusé : indiquez un chemin absolu (/…) ou commençant par ~/."
@@ -460,6 +476,18 @@ private struct AccessSettingsTab: View {
         // A stored grant fires `accessDidChange`, which also picks up the new directory; without
         // one (already covered, or the grant failed) the reload still has to run.
         if store.isCovered(picked) || !store.grant(picked) { store.accessDidChange() }
+    }
+}
+
+// MARK: - Demo
+
+/// Why a control is greyed out while the demo runs.
+private struct DemoLockedNote: View {
+    var body: some View {
+        Text("Indisponible en mode démo : ces réglages concernent vos propres données.")
+            .font(.system(size: 11))
+            .foregroundStyle(Theme.slate)
+            .fixedSize(horizontal: false, vertical: true)
     }
 }
 

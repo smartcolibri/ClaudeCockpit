@@ -31,3 +31,6 @@ build-*/
 
 # Launch film workspace (/brag)
 brag-output*/
+
+# Archify working folders (diagrams are published under docs/diagrams/)
+.archify/

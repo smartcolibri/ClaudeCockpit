@@ -14,13 +14,10 @@ struct SessionsBrowserView: View {
 
     @State private var searchText = ""
     @State private var debounce: Task<Void, Never>?
-    /// Persisted like the sidebar section: reopening the window on the transcript you
-    /// were reading is the expected behaviour, and it gives the snapshot runner a way
-    /// to capture the detail view instead of the empty state.
-    @State private var selection: String? = {
-        let stored = UserDefaults.standard.string(forKey: SettingsKey.sessionsSelectedId)
-        return (stored?.isEmpty ?? true) ? nil : stored
-    }()
+    /// Persisted through the store like the sidebar section: reopening the window on the
+    /// transcript you were reading is the expected behaviour, and it gives the snapshot runner
+    /// a way to capture the detail view instead of the empty state. The demo keeps its own.
+    @State private var selection: String?
     @State private var hits: [SearchHit] = []
     @State private var projects: [ProjectCount] = []
     @State private var period: Period = .all
@@ -78,9 +75,8 @@ struct SessionsBrowserView: View {
             }
         }
         .onReceive(clock) { now = $0 }
-        .onChange(of: selection) { _, new in
-            UserDefaults.standard.set(new ?? "", forKey: SettingsKey.sessionsSelectedId)
-        }
+        .onAppear { if selection == nil { selection = store.lastSessionSelection } }
+        .onChange(of: selection) { _, new in store.lastSessionSelection = new }
         .task { projects = await store.sessionProjects() }
         .onChange(of: store.sessionIndex.lastRun) { _, _ in
             Task { projects = await store.sessionProjects() }

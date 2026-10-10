@@ -70,15 +70,19 @@ enum CockpitSection: String, CaseIterable, Identifiable {
 @MainActor @Observable
 final class CockpitStore {
     // MARK: Services
-    /// Rebuilt when the Claude config directory setting changes.
-    private(set) var paths: ClaudePaths
+    /// Rebuilt when the Claude config directory setting changes, or the demo starts or ends.
+    private(set) var paths: ClaudePaths {
+        // Paths on screen are abbreviated against the home in use: `~/…` in the demo too.
+        didSet { UsagePath.setDisplayHome(paths.home) }
+    }
     /// Folders granted to the sandboxed app; every source checks it before reading.
     let access: AccessStore
     private var usageService: UsageService
     private var rtkService: RTKService
-    /// One service for the app's lifetime: it owns the only connection to `sessions.db` and
-    /// follows a moved config directory through `setPaths`, serialised on its actor.
-    let sessionService: SessionService
+    /// One service per index file: it owns the only connection to `sessions.db` and follows a
+    /// moved config directory through `setPaths`, serialised on its actor. Replaced only when
+    /// the demo mode starts or ends, since the demo keeps an index of its own.
+    private(set) var sessionService: SessionService
     private var skillsStore: ResourceStore
     private let defaults = UserDefaults.standard
 
@@ -127,6 +131,13 @@ final class CockpitStore {
     /// Last user-visible notice (toast) from a skills action.
     var notice: String?
 
+    /// True while the app shows the bundled sample data instead of the user's (see
+    /// `enterDemo`). Kept in memory only: a relaunch starts in real mode, unless
+    /// `CLAUDECOCKPIT_DEMO=1` asks for the demo (snapshots, App Review notes).
+    private(set) var isDemo: Bool
+    /// The demo's own "last opened session", so the real `sessions.selectedId` survives it.
+    private var demoSessionSelection: String?
+
     // MARK: Usage filters & pricing
     var usageFilters = UsageFilters(range: .last30Days) {
         didSet { Task { await recomputeUsage() } }
@@ -158,16 +169,37 @@ final class CockpitStore {
     // MARK: Init
     init() {
         SettingsKey.registerDefaults()
-        let paths = ClaudePaths.live(configDirSetting: UserDefaults.standard.string(forKey: SettingsKey.claudeConfigDir))
+        var demo = ProcessInfo.processInfo.environment["CLAUDECOCKPIT_DEMO"] == "1"
+        var demoFailure: String?
+        if demo {
+            do { try Self.seedDemo() } catch {
+                demo = false
+                demoFailure = error.localizedDescription
+            }
+        } else {
+            // A demo left by a quit (rather than "Quitter la démo") is not kept around.
+            try? DemoSeeder.remove(root: Self.demoRoot)
+        }
+        isDemo = demo
+        let paths = Self.makePaths(demo: demo)
         self.paths = paths
+        UsagePath.setDisplayHome(paths.home)
         access = AccessStore()
         usageService = UsageService(paths: paths)
-        rtkService = RTKService(paths: paths, overridePath: Self.rtkOverride(paths: paths))
+        rtkService = RTKService(paths: paths, overridePath: demo ? nil : Self.rtkOverride(paths: paths))
         sessionService = SessionService(paths: paths)
         skillsStore = ResourceStore(paths: paths)
         pricing = UserDefaults.standard.string(forKey: SettingsKey.pricingJSON)
             .map(PricingSettings.decoded(fromJSONString:)) ?? .default
         access.onChange = { [weak self] in self?.accessDidChange() }
+        if let demoFailure { notice = "Impossible de préparer les données d'exemple : \(demoFailure)" }
+    }
+
+    /// The one place paths are built: the demo's copy, or the real home with the Claude
+    /// config directory from the setting (then `CLAUDE_CONFIG_DIR`, then `~/.claude`).
+    private static func makePaths(demo: Bool) -> ClaudePaths {
+        demo ? .demo(root: demoRoot)
+            : .live(configDirSetting: UserDefaults.standard.string(forKey: SettingsKey.claudeConfigDir))
     }
 
     private static func rtkOverride(paths: ClaudePaths) -> URL? {
@@ -175,22 +207,91 @@ final class CockpitStore {
         return raw.isEmpty ? nil : URL(fileURLWithPath: paths.expandTilde(raw))
     }
 
+    /// The rtk database chosen in Réglages; the demo always reads its own.
+    private var rtkOverridePath: URL? { isDemo ? nil : Self.rtkOverride(paths: paths) }
+
+    // MARK: Demo
+
+    private static let demoRoot = DemoSeeder.defaultRoot
+
+    /// Copies the bundled sample data (`Resources/Demo`) into the demo root, retimed to now.
+    private static func seedDemo() throws {
+        guard let source = Bundle.main.url(forResource: "Demo", withExtension: nil) else {
+            throw CocoaError(.fileNoSuchFile)
+        }
+        try DemoSeeder.seed(from: source, into: demoRoot)
+    }
+
+    /// Switches to the sample data: fresh copy, every source reloaded from it.
+    func enterDemo() {
+        guard !isDemo else { return }
+        do {
+            try Self.seedDemo()
+        } catch {
+            notice = "Impossible de préparer les données d'exemple : \(error.localizedDescription)"
+            return
+        }
+        isDemo = true
+        demoSessionSelection = nil
+        accessDidChange()
+    }
+
+    /// Back to the user's own data (the onboarding when nothing is granted yet). The demo
+    /// copy and its app data are deleted once the retired services have finished what they
+    /// had in flight (an index pass, a usage scan writing its cache), so neither can recreate
+    /// them. A demo entered again meanwhile owns the folder: it is left alone.
+    func exitDemo() {
+        guard isDemo else { return }
+        let retiredSessions = sessionService
+        let retiredUsage = usageService
+        isDemo = false
+        demoSessionSelection = nil
+        accessDidChange()
+        Task { [weak self] in
+            _ = await retiredSessions.paths
+            await retiredUsage.flush()
+            guard let self, !self.isDemo else { return }
+            do {
+                try DemoSeeder.remove(root: Self.demoRoot)
+            } catch {
+                self.notice = "Données d'exemple non supprimées : \(error.localizedDescription)"
+            }
+        }
+    }
+
+    /// The session the browser reopens on.
+    var lastSessionSelection: String? {
+        get {
+            if isDemo { return demoSessionSelection }
+            let stored = defaults.string(forKey: SettingsKey.sessionsSelectedId) ?? ""
+            return stored.isEmpty ? nil : stored
+        }
+        set {
+            if isDemo { demoSessionSelection = newValue } else { defaults.set(newValue ?? "", forKey: SettingsKey.sessionsSelectedId) }
+        }
+    }
+
     // MARK: Access
 
     /// `~/.claude` (or the configured directory) is readable: usage, sessions, skills.
-    var claudeAccess: Bool { access.covers(paths.claudeDir) }
+    var claudeAccess: Bool { covers(paths.claudeDir) }
     /// The whole home is readable: skills linked outside `~/.claude` resolve.
-    var homeAccess: Bool { access.covers(paths.home) }
+    var homeAccess: Bool { covers(paths.home) }
     /// rtk's database can be read: the chosen one, or any automatic candidate. Always through
     /// its folder: rtk runs SQLite in WAL mode, and a grant on `history.db` alone would read
     /// the main file without its `-wal` journal, i.e. stale data shown as current.
     var rtkAccess: Bool {
-        if let override = Self.rtkOverride(paths: paths) {
-            return access.covers(override.deletingLastPathComponent())
+        if let override = rtkOverridePath {
+            return covers(override.deletingLastPathComponent())
         }
-        return paths.rtkDatabaseCandidates.contains { access.covers($0.deletingLastPathComponent()) }
+        return paths.rtkDatabaseCandidates.contains { covers($0.deletingLastPathComponent()) }
     }
-    func isCovered(_ url: URL) -> Bool { access.covers(url) }
+    func isCovered(_ url: URL) -> Bool { covers(url) }
+
+    /// The demo copy lives in the app's own container, which needs no grant.
+    private func covers(_ url: URL) -> Bool {
+        (isDemo && AccessCoverage.isPath(url.path, inside: paths.home.path)) || access.covers(url)
+    }
 
     /// Result of a grant request, for the onboarding and the settings to word.
     enum AccessRequestResult: Equatable {
@@ -205,6 +306,7 @@ final class CockpitStore {
     /// checks the selection and stores it. Everything reloads through `accessDidChange`.
     @discardableResult
     func requestAccess(_ target: AccessTarget) -> AccessRequestResult {
+        guard !isDemo else { return .cancelled }
         let expected = target == .home ? paths.home : paths.claudeDir
         let message = target == .home
             ? "Sélectionnez votre dossier personnel « \(paths.home.lastPathComponent) » puis cliquez sur Autoriser."
@@ -250,6 +352,7 @@ final class CockpitStore {
     /// Grants any folder (or file) the user picks, starting the panel at `directory`.
     @discardableResult
     func grantFolder(startingAt directory: URL, message: String, chooseFiles: Bool = false) -> URL? {
+        guard !isDemo else { return nil }
         guard let url = access.runPanel(directory: directory, message: message, chooseFiles: chooseFiles) else { return nil }
         grant(url)
         return url
@@ -259,6 +362,7 @@ final class CockpitStore {
     /// Returns whether it was stored, in which case `accessDidChange` already ran.
     @discardableResult
     func grant(_ url: URL) -> Bool {
+        guard !isDemo else { return false }
         do {
             try access.add(url)
             return true
@@ -270,7 +374,14 @@ final class CockpitStore {
 
     /// "Réautoriser": the user confirms (or moves) a granted folder. Refused when the new
     /// folder would lose the Claude config directory; the old grant is then kept as is.
+    /// "Retirer" in Réglages › Accès.
+    func revoke(_ grant: AccessStore.Grant) {
+        guard !isDemo else { return }
+        access.remove(grant)
+    }
+
     func reauthorize(_ grant: AccessStore.Grant) {
+        guard !isDemo else { return }
         let current = URL(fileURLWithPath: grant.path)
         guard let picked = access.runPanel(
             directory: current, message: "Confirmez le dossier \(displayPath(current)).") else { return }
@@ -300,10 +411,16 @@ final class CockpitStore {
     /// rebuilt only when they differ; watchers restart only on what is now covered.
     func accessDidChange() {
         accessGeneration += 1
-        let fresh = ClaudePaths.live(configDirSetting: defaults.string(forKey: SettingsKey.claudeConfigDir))
+        let fresh = Self.makePaths(demo: isDemo)
         if fresh != paths {
             sessionsWatchTask?.cancel()
             sessionsWatcher?.stop()
+            // Entering or leaving the demo: another index file, so another service.
+            if fresh.appSupportDir != paths.appSupportDir {
+                sessionService = SessionService(paths: fresh)
+            }
+            // Another home holds another rtk database: its figures must not linger either.
+            if fresh.home != paths.home { rtk = nil }
             paths = fresh
             usageService = UsageService(paths: fresh)
             skillsStore = ResourceStore(paths: fresh)
@@ -359,7 +476,8 @@ final class CockpitStore {
     /// launch, as soon as the grants let the pruner delete inside `~/.claude/backups`: at
     /// launch, or after the first grant on a fresh install.
     private func pruneBackupsOnce() {
-        guard !didPruneBackups, claudeAccess else { return }
+        // Never in the demo, and without spending the once-per-launch pass on it.
+        guard !isDemo, !didPruneBackups, claudeAccess else { return }
         didPruneBackups = true
         let paths = paths
         Task.detached(priority: .background) { BackupPruner.prune(paths: paths) }
@@ -534,7 +652,7 @@ final class CockpitStore {
         rtkWatchTask?.cancel()
         rtkWatchTask = nil
         rtkService.stop()
-        rtkService = RTKService(paths: paths, overridePath: Self.rtkOverride(paths: paths))
+        rtkService = RTKService(paths: paths, overridePath: rtkOverridePath)
         if !keepSnapshot { rtk = nil }
         // Refreshes once and re-subscribes, this time to the new service.
         startRTKWatch()
@@ -543,18 +661,19 @@ final class CockpitStore {
 
     // MARK: Skills
     var projectRoots: [URL] {
+        if isDemo { return paths.defaultProjectRoots }
         let raw = defaults.string(forKey: SettingsKey.projectRoots) ?? ""
         let lines = raw.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
         if lines.isEmpty { return paths.defaultProjectRoots }
         return lines.map { URL(fileURLWithPath: paths.expandTilde($0), isDirectory: true) }
     }
     /// Roots the sandbox grants do not cover: skipped by the scan, listed in Réglages.
-    var inaccessibleProjectRoots: [URL] { projectRoots.filter { !access.covers($0) } }
+    var inaccessibleProjectRoots: [URL] { projectRoots.filter { !covers($0) } }
 
     private static let projectsCacheKey = "cache.projects"
 
     /// Projects found by the last scan, persisted so the first inventory after
-    /// launch does not wait for a directory walk.
+    /// launch does not wait for a directory walk. Neither read nor written in the demo.
     private var cachedProjects: [ProjectRef] {
         get {
             guard let data = defaults.data(forKey: Self.projectsCacheKey),
@@ -575,7 +694,7 @@ final class CockpitStore {
         do {
             // 1. Fast path: inventory with the cached project list.
             if skills == nil {
-                let cached = cachedProjects
+                let cached = isDemo ? [] : cachedProjects
                 if !cached.isEmpty {
                     let quick = try await skillsStore.inventory(projects: cached)
                     guard generation == accessGeneration else { return }
@@ -584,10 +703,10 @@ final class CockpitStore {
                 }
             }
             // 2. Full path: rescan roots (bounded walk) then rebuild the inventory.
-            let roots = projectRoots.filter { access.covers($0) }
+            let roots = projectRoots.filter { covers($0) }
             let projects = await Task.detached(priority: .utility) { ProjectScanner().scan(roots: roots) }.value
             guard generation == accessGeneration else { return }
-            cachedProjects = projects
+            if !isDemo { cachedProjects = projects }
             let inventory = try await skillsStore.inventory(projects: projects)
             guard generation == accessGeneration else { return }
             skills = inventory
@@ -603,6 +722,7 @@ final class CockpitStore {
 
     @discardableResult
     func transfer(_ resource: ClaudeResource, to level: ResourceLevel, mode: TransferMode, overwrite: Bool = false) async throws -> ClaudeResource {
+        guard !isDemo else { throw Self.demoReadOnly }
         let result = try await skillsStore.transfer(resource, to: level, mode: mode, overwrite: overwrite)
         notice = "\(mode == .copy ? "Copié" : "Déplacé") « \(resource.name) » vers \(level.label)"
         await refreshSkills()
@@ -611,6 +731,7 @@ final class CockpitStore {
 
     @discardableResult
     func importPlugin(_ plugin: PluginResource, to level: ResourceLevel, overwrite: Bool = false) async throws -> ClaudeResource {
+        guard !isDemo else { throw Self.demoReadOnly }
         let result = try await skillsStore.importPlugin(plugin, to: level, overwrite: overwrite)
         notice = "Importé « \(plugin.name) » vers \(level.label)"
         await refreshSkills()
@@ -619,11 +740,14 @@ final class CockpitStore {
 
     @discardableResult
     func delete(_ resource: ClaudeResource) async throws -> URL {
+        guard !isDemo else { throw Self.demoReadOnly }
         let backup = try await skillsStore.delete(resource)
         notice = "Supprimé « \(resource.name) » (sauvegarde : \(backup.path))"
         await refreshSkills()
         return backup
     }
+
+    private static let demoReadOnly = SkillsError.io("Indisponible en mode démo : les ressources d'exemple sont en lecture seule.")
 
     func reveal(_ resource: ClaudeResource) {
         NSWorkspace.shared.activateFileViewerSelecting([skillsStore.revealURL(for: resource)])
@@ -636,6 +760,7 @@ final class CockpitStore {
     var launchAtLogin: Bool { SMAppService.mainApp.status == .enabled }
 
     func setLaunchAtLogin(_ enabled: Bool) throws {
+        guard !isDemo else { return }
         if enabled { try SMAppService.mainApp.register() } else { try SMAppService.mainApp.unregister() }
     }
 

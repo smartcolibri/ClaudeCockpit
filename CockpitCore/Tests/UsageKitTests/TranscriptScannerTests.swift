@@ -424,4 +424,11 @@ final class TranscriptScannerTests: XCTestCase {
         XCTAssertEqual(UsagePath.shorten("/Users/vincent/app", home: home), "~/app")
         XCTAssertEqual(UsagePath.shorten("/opt/app", home: home), "/opt/app")
     }
+
+    func testShortenFollowsTheDisplayHome() {
+        defer { UsagePath.setDisplayHome(ClaudePaths.realHome) }
+        UsagePath.setDisplayHome(URL(fileURLWithPath: "/c/demo/home"))
+        XCTAssertEqual(UsagePath.shorten("/c/demo/home/DevApps/app"), "~/DevApps/app")
+        XCTAssertEqual(UsagePath.shorten(ClaudePaths.realHome.path + "/x"), ClaudePaths.realHome.path + "/x")
+    }
 }

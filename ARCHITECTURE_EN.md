@@ -353,6 +353,34 @@ no network entitlement). Inside the sandbox `homeDirectoryForCurrentUser`, `NSHo
   stores nothing when the folder is refused (a file-only grant would show stale data); the
   read-a-copy fallback writes to `FileManager.temporaryDirectory`, the container's `tmp`.
 
+### Demo mode
+
+Interactive diagram: [https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-demo-mode.html](https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-demo-mode.html) (source `docs/diagrams/claude-cockpit-demo-mode.architecture.json`).
+
+For App Review, which has no Claude Code data. `Scripts/make-demo-data.swift` writes a deterministic,
+fictional tree to `ClaudeCockpit/Resources/Demo/` (bundled as a folder reference): `manifest.json` (time
+anchor, original home `/Users/demo`) and `home/` with 3 projects, 8 sessions (2 with subagents), skills,
+agents and commands at every level plus a plugin, and an RTK `history.db`. Hidden folders are stored as
+`_dot_x` so Xcode and git keep them.
+
+- "Explorer avec des données d'exemple" (onboarding) or `CLAUDECOCKPIT_DEMO=1` calls `enterDemo()`.
+  `DemoSeeder` (CockpitShared) copies the tree to `<container>/Application Support/ClaudeCockpit/demo/home`,
+  restores the dot folders, shifts every JSONL timestamp per session (subagents move with their parent;
+  anchor-day sessions are fitted inside `[start of today, now]`, older days keep their offset, clamped
+  before the next day for DST) and the RTK `timestamp` column by UTC day, and rewrites `/Users/demo` to the
+  demo home in JSONL paths and RTK `project_path`.
+- `ClaudePaths.demo(root:)` makes the demo home *the* home (SkillsKit refuses paths outside `home`), with a
+  separate `demo/appdata`. `CockpitStore.makePaths(demo:)` is the only place paths are built; the
+  `SessionService` is rebuilt whenever the app-data folder changes, so the demo never indexes into the real
+  `sessions.db`. `UsagePath.displayHome` follows the current home so paths read `~/…`.
+- `isDemo` lives in memory only. Coverage is true inside the demo home; the RTK override is ignored.
+  Transfer, import, delete, backup pruning, grants, launch at login, config dir, RTK path and project roots
+  are refused in the store and disabled in the UI; `cache.projects` and `sessions.selectedId` are not
+  written; resume shows a notice instead of copying a command. Stars, renames and hides only touch the demo
+  index.
+- "Quitter la démo" returns to onboarding; once the retired session and usage services have finished, the
+  demo folder is deleted unless the demo was re-entered meanwhile. A normal launch deletes any leftover demo.
+
 ## Error handling
 
 The policy is one sentence: **every source fails alone, and a failure never destroys what was
