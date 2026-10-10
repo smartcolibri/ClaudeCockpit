@@ -84,11 +84,12 @@ flowchart TD
 | Module | Responsibility | Key types | Depends on |
 |---|---|---|---|
 | `CockpitShared` | Everything the other kits agree on: where files live, how numbers and dates are written in the app's language, how to watch a directory, how to parse front matter | `ClaudePaths`, `AppFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
-| `UsageKit` | Turns Claude Code's transcripts into every figure the usage screens show | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
+| `UsageKit` | Turns Claude Code's transcripts into every figure the usage screens show | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
 | `SessionsKit` | Indexes Claude Code's transcripts into a local SQLite/FTS5 database and answers every question the Sessions section asks of it: listing, paging a transcript, full-text search, activity, recent edits, health | `SessionService`, `SessionStore`, `TranscriptParser`, `TranscriptWalker`, `SessionHealthRule`, `SessionExporter`, `SessionRef`, `SessionMessage`, `ContentBlock`, `SessionFilter`, `ActivityReport` | `CockpitShared`, SQLite.swift |
 | `QuotaKit` | Reads the OAuth token, calls Anthropic's gauge endpoint, enforces the rate-limit policy, projects the pace | `QuotaService`, `CredentialStore`, `QuotaAPI`, `Meter`, `GaugeSnapshot`, `PaceProjection`, `UsageMath`, `PaceSentence` | `CockpitShared` |
 | `RTKKit` | Read-only access to rtk's SQLite database, plus a watcher that fires when rtk writes | `RTKService`, `TrackingRepository`, `DBWatcher`, `RTKSnapshot`, `CommandRecord`, `TotalsStat`, `DayStat`, `CommandStat` | `CockpitShared`, SQLite.swift |
 | `SkillsKit` | The three-level resource tree, its inventory, and every mutation with its backup | `ResourceStore`, `ProjectScanner`, `ClaudeResource`, `PluginResource`, `SkillsInventory`, `ResourceKind`, `ResourceLevel`, `SkillsError` | `CockpitShared` |
+| `OverviewKit` | Ranks the Overview's recommendations from plain values gathered across the sources | `RecommendationEngine`, `RecommendationInput`, `Recommendation` | — |
 | App target | SwiftUI views, the AppKit shell, Sparkle, and the hub that owns the services | `CockpitStore`, `SettingsKey`, `AppDelegate`, `UpdaterController`, `CockpitSection`, `SourceState` | all of the above, Sparkle |
 
 `ClaudePaths` deserves a note: every path in the app is computed from a `home` URL held by that
@@ -241,6 +242,45 @@ block, or the same response in a session and a sub-agent transcript). Aggregates
 `api_message_id` once, taking the max of each usage field over its copies, and are recomputed
 for every session sharing a response whenever one of them is ingested or purged.
 
+### Overview — the landing dashboard
+
+The Overview is a bento of tiles built from four sources at once, under
+`Window/Sections/Overview/` with one view per tile. Every figure **ignores the Usage screen's
+filters**: `UsageAggregator.overview(events:pricing:now:calendar:home:)` computes a
+`UsageOverview` from all events, carried by every `UsageSnapshot`. It holds the last 30 days of
+cost per day and model family, one cost per day over the 12-week activity window (Monday of the
+week eleven weeks back to today), today and yesterday by hour, today's tokens by kind, the top 5
+projects and the model mix over 30 days, the project spending most on Opus, the cache read rate
+(same ratio as `InsightEngine`), unpriced models, the mean daily cost of the 30 full days before
+today, month-to-date cost with a linear projection (calendar days, none before a full day) and
+last month's cost, and this week against the same stretch of last week.
+
+- Tiles: today's cost (14-day sparkline, delta against the 30-day mean, month projection), tokens
+  today (split bar), RTK over 7 days (savings weighted by `DayStat.inputTokens`), cost per day
+  stacked by model, top projects, by hour today against yesterday, session health (mean
+  `SessionRef.healthScore` today and over 7 days, sessions with errors, sessions below 60), active
+  skills, and the activity heatmap: sessions per day from `SessionService.activity`, cost per day
+  from `UsageOverview.dailyCost`, because the index only knows the cost Claude Code recorded.
+- Interactions: Swift Charts tooltips follow the pointer (`chartOverlay` + `onContinuousHover`,
+  since the built-in selection waits for a click on macOS); each tile is one button leading to its
+  section; a heatmap day opens the Sessions browser bounded to that day (`since`/`until`, shown as
+  a date chip), the health tile opens it on "With Errors", a session row opens that transcript.
+  `CockpitStore.showSessions(…)` starts from a fresh `SessionFilter` so nothing the user had
+  narrowed hides the target.
+- Each tile wraps its content in `TileSource`: the grant flow when unauthorized, the error with a
+  retry, a loading line — a failing source only blanks its own tiles. Below 920 points the right
+  column moves under the tiles; row heights are fixed so the whole bento fits the default window.
+- **Recommendations** come from `OverviewKit.RecommendationEngine`, a pure function of a
+  plain-value `RecommendationInput` (usage facts, today's session counts, rtk state — each `nil`
+  or `.unknown` when its source is unavailable) to at most 5 `Recommendation`s ranked critical,
+  warning, info, good, ties in rule order. Rules and thresholds (documented in code): week-to-date
+  cost ±20 % (after a day, baseline ≥ $1), Opus ≥ 60 % of 30-day cost (≥ $5) naming the project,
+  sessions with errors today (critical from 3), sessions scored below 60, one hour ≥ 40 % of
+  today's cost (≥ $1 over ≥ 3 active hours), cache read rate < 30 % or ≥ 80 % (≥ 1 M cacheable
+  tokens), rtk missing or saving < 30 % (≥ 20 commands), unpriced models, and a month projection
+  ≥ 1.25 × last month (from day 3, last month ≥ $5). The core returns kinds and a target section;
+  the app writes the sentence.
+
 ## Concurrency model
 
 The rule is one-directional: **services do the work off the main actor, the store publishes the
@@ -359,7 +399,9 @@ Interactive diagram: [https://smartcolibri.github.io/ClaudeCockpit/diagrams/clau
 
 For App Review, which has no Claude Code data. `Scripts/make-demo-data.swift` writes a deterministic,
 fictional tree to `ClaudeCockpit/Resources/Demo/` (bundled as a folder reference): `manifest.json` (time
-anchor, original home `/Users/demo`) and `home/` with 3 projects, 8 sessions (2 with subagents), skills,
+anchor, original home `/Users/demo`) and `home/` with 3 projects, 8 detailed sessions (2 with subagents) plus about 140 short ones
+spread over the 12 weeks before the anchor (busier on weekdays, written against the anchor's
+weekday, so the busy days shift once seeded), skills,
 agents and commands at every level plus a plugin, and an RTK `history.db`. Hidden folders are stored as
 `_dot_x` so Xcode and git keep them.
 
@@ -457,7 +499,8 @@ be worth doing on every change.
 | Suite | Covers |
 |---|---|
 | `CockpitSharedTests` | Path derivation including `CLAUDE_CONFIG_DIR`, French formatting, front-matter parsing |
-| `UsageKitTests` | Transcript scanning against JSONL fixtures, incremental re-reads, deduplication, pricing math, date-range bounds, aggregation |
+| `UsageKitTests` | Transcript scanning against JSONL fixtures, incremental re-reads, deduplication, pricing math, date-range bounds, aggregation, the Overview series on a Paris clock across a DST switch |
+| `OverviewKitTests` | Every recommendation rule on both sides of its thresholds, ranking by severity then rule order, the cap of five, determinism |
 | `SessionsKitTests` | Transcript line parsing for every line kind, incremental indexing and resume, deduplication, store queries (list filters, FTS snippets, recent edits, activity buckets), health grading, exporters, and a benchmark against the full real corpus |
 | `QuotaKitTests` | Credential parsing for both JSON shapes and expiry, gauge parsing, pace math, and the rate-limit policy driven by an injected clock |
 | `RTKKitTests` | Repository queries against a fixture `history.db` built in a temp directory, schema validation, watcher ticks |

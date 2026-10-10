@@ -4,10 +4,10 @@
 //
 //  Writes ClaudeCockpit/Resources/Demo/: a manifest naming the anchor instant and the sample
 //  home `/Users/demo` (the seeder points those paths at the demo copy), and a fictional home
-//  holding Claude Code transcripts (three projects, eight sessions with
-//  sub-agents, edits, titles and costs), skills / agents / commands at every level, a
-//  plugin, and an rtk history.db over seven UTC days. Everything is invented and in
-//  English; no path or name comes from a real machine.
+//  holding Claude Code transcripts (three projects, eight detailed sessions with
+//  sub-agents, edits, titles and costs, plus short ones over twelve weeks), skills /
+//  agents / commands at every level, a plugin, and an rtk history.db over seven UTC days.
+//  Everything is invented and in English; no path or name comes from a real machine.
 //
 //  Timestamps are written against a fixed anchor; `DemoSeeder` moves them next to the
 //  current date when the demo starts. Directories that start with a dot are written as

@@ -87,11 +87,12 @@ flowchart TD
 | Module | Responsabilité | Types clés | Dépend de |
 |---|---|---|---|
 | `CockpitShared` | Tout ce sur quoi les autres kits doivent s'accorder : où vivent les fichiers, comment s'écrivent les nombres et les dates dans la langue de l'app, comment surveiller un répertoire, comment lire un front matter | `ClaudePaths`, `AppFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
-| `UsageKit` | Transforme les transcriptions de Claude Code en tous les chiffres qu'affichent les écrans d'usage | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
+| `UsageKit` | Transforme les transcriptions de Claude Code en tous les chiffres qu'affichent les écrans d'usage | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
 | `SessionsKit` | Indexe les transcriptions de Claude Code dans une base SQLite/FTS5 locale et répond à tout ce que demande la section Sessions : liste, pagination d'une transcription, recherche plein texte, activité, éditions récentes, santé | `SessionService`, `SessionStore`, `TranscriptParser`, `TranscriptWalker`, `SessionHealthRule`, `SessionExporter`, `SessionRef`, `SessionMessage`, `ContentBlock`, `SessionFilter`, `ActivityReport` | `CockpitShared`, SQLite.swift |
 | `QuotaKit` | Lit le jeton OAuth, appelle l'endpoint de jauges d'Anthropic, applique la politique de limitation, projette le rythme | `QuotaService`, `CredentialStore`, `QuotaAPI`, `Meter`, `GaugeSnapshot`, `PaceProjection`, `UsageMath`, `PaceSentence` | `CockpitShared` |
 | `RTKKit` | Accès en lecture seule à la base SQLite de rtk, plus un observateur qui se déclenche quand rtk écrit | `RTKService`, `TrackingRepository`, `DBWatcher`, `RTKSnapshot`, `CommandRecord`, `TotalsStat`, `DayStat`, `CommandStat` | `CockpitShared`, SQLite.swift |
 | `SkillsKit` | L'arborescence de ressources à trois niveaux, son inventaire, et chaque mutation avec sa sauvegarde | `ResourceStore`, `ProjectScanner`, `ClaudeResource`, `PluginResource`, `SkillsInventory`, `ResourceKind`, `ResourceLevel`, `SkillsError` | `CockpitShared` |
+| `OverviewKit` | Classe les recommandations de la vue d'ensemble à partir de valeurs simples recueillies dans les sources | `RecommendationEngine`, `RecommendationInput`, `Recommendation` | — |
 | Cible applicative | Vues SwiftUI, coque AppKit, Sparkle, et le concentrateur qui détient les services | `CockpitStore`, `SettingsKey`, `AppDelegate`, `UpdaterController`, `CockpitSection`, `SourceState` | tout ce qui précède, Sparkle |
 
 `ClaudePaths` mérite une note : chaque chemin de l'application est calculé à partir d'une URL
@@ -264,6 +265,50 @@ sous-agent). Les agrégats comptent chaque `api_message_id` une seule fois, en p
 de chaque champ d'usage sur ses copies, et sont recalculés pour toutes les sessions partageant une
 réponse dès que l'une d'elles est ingérée ou purgée.
 
+### Vue d'ensemble — le tableau de bord d'accueil
+
+La vue d'ensemble est un bento de tuiles construit à partir de quatre sources à la fois, sous
+`Window/Sections/Overview/` avec une vue par tuile. Chaque chiffre **ignore les filtres de l'écran
+Usage** : `UsageAggregator.overview(events:pricing:now:calendar:home:)` calcule un `UsageOverview`
+à partir de tous les événements, porté par chaque `UsageSnapshot`. Il contient le coût par jour et
+par famille de modèles des 30 derniers jours, un coût par jour sur la fenêtre d'activité de
+12 semaines (du lundi d'il y a onze semaines à aujourd'hui), aujourd'hui et hier heure par heure,
+les tokens du jour par type, les 5 projets les plus coûteux et la répartition par modèle sur
+30 jours, le projet qui dépense le plus en Opus, le taux de lecture du cache (même ratio
+qu'`InsightEngine`), les modèles sans tarif, le coût quotidien moyen des 30 jours pleins avant
+aujourd'hui, le coût du mois en cours avec une projection linéaire (en jours calendaires, aucune
+avant un jour complet) et le coût du mois dernier, et cette semaine face au même tronçon de la
+semaine dernière.
+
+- Tuiles : coût du jour (courbe sur 14 jours, écart à la moyenne sur 30 jours, projection du
+  mois), tokens du jour (barre de répartition), RTK sur 7 jours (économie pondérée par
+  `DayStat.inputTokens`), coût par jour empilé par modèle, top projets, par heure aujourd'hui face
+  à hier, santé des sessions (moyenne de `SessionRef.healthScore` aujourd'hui et sur 7 jours,
+  sessions en erreur, sessions sous 60), skills actifs, et la carte d'activité : sessions par jour
+  depuis `SessionService.activity`, coût par jour depuis `UsageOverview.dailyCost`, car l'index ne
+  connaît que le coût que Claude Code a enregistré.
+- Interactions : les infobulles Swift Charts suivent le pointeur (`chartOverlay` +
+  `onContinuousHover`, la sélection intégrée attendant un clic sur macOS) ; chaque tuile est un
+  bouton qui mène à sa section ; un jour de la carte ouvre le navigateur de sessions borné à ce
+  jour (`since`/`until`, affiché comme une puce de date), la tuile santé l'ouvre sur « Avec
+  erreurs », une ligne de session ouvre sa transcription. `CockpitStore.showSessions(…)` part d'un
+  `SessionFilter` vierge pour que rien de ce que l'utilisateur avait restreint ne masque la cible.
+- Chaque tuile enveloppe son contenu dans `TileSource` : le parcours d'autorisation sans accès,
+  l'erreur avec un bouton Réessayer, une ligne de chargement — une source en échec ne vide que ses
+  propres tuiles. Sous 920 points, la colonne de droite passe sous les tuiles ; les hauteurs de
+  rangée sont fixes pour que tout le bento tienne dans la fenêtre par défaut.
+- Les **recommandations** viennent d'`OverviewKit.RecommendationEngine`, une fonction pure d'un
+  `RecommendationInput` en valeurs simples (faits d'usage, comptes de sessions du jour, état de
+  rtk — chacun `nil` ou `.unknown` quand sa source est indisponible) vers au plus 5
+  `Recommendation` classées critique, avertissement, info, bonne nouvelle, à égalité dans l'ordre
+  des règles. Règles et seuils (documentés dans le code) : coût de la semaine ±20 % (après un jour,
+  base ≥ 1 $), Opus ≥ 60 % du coût sur 30 jours (≥ 5 $) en nommant le projet, sessions en erreur
+  aujourd'hui (critique dès 3), sessions notées sous 60, une heure ≥ 40 % du coût du jour (≥ 1 $
+  sur ≥ 3 heures actives), taux de lecture du cache < 30 % ou ≥ 80 % (≥ 1 M de tokens
+  réutilisables), rtk absent ou économisant < 30 % (≥ 20 commandes), modèles sans tarif, et une
+  projection du mois ≥ 1,25 × le mois dernier (dès le 3e jour, mois dernier ≥ 5 $). Le cœur renvoie
+  des types et une section cible ; l'application rédige la phrase.
+
 ## Modèle de concurrence
 
 La règle est unidirectionnelle : **les services travaillent hors de l'acteur principal, le store
@@ -390,7 +435,9 @@ Diagramme interactif : [https://smartcolibri.github.io/ClaudeCockpit/diagrams/cl
 Pour la revue Apple, qui n'a aucune donnée Claude Code. `Scripts/make-demo-data.swift` écrit un arbre
 fictif et déterministe dans `ClaudeCockpit/Resources/Demo/` (embarqué comme référence de dossier) :
 `manifest.json` (ancre temporelle, home d'origine `/Users/demo`) et `home/` avec 3 projets, 8 sessions
-(dont 2 avec sous-agents), des skills, agents et commandes à tous les niveaux plus un plugin, et une base
+détaillées (dont 2 avec sous-agents) plus environ 140 courtes réparties sur les 12 semaines avant
+l'ancre (plus nombreuses en semaine, écrites selon le jour de l'ancre, si bien que les jours chargés
+se décalent une fois la démo installée), des skills, agents et commandes à tous les niveaux plus un plugin, et une base
 RTK `history.db`. Les dossiers cachés sont stockés en `_dot_x` pour que Xcode et git les gardent.
 
 - « Explorer avec des données d'exemple » (onboarding) ou `CLAUDECOCKPIT_DEMO=1` appelle `enterDemo()`.
@@ -494,7 +541,8 @@ complète assez peu coûteuse pour valoir la peine à chaque changement.
 | Suite | Couvre |
 |---|---|
 | `CockpitSharedTests` | Dérivation des chemins y compris `CLAUDE_CONFIG_DIR`, formatage français, lecture du front matter |
-| `UsageKitTests` | Scan de transcriptions sur fixtures JSONL, relectures incrémentales, déduplication, calcul des coûts, bornes de plages de dates, agrégation |
+| `UsageKitTests` | Scan de transcriptions sur fixtures JSONL, relectures incrémentales, déduplication, calcul des coûts, bornes de plages de dates, agrégation, la série de la vue d'ensemble sur une horloge de Paris à travers un changement d'heure |
+| `OverviewKitTests` | Chaque règle de recommandation de part et d'autre de ses seuils, le classement par gravité puis par ordre des règles, la limite de cinq, le déterminisme |
 | `SessionsKitTests` | Analyse des lignes de transcription pour chaque type de ligne, indexation incrémentale et reprise, déduplication, requêtes du store (filtres de liste, extraits FTS, éditions récentes, buckets d'activité), notation de santé, exporteurs, et un benchmark sur le corpus réel complet |
 | `QuotaKitTests` | Lecture des identifiants dans les deux formes JSON et gestion de l'expiration, analyse de la jauge, calcul du rythme, et la politique de limitation pilotée par une horloge injectée |
 | `RTKKitTests` | Requêtes du repository contre un `history.db` de fixture construit dans un répertoire temporaire, validation de schéma, tics de l'observateur |

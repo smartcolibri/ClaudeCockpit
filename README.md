@@ -48,6 +48,16 @@ preferences; numbers, dates and currencies follow that language and your region.
 
 ## Features
 
+### Overview
+
+| What you see | Detail |
+|---|---|
+| Bento dashboard | Today's cost with a 14-day sparkline, its gap to the 30-day average and the month's projection; today's tokens by kind; RTK's week; cost per day stacked by model; top projects; today against yesterday by hour; session health; active skills |
+| Twelve weeks of activity | Sessions per day as a heatmap; hover a day for its sessions and cost, click it to open that day's sessions |
+| Recommendations | Up to five, ranked by severity: cost trend, heavy Opus use, sessions with errors or a low health score, a burst hour, cache rate, RTK missing or saving little, unpriced models, a month heading above the last |
+| Today's sessions | The latest five with their cost, each opening its transcript |
+| Independent of filters | Every figure covers all projects and models, whatever the Local Usage screen is filtered on |
+
 ### Quotas & pace
 
 | What you see | Detail |
