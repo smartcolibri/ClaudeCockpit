@@ -84,7 +84,7 @@ flowchart TD
 | Module | Responsibility | Key types | Depends on |
 |---|---|---|---|
 | `CockpitShared` | Everything the other kits agree on: where files live, how numbers and dates are written in the app's language, how to watch a directory, how to parse front matter | `ClaudePaths`, `AppFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
-| `UsageKit` | Turns Claude Code's transcripts into every figure the usage screens show | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
+| `UsageKit` | Turns Claude Code's transcripts into every figure the usage screens show | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsagePeriod`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
 | `SessionsKit` | Indexes Claude Code's transcripts into a local SQLite/FTS5 database and answers every question the Sessions section asks of it: listing, paging a transcript, full-text search, activity, recent edits, health | `SessionService`, `SessionStore`, `TranscriptParser`, `TranscriptWalker`, `SessionHealthRule`, `SessionExporter`, `SessionRef`, `SessionMessage`, `ContentBlock`, `SessionFilter`, `ActivityReport` | `CockpitShared`, SQLite.swift |
 | `QuotaKit` | Reads the OAuth token, calls Anthropic's gauge endpoint, enforces the rate-limit policy, projects the pace | `QuotaService`, `CredentialStore`, `QuotaAPI`, `Meter`, `GaugeSnapshot`, `PaceProjection`, `UsageMath`, `PaceSentence` | `CockpitShared` |
 | `RTKKit` | Read-only access to rtk's SQLite database, plus a watcher that fires when rtk writes | `RTKService`, `TrackingRepository`, `DBWatcher`, `RTKSnapshot`, `CommandRecord`, `TotalsStat`, `DayStat`, `CommandStat` | `CockpitShared`, SQLite.swift |
@@ -115,6 +115,28 @@ in the same pass.
 `UsageService` owns the scanner and the resulting event list. Aggregation is deliberately
 separate: `UsageAggregator.snapshot(events:filters:pricing:now:)` is a pure function, so changing
 a filter or a price recomputes the screen without re-reading a single byte from disk.
+
+**The Usage screen follows its filters, all of them.** Model, project and period apply to every
+figure on it; today-versus-yesterday comparisons belong to the Overview. Besides the totals,
+breakdowns (project, model id, agent, skill, each with its session count) and sessions,
+`UsageSnapshot.period` (`UsagePeriod`) carries the series computed from the filtered events:
+
+- `days`: each day of the period, normalised with `startOfDay` after every step (a day where
+  summer time starts at midnight begins at 01:00), never past today; `.all` starts at the first
+  filtered event.
+- `buckets`, one bar each: hours for a one-day period, days up to 62, ISO weeks up to 30 weeks,
+  then months; the first week or month is clipped to the period's start. Each bucket carries its
+  cost per model family, its tokens per kind and its distinct sessions.
+- `hourly` totals per hour of day, divided by the number of days for the mean cost per hour;
+  `sessionsByWeekday` (Monday first, each session counted once on the day of its first turn, so
+  the counts add up to the Sessions figure) and `weekdayDays`, how many of each weekday the
+  period holds, so a weekday "this week" has not reached is left out rather than drawn at zero.
+- `previousCostUSD`, the cost over `DateRangeFilter.previousBounds`, with the same model and
+  project filters: yesterday up to the same time for Today, last week or last month up to the
+  same point for This week and This month, the month before for Previous month, the N days
+  before for N days (ending at now minus N days), nothing for All. Steps are calendar steps, so
+  the wall-clock time survives a DST switch, and a month-to-date end is clamped to the shorter
+  month.
 
 **Cadence:** every 30 seconds by default, never faster than 10. The scan runs off the main
 thread; the snapshot lands on the main actor.
@@ -444,7 +466,7 @@ French ships as a translation and any other language falls back to English.
 - **Core strings** live in one catalog per module (`defaultLocalization: "en"` in `Package.swift`)
   and use `String(localized:bundle: .module)` — errors and labels of SkillsKit, RTKKit, UsageKit,
   CockpitShared and SessionsKit. Where the core only needs to say *what* happened, it returns a
-  value and the app words it: `Insight.Kind`, `DateRangeFilter`. `HealthEvidence` is a value
+  value and the app words it: `DateRangeFilter`. `HealthEvidence` is a value
   too, worded by SessionsKit itself (`sentence(locale:)`) so its sentences are tested per
   language. QuotaKit is not linked into the app and stays French.
 - **`AppFormat`** (CockpitShared) formats numbers, money, percentages, dates, durations and

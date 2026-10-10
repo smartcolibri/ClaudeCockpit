@@ -87,7 +87,7 @@ flowchart TD
 | Module | Responsabilité | Types clés | Dépend de |
 |---|---|---|---|
 | `CockpitShared` | Tout ce sur quoi les autres kits doivent s'accorder : où vivent les fichiers, comment s'écrivent les nombres et les dates dans la langue de l'app, comment surveiller un répertoire, comment lire un front matter | `ClaudePaths`, `AppFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
-| `UsageKit` | Transforme les transcriptions de Claude Code en tous les chiffres qu'affichent les écrans d'usage | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
+| `UsageKit` | Transforme les transcriptions de Claude Code en tous les chiffres qu'affichent les écrans d'usage | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsagePeriod`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
 | `SessionsKit` | Indexe les transcriptions de Claude Code dans une base SQLite/FTS5 locale et répond à tout ce que demande la section Sessions : liste, pagination d'une transcription, recherche plein texte, activité, éditions récentes, santé | `SessionService`, `SessionStore`, `TranscriptParser`, `TranscriptWalker`, `SessionHealthRule`, `SessionExporter`, `SessionRef`, `SessionMessage`, `ContentBlock`, `SessionFilter`, `ActivityReport` | `CockpitShared`, SQLite.swift |
 | `QuotaKit` | Lit le jeton OAuth, appelle l'endpoint de jauges d'Anthropic, applique la politique de limitation, projette le rythme | `QuotaService`, `CredentialStore`, `QuotaAPI`, `Meter`, `GaugeSnapshot`, `PaceProjection`, `UsageMath`, `PaceSentence` | `CockpitShared` |
 | `RTKKit` | Accès en lecture seule à la base SQLite de rtk, plus un observateur qui se déclenche quand rtk écrit | `RTKService`, `TrackingRepository`, `DBWatcher`, `RTKSnapshot`, `CommandRecord`, `TotalsStat`, `DayStat`, `CommandStat` | `CockpitShared`, SQLite.swift |
@@ -122,6 +122,31 @@ n'est comptée qu'une fois. Les titres de session viennent des lignes `ai-title`
 volontairement séparée : `UsageAggregator.snapshot(events:filters:pricing:now:)` est une fonction
 pure, si bien que changer un filtre ou un tarif recalcule l'écran sans relire un seul octet sur
 le disque.
+
+**L'écran Usage suit ses filtres, tous.** Modèle, projet et période s'appliquent à chacun de ses
+chiffres ; les comparaisons aujourd'hui/hier relèvent de la Vue d'ensemble. Outre les totaux, les
+répartitions (projet, identifiant de modèle, agent, skill, chacune avec son nombre de sessions) et
+les sessions, `UsageSnapshot.period` (`UsagePeriod`) porte les séries calculées à partir des
+événements filtrés :
+
+- `days` : chaque jour de la période, normalisé par `startOfDay` après chaque pas (un jour où l'heure
+  d'été commence à minuit débute à 01:00), jamais au-delà d'aujourd'hui ; `.all` commence au premier
+  événement filtré.
+- `buckets`, une barre chacun : des heures pour une période d'un jour, des jours jusqu'à 62, des
+  semaines ISO jusqu'à 30 semaines, puis des mois ; la première semaine ou le premier mois est rogné
+  au début de la période. Chaque intervalle porte son coût par famille de modèles, ses tokens par
+  type et ses sessions distinctes.
+- `hourly`, les totaux par heure de la journée, divisés par le nombre de jours pour le coût moyen
+  par heure ; `sessionsByWeekday` (lundi en premier, chaque session comptée une fois, le jour de son
+  premier tour, pour que la somme égale le chiffre Sessions) et `weekdayDays`, le nombre de chaque
+  jour de la semaine dans la période, pour qu'un jour que « cette semaine » n'a pas encore atteint
+  soit omis plutôt que dessiné à zéro.
+- `previousCostUSD`, le coût sur `DateRangeFilter.previousBounds`, avec les mêmes filtres de modèle
+  et de projet : hier jusqu'à la même heure pour Aujourd'hui, la semaine ou le mois précédent
+  jusqu'au même stade pour Cette semaine et Ce mois-ci, le mois d'avant pour Mois précédent, les N
+  jours d'avant pour N jours (jusqu'à maintenant moins N jours), rien pour Tout. Les pas sont des pas
+  de calendrier, si bien que l'heure murale survit à un changement d'heure, et une fin de mois en
+  cours est bornée au mois le plus court.
 
 **Cadence :** toutes les 30 secondes par défaut, jamais plus vite que 10. Le scan tourne hors du
 fil principal ; le snapshot atterrit sur l'acteur principal.
@@ -484,7 +509,7 @@ le français est livré comme traduction et toute autre langue retombe sur l'ang
 - **Les chaînes du cœur** vivent dans un catalogue par module (`defaultLocalization: "en"` dans
   `Package.swift`) et utilisent `String(localized:bundle: .module)` — erreurs et libellés de SkillsKit,
   RTKKit, UsageKit, CockpitShared et SessionsKit. Quand le cœur n'a besoin de dire que *ce qui* s'est
-  passé, il renvoie une valeur et l'app la formule : `Insight.Kind`, `DateRangeFilter`. `HealthEvidence`
+  passé, il renvoie une valeur et l'app la formule : `DateRangeFilter`. `HealthEvidence`
   est aussi une valeur, formulée par SessionsKit lui-même (`sentence(locale:)`) pour que ses
   phrases soient testées dans chaque langue. QuotaKit n'est pas lié à l'app et reste en français.
 - **`AppFormat`** (CockpitShared) formate nombres, montants, pourcentages, dates, durées et temps
