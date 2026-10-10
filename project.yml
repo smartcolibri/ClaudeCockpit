@@ -29,6 +29,12 @@ targets:
         excludes:
           - "**/*.entitlements"
           - "Info.plist"
+          - "Resources/Demo/**"
+      # Demo mode sample data (Scripts/make-demo-data.swift), copied as one tree: a plain
+      # group would flatten it and collide on its many SKILL.md files.
+      - path: ClaudeCockpit/Resources/Demo
+        type: folder
+        buildPhase: resources
     settings:
       base:
         PRODUCT_NAME: Cockpit for Claude
