@@ -44,7 +44,7 @@ flowchart TD
 
     subgraph core["CockpitCore — package SwiftPM local"]
         SHARED["CockpitShared<br/>ClaudePaths · AppFormat<br/>DirectoryWatcher · RecursiveWatcher · Frontmatter"]
-        USAGE["UsageKit<br/>UsageService · TranscriptScanner<br/>UsageAggregator · InsightEngine"]
+        USAGE["UsageKit<br/>UsageService · TranscriptScanner<br/>UsageAggregator · UsagePeriod"]
         SESSIONS["SessionsKit<br/>SessionService · SessionStore<br/>TranscriptParser · TranscriptWalker"]
         QUOTA["QuotaKit<br/>QuotaService · CredentialStore<br/>QuotaAPI · UsageMath"]
         RTK["RTKKit<br/>RTKService · TrackingRepository<br/>DBWatcher"]
@@ -87,7 +87,7 @@ flowchart TD
 | Module | Responsabilité | Types clés | Dépend de |
 |---|---|---|---|
 | `CockpitShared` | Tout ce sur quoi les autres kits doivent s'accorder : où vivent les fichiers, comment s'écrivent les nombres et les dates dans la langue de l'app, comment surveiller un répertoire, comment lire un front matter | `ClaudePaths`, `AppFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
-| `UsageKit` | Transforme les transcriptions de Claude Code en tous les chiffres qu'affichent les écrans d'usage | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsagePeriod`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
+| `UsageKit` | Transforme les transcriptions de Claude Code en tous les chiffres qu'affichent les écrans d'usage | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsagePeriod`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
 | `SessionsKit` | Indexe les transcriptions de Claude Code dans une base SQLite/FTS5 locale et répond à tout ce que demande la section Sessions : liste, pagination d'une transcription, recherche plein texte, activité, éditions récentes, santé | `SessionService`, `SessionStore`, `TranscriptParser`, `TranscriptWalker`, `SessionHealthRule`, `SessionExporter`, `SessionRef`, `SessionMessage`, `ContentBlock`, `SessionFilter`, `ActivityReport` | `CockpitShared`, SQLite.swift |
 | `QuotaKit` | Lit le jeton OAuth, appelle l'endpoint de jauges d'Anthropic, applique la politique de limitation, projette le rythme | `QuotaService`, `CredentialStore`, `QuotaAPI`, `Meter`, `GaugeSnapshot`, `PaceProjection`, `UsageMath`, `PaceSentence` | `CockpitShared` |
 | `RTKKit` | Accès en lecture seule à la base SQLite de rtk, plus un observateur qui se déclenche quand rtk écrit | `RTKService`, `TrackingRepository`, `DBWatcher`, `RTKSnapshot`, `CommandRecord`, `TotalsStat`, `DayStat`, `CommandStat` | `CockpitShared`, SQLite.swift |
@@ -124,7 +124,9 @@ pure, si bien que changer un filtre ou un tarif recalcule l'écran sans relire u
 le disque.
 
 **L'écran Usage suit ses filtres, tous.** Modèle, projet et période s'appliquent à chacun de ses
-chiffres ; les comparaisons aujourd'hui/hier relèvent de la Vue d'ensemble. Outre les totaux, les
+chiffres ; les comparaisons aujourd'hui/hier relèvent de la Vue d'ensemble. Les tours
+`<synthetic>` sans token (`UsageEvent.isSynthetic`) sont écartés avant tout calcul : le repli de
+famille les rangerait sinon sous Sonnet, dans chaque tuile, pastille et liste. Outre les totaux, les
 répartitions (projet, identifiant de modèle, agent, skill, chacune avec son nombre de sessions) et
 les sessions, `UsageSnapshot.period` (`UsagePeriod`) porte les séries calculées à partir des
 événements filtrés :
@@ -132,7 +134,11 @@ les sessions, `UsageSnapshot.period` (`UsagePeriod`) porte les séries calculée
 - `days` : chaque jour de la période, normalisé par `startOfDay` après chaque pas (un jour où l'heure
   d'été commence à minuit débute à 01:00), jamais au-delà d'aujourd'hui ; `.all` commence au premier
   événement filtré.
-- `buckets`, une barre chacun : des heures pour une période d'un jour, des jours jusqu'à 62, des
+- `coveredDays` : combien de ces jours l'historique scanné atteint. Claude Code supprime les
+  anciens transcripts, si bien que l'historique (son premier événement, quels que soient les
+  filtres) peut commencer dans la période ; chaque moyenne par jour et le coût moyen par heure se
+  divisent par les jours couverts, pas par des jours inconnus plutôt qu'inactifs.
+- `buckets`, une barre chacun : des heures pour Aujourd'hui, des jours jusqu'à 62, des
   semaines ISO jusqu'à 30 semaines, puis des mois ; la première semaine ou le premier mois est rogné
   au début de la période. Chaque intervalle porte son coût par famille de modèles, ses tokens par
   type et ses sessions distinctes.
@@ -143,10 +149,12 @@ les sessions, `UsageSnapshot.period` (`UsagePeriod`) porte les séries calculée
   soit omis plutôt que dessiné à zéro.
 - `previousCostUSD`, le coût sur `DateRangeFilter.previousBounds`, avec les mêmes filtres de modèle
   et de projet : hier jusqu'à la même heure pour Aujourd'hui, la semaine ou le mois précédent
-  jusqu'au même stade pour Cette semaine et Ce mois-ci, le mois d'avant pour Mois précédent, les N
-  jours d'avant pour N jours (jusqu'à maintenant moins N jours), rien pour Tout. Les pas sont des pas
-  de calendrier, si bien que l'heure murale survit à un changement d'heure, et une fin de mois en
-  cours est bornée au mois le plus court.
+  jusqu'au même stade pour Cette semaine, la même durée écoulée depuis le début du mois précédent
+  pour Ce mois-ci (bornée à la fin de ce mois), le mois d'avant pour Mois précédent, les N jours
+  d'avant pour N jours (jusqu'à maintenant moins N jours), rien pour Tout. Les autres pas sont des
+  pas de calendrier, si bien que l'heure murale survit à un changement d'heure. `nil` aussi quand
+  l'historique commence plus d'un jour après la fenêtre : l'écran dit alors qu'il n'y a pas assez
+  d'historique pour comparer.
 
 **Cadence :** toutes les 30 secondes par défaut, jamais plus vite que 10. Le scan tourne hors du
 fil principal ; le snapshot atterrit sur l'acteur principal.
@@ -301,7 +309,7 @@ par famille de modèles des 30 derniers jours, un coût par jour sur la fenêtre
 les tokens du jour par type, les 5 projets les plus coûteux et la répartition par modèle sur
 30 jours, le projet qui dépense le plus en Opus et la part d'Opus sur les 30 jours d'avant, le
 taux de lecture du cache (lectures sur lectures + écritures + entrées — les écritures comptent,
-contrairement au ratio d'`InsightEngine`, sinon tout compte Claude Code frôle 100 %), les modèles
+sinon tout compte Claude Code frôle 100 %), les modèles
 sans tarif (les tours `<synthetic>` et sans token ne sont pas de l'usage de modèle), le coût
 quotidien moyen des jours pleins avant aujourd'hui (30, ou moins depuis le premier événement), le coût du mois en cours avec une projection linéaire (en jours calendaires, aucune
 avant un jour complet) et le coût du mois dernier, et cette semaine face au même tronçon de la

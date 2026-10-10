@@ -74,8 +74,8 @@ preferences; numbers, dates and currencies follow that language and your region.
 | What you see | Detail |
 |---|---|
 | One rule | The whole screen follows the filters: model families, project (working directory) and period, from Today to All, on one line |
-| Four tiles | Estimated cost with a sparkline and the change against the previous period of equal length, sessions per day, turns per session, tokens split into input, output, cache read and cache written |
-| Cost over the period | Bars stacked by model family, or tokens stacked by kind; hourly for one day, daily up to two months, then weekly, then monthly; hover for the detail |
+| Four tiles | Estimated cost with a sparkline and the change against the previous period of equal length, sessions per day, turns per session (means over the days the history covers), tokens split into input, output, cache read and cache written |
+| Cost over the period | Bars stacked by model family, or tokens stacked by kind; hourly for Today, daily up to two months, then weekly, then monthly; hover for the detail |
 | Breakdown | Cost by model family as a donut, and cost and sessions by project, model, agent or skill, top five with "Show all" |
 | Rhythm | Mean cost per hour of day with its peak, and sessions per weekday with the weekday share |
 | Sessions list | Named sessions, most recent first, with a per-session detail pane |

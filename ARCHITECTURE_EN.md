@@ -41,7 +41,7 @@ flowchart TD
 
     subgraph core["CockpitCore — local SwiftPM package"]
         SHARED["CockpitShared<br/>ClaudePaths · AppFormat<br/>DirectoryWatcher · RecursiveWatcher · Frontmatter"]
-        USAGE["UsageKit<br/>UsageService · TranscriptScanner<br/>UsageAggregator · InsightEngine"]
+        USAGE["UsageKit<br/>UsageService · TranscriptScanner<br/>UsageAggregator · UsagePeriod"]
         SESSIONS["SessionsKit<br/>SessionService · SessionStore<br/>TranscriptParser · TranscriptWalker"]
         QUOTA["QuotaKit<br/>QuotaService · CredentialStore<br/>QuotaAPI · UsageMath"]
         RTK["RTKKit<br/>RTKService · TrackingRepository<br/>DBWatcher"]
@@ -84,7 +84,7 @@ flowchart TD
 | Module | Responsibility | Key types | Depends on |
 |---|---|---|---|
 | `CockpitShared` | Everything the other kits agree on: where files live, how numbers and dates are written in the app's language, how to watch a directory, how to parse front matter | `ClaudePaths`, `AppFormat`, `DirectoryWatcher`, `Frontmatter` | Foundation |
-| `UsageKit` | Turns Claude Code's transcripts into every figure the usage screens show | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsagePeriod`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `InsightEngine`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
+| `UsageKit` | Turns Claude Code's transcripts into every figure the usage screens show | `UsageService`, `TranscriptScanner`, `UsageAggregator`, `UsageSnapshot`, `UsagePeriod`, `UsageOverview`, `UsageEvent`, `PricingSettings`, `SessionSummary`, `BreakdownDimension` | `CockpitShared` |
 | `SessionsKit` | Indexes Claude Code's transcripts into a local SQLite/FTS5 database and answers every question the Sessions section asks of it: listing, paging a transcript, full-text search, activity, recent edits, health | `SessionService`, `SessionStore`, `TranscriptParser`, `TranscriptWalker`, `SessionHealthRule`, `SessionExporter`, `SessionRef`, `SessionMessage`, `ContentBlock`, `SessionFilter`, `ActivityReport` | `CockpitShared`, SQLite.swift |
 | `QuotaKit` | Reads the OAuth token, calls Anthropic's gauge endpoint, enforces the rate-limit policy, projects the pace | `QuotaService`, `CredentialStore`, `QuotaAPI`, `Meter`, `GaugeSnapshot`, `PaceProjection`, `UsageMath`, `PaceSentence` | `CockpitShared` |
 | `RTKKit` | Read-only access to rtk's SQLite database, plus a watcher that fires when rtk writes | `RTKService`, `TrackingRepository`, `DBWatcher`, `RTKSnapshot`, `CommandRecord`, `TotalsStat`, `DayStat`, `CommandStat` | `CockpitShared`, SQLite.swift |
@@ -117,14 +117,21 @@ separate: `UsageAggregator.snapshot(events:filters:pricing:now:)` is a pure func
 a filter or a price recomputes the screen without re-reading a single byte from disk.
 
 **The Usage screen follows its filters, all of them.** Model, project and period apply to every
-figure on it; today-versus-yesterday comparisons belong to the Overview. Besides the totals,
+figure on it; today-versus-yesterday comparisons belong to the Overview. Zero-token
+`<synthetic>` placeholder turns (`UsageEvent.isSynthetic`) are dropped before anything is
+counted: the family fallback would otherwise file them under Sonnet, in every tile, chip and
+list. Besides the totals,
 breakdowns (project, model id, agent, skill, each with its session count) and sessions,
 `UsageSnapshot.period` (`UsagePeriod`) carries the series computed from the filtered events:
 
 - `days`: each day of the period, normalised with `startOfDay` after every step (a day where
   summer time starts at midnight begins at 01:00), never past today; `.all` starts at the first
   filtered event.
-- `buckets`, one bar each: hours for a one-day period, days up to 62, ISO weeks up to 30 weeks,
+- `coveredDays`: how many of those days the scanned history reaches. Claude Code deletes old
+  transcripts, so the history (its first event, whatever the filters) can start inside the
+  period; every per-day mean and the mean cost per hour divide by the covered days, not by days
+  that are unknown rather than idle.
+- `buckets`, one bar each: hours for Today, days up to 62, ISO weeks up to 30 weeks,
   then months; the first week or month is clipped to the period's start. Each bucket carries its
   cost per model family, its tokens per kind and its distinct sessions.
 - `hourly` totals per hour of day, divided by the number of days for the mean cost per hour;
@@ -133,10 +140,11 @@ breakdowns (project, model id, agent, skill, each with its session count) and se
   period holds, so a weekday "this week" has not reached is left out rather than drawn at zero.
 - `previousCostUSD`, the cost over `DateRangeFilter.previousBounds`, with the same model and
   project filters: yesterday up to the same time for Today, last week or last month up to the
-  same point for This week and This month, the month before for Previous month, the N days
-  before for N days (ending at now minus N days), nothing for All. Steps are calendar steps, so
-  the wall-clock time survives a DST switch, and a month-to-date end is clamped to the shorter
-  month.
+  same point for This week, the same elapsed duration from the previous month's start for This
+  month (capped at that month's end), the month before for Previous month, the N days before
+  for N days (ending at now minus N days), nothing for All. Other steps are calendar steps, so
+  the wall-clock time survives a DST switch. `nil` too when the history starts more than a day
+  after the window does: the screen then says there is not enough history to compare.
 
 **Cadence:** every 30 seconds by default, never faster than 10. The scan runs off the main
 thread; the snapshot lands on the main actor.
@@ -274,7 +282,7 @@ cost per day and model family, one cost per day over the 12-week activity window
 week eleven weeks back to today), today and yesterday by hour, today's tokens by kind, the top 5
 projects and the model mix over 30 days, the project spending most on Opus and Opus's share of the
 30 days before, the cache read rate (cache reads over cache reads + writes + input — writes count,
-unlike `InsightEngine`'s ratio, or every Claude Code account reads near 100 %), unpriced models
+or every Claude Code account reads near 100 %), unpriced models
 (`<synthetic>` and zero-token turns are not model usage), the mean daily cost of the full days
 before today (30, or fewer since the first event), month-to-date cost with a linear projection (calendar days, none before a full day) and
 last month's cost, and this week against the same stretch of last week.
