@@ -22,6 +22,9 @@ struct UsageView: View {
 struct UsageDashboard: View {
     @Environment(CockpitStore.self) private var store
     let width: CGFloat
+    /// Only the snapshot pins the width; on screen the content fills what the scroll view
+    /// leaves, which a permanent scroll bar narrows.
+    var pinsWidth = false
 
     static let wideLayout: CGFloat = 900
     static let horizontalPadding: CGFloat = 20
@@ -55,7 +58,8 @@ struct UsageDashboard: View {
         }
         .padding(.horizontal, Self.horizontalPadding)
         .padding(.vertical, 16)
-        .frame(width: width > 0 ? width : nil, alignment: .topLeading)
+        .frame(width: pinsWidth ? width : nil, alignment: .topLeading)
+        .frame(maxWidth: .infinity, alignment: .topLeading)
     }
 
     // MARK: Header

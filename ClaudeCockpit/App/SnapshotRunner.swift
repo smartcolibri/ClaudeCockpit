@@ -131,7 +131,7 @@ enum SnapshotRunner {
     /// The Usage dashboard at its full content height, hosted in a borderless window (a
     /// titled one would be clamped to the screen's height).
     private static func writeUsage(store: CockpitStore, width: CGFloat, to url: URL) async {
-        let root = UsageDashboard(width: width)
+        let root = UsageDashboard(width: width, pinsWidth: true)
             .environment(store)
             .environment(\.locale, AppFormat.locale)
             .background(Theme.background)
