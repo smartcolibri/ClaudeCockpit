@@ -83,7 +83,7 @@ struct CostPerDayTile: View {
             }
         }
         .chartHover(Date.self) { hovered = $0 }
-        .frame(minHeight: 110)
+        .frame(minHeight: 70)
     }
 
     private func hoveredDay(_ overview: UsageOverview) -> Date? {

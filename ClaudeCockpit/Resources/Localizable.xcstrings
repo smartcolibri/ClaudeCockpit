@@ -188,7 +188,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ des tokens filtrés économisés"
+            "value" : "%@ d'économie sur le filtré"
           }
         }
       }
@@ -2145,18 +2145,18 @@
         }
       }
     },
-    "By hour, today vs yesterday" : {
+    "By hour" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "By hour, today vs yesterday"
+            "value" : "By hour"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Par heure, aujourd'hui vs hier"
+            "value" : "Par heure"
           }
         }
       }
@@ -7348,7 +7348,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Santé des sessions"
+            "value" : "Santé"
           }
         }
       }
@@ -7493,22 +7493,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Sessions cette semaine"
-          }
-        }
-      }
-    },
-    "Sessions today" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sessions today"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sessions aujourd'hui"
           }
         }
       }
@@ -8449,6 +8433,22 @@
         }
       }
     },
+    "Today's sessions" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Today's sessions"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions du jour"
+          }
+        }
+      }
+    },
     "Token counts come from the Claude Code transcripts (~/.claude/projects): they are the real figures returned by the API, not an estimate." : {
       "localizations" : {
         "en" : {
@@ -8657,18 +8657,18 @@
         }
       }
     },
-    "Top projects, 30 days" : {
+    "Top projects" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Top projects, 30 days"
+            "value" : "Top projects"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Top projets, 30 j"
+            "value" : "Top projets"
           }
         }
       }

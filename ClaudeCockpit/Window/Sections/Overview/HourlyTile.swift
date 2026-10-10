@@ -73,7 +73,7 @@ struct HourlyTile: View {
         }
         .chartYAxis(.hidden)
         .chartHover(Double.self) { value in hovered = value.map { Int($0.rounded()) } }
-        .frame(minHeight: 52)
+        .frame(minHeight: 40)
     }
 
     private func legend(_ title: String, dashed: Bool) -> some View {

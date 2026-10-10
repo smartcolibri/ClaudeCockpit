@@ -14,7 +14,7 @@ struct TodaySessionsCard: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 6) {
                 Image(systemName: "text.bubble.fill").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.violet)
-                SectionLabel(text: String(localized: "Sessions today"))
+                SectionLabel(text: String(localized: "Today's sessions"))
                 Spacer(minLength: 0)
                 if loaded, !sessions.isEmpty {
                     Text(verbatim: totalLabel)
