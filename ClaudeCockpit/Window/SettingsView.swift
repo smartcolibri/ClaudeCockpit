@@ -370,7 +370,7 @@ private struct AccessSettingsTab: View {
                         Spacer()
                         Button("Réautoriser") { store.reauthorize(grant) }
                             .disabled(store.isDemo)
-                        Button("Retirer", role: .destructive) { store.access.remove(grant) }
+                        Button("Retirer", role: .destructive) { store.revoke(grant) }
                             .disabled(store.isDemo)
                     }
                 }

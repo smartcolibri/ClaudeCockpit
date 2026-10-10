@@ -70,8 +70,11 @@ enum CockpitSection: String, CaseIterable, Identifiable {
 @MainActor @Observable
 final class CockpitStore {
     // MARK: Services
-    /// Rebuilt when the Claude config directory setting changes.
-    private(set) var paths: ClaudePaths
+    /// Rebuilt when the Claude config directory setting changes, or the demo starts or ends.
+    private(set) var paths: ClaudePaths {
+        // Paths on screen are abbreviated against the home in use: `~/…` in the demo too.
+        didSet { UsagePath.setDisplayHome(paths.home) }
+    }
     /// Folders granted to the sandboxed app; every source checks it before reading.
     let access: AccessStore
     private var usageService: UsageService
@@ -180,6 +183,7 @@ final class CockpitStore {
         isDemo = demo
         let paths = Self.makePaths(demo: demo)
         self.paths = paths
+        UsagePath.setDisplayHome(paths.home)
         access = AccessStore()
         usageService = UsageService(paths: paths)
         rtkService = RTKService(paths: paths, overridePath: demo ? nil : Self.rtkOverride(paths: paths))
@@ -233,20 +237,24 @@ final class CockpitStore {
     }
 
     /// Back to the user's own data (the onboarding when nothing is granted yet). The demo
-    /// copy and its index are deleted once the retired session service has finished any
-    /// pass in flight, so that pass cannot recreate them.
+    /// copy and its app data are deleted once the retired services have finished what they
+    /// had in flight (an index pass, a usage scan writing its cache), so neither can recreate
+    /// them. A demo entered again meanwhile owns the folder: it is left alone.
     func exitDemo() {
         guard isDemo else { return }
-        let retired = sessionService
+        let retiredSessions = sessionService
+        let retiredUsage = usageService
         isDemo = false
         demoSessionSelection = nil
         accessDidChange()
         Task { [weak self] in
-            _ = await retired.paths
+            _ = await retiredSessions.paths
+            await retiredUsage.flush()
+            guard let self, !self.isDemo else { return }
             do {
                 try DemoSeeder.remove(root: Self.demoRoot)
             } catch {
-                self?.notice = "Données d'exemple non supprimées : \(error.localizedDescription)"
+                self.notice = "Données d'exemple non supprimées : \(error.localizedDescription)"
             }
         }
     }
@@ -366,6 +374,12 @@ final class CockpitStore {
 
     /// "Réautoriser": the user confirms (or moves) a granted folder. Refused when the new
     /// folder would lose the Claude config directory; the old grant is then kept as is.
+    /// "Retirer" in Réglages › Accès.
+    func revoke(_ grant: AccessStore.Grant) {
+        guard !isDemo else { return }
+        access.remove(grant)
+    }
+
     func reauthorize(_ grant: AccessStore.Grant) {
         guard !isDemo else { return }
         let current = URL(fileURLWithPath: grant.path)
