@@ -68,7 +68,7 @@ struct ResourcesView: View {
                     .padding(.top, 12)
             }
             if !store.homeAccess {
-                AccessRequiredBanner(message: String(localized: "only \(store.displayPath(store.paths.claudeDir)) is allowed. Items linked outside this folder and projects are not listed."))
+                AccessRequiredBanner(message: String(localized: "only \(store.displayPath(store.paths.claudeDir)) is allowed. Items linked outside this folder and projects are not listed.", locale: AppFormat.locale))
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
             }
@@ -247,12 +247,12 @@ struct ResourcesView: View {
 
     private var emptyText: String {
         if store.skillsState.isLoading && inventory == nil { return String(localized: "Reading resources…") }
-        if !query.isEmpty { return String(localized: "No results for “\(search)”.") }
-        return String(localized: "No \(kind.pluralLabel.lowercased()) in \(level.label).")
+        if !query.isEmpty { return String(localized: "No results for “\(search)”.", locale: AppFormat.locale) }
+        return String(localized: "No \(kind.pluralLabel.lowercased()) in \(level.label).", locale: AppFormat.locale)
     }
 
     private var pluginEmptyText: String {
-        if !query.isEmpty { return String(localized: "No results for “\(search)”.") }
+        if !query.isEmpty { return String(localized: "No results for “\(search)”.", locale: AppFormat.locale) }
         return String(localized: "No plugins installed.")
     }
 

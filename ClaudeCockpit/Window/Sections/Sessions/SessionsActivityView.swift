@@ -38,7 +38,7 @@ struct SessionsActivityView: View {
                 if let message = store.sessionsState.errorMessage {
                     SourceBanner(
                         kind: .error,
-                        message: String(localized: "Could not read the index: \(message)"),
+                        message: String(localized: "Could not read the index: \(message)", locale: AppFormat.locale),
                         action: { Task { await store.indexSessions() } },
                         actionTitle: String(localized: "Reindex"))
                 }
@@ -179,7 +179,7 @@ struct SessionsActivityView: View {
             ActivityPlaceholder(
                 icon: "hourglass",
                 title: String(localized: "Indexing in progress"),
-                message: String(localized: "\(AppFormat.integer(store.sessionIndex.filesDone)) of \(AppFormat.integer(store.sessionIndex.filesTotal)) transcripts scanned."),
+                message: String(localized: "\(AppFormat.integer(store.sessionIndex.filesDone)) of \(AppFormat.integer(store.sessionIndex.filesTotal)) transcripts scanned.", locale: AppFormat.locale),
                 isBusy: true)
         } else {
             ActivityPlaceholder(
@@ -234,6 +234,6 @@ struct SessionsActivityView: View {
     private func toolErrorNote(_ report: ActivityReport) -> String {
         let errors = report.tools.reduce(0) { $0 + $1.errors }
         guard errors > 0 else { return String(localized: "no errors") }
-        return String(localized: "\(AppFormat.integer(errors)) failed")
+        return String(localized: "\(AppFormat.integer(errors)) failed", locale: AppFormat.locale)
     }
 }

@@ -67,7 +67,7 @@ struct OverviewView: View {
             store.usageState.lastSuccess, store.rtkState.lastSuccess, store.skillsState.lastSuccess,
         ].compactMap { $0 }
         guard let latest = dates.max() else { return String(localized: "No source read yet") }
-        return String(localized: "Updated \(AppFormat.relative(latest, now: now))")
+        return String(localized: "Updated \(AppFormat.relative(latest, now: now))", locale: AppFormat.locale)
     }
 
     // MARK: Tiles
@@ -77,7 +77,7 @@ struct OverviewView: View {
             StatTile(
                 label: String(localized: "Today's cost"),
                 value: store.usage.map { store.money($0.costTodayUnfilteredUSD) } ?? "—",
-                note: store.usage.map { String(localized: "\(store.money($0.costThisWeekUnfilteredUSD)) since Monday") },
+                note: store.usage.map { String(localized: "\(store.money($0.costThisWeekUnfilteredUSD)) since Monday", locale: AppFormat.locale) },
                 tint: Theme.blue,
                 icon: "eurosign.circle")
             StatTile(
@@ -89,13 +89,13 @@ struct OverviewView: View {
             StatTile(
                 label: String(localized: "RTK tokens saved, 7 days"),
                 value: store.rtk == nil ? "—" : AppFormat.tokens(rtkWeekSaved),
-                note: store.rtk.map { String(localized: "\(AppFormat.tokens($0.today.savedTokens)) today") },
+                note: store.rtk.map { String(localized: "\(AppFormat.tokens($0.today.savedTokens)) today", locale: AppFormat.locale) },
                 tint: Theme.emerald,
                 icon: "scissors")
             StatTile(
                 label: String(localized: "Active skills"),
                 value: store.skills.map { AppFormat.integer($0.count(kind: .skill, level: .global)) } ?? "—",
-                note: store.skills.map { String(localized: "\(AppFormat.integer($0.count(kind: .skill))) in total, all levels") },
+                note: store.skills.map { String(localized: "\(AppFormat.integer($0.count(kind: .skill))) in total, all levels", locale: AppFormat.locale) },
                 tint: Theme.violet,
                 icon: "sparkles")
         }
@@ -139,7 +139,7 @@ struct OverviewView: View {
             } else if let message = store.sessionsState.errorMessage {
                 SourceBanner(
                     kind: .info,
-                    message: String(localized: "Sessions index unavailable: \(message)"),
+                    message: String(localized: "Sessions index unavailable: \(message)", locale: AppFormat.locale),
                     action: { Task { await store.indexSessions() } },
                     actionTitle: String(localized: "Reindex"))
             } else if !sessionsLoaded || (todaySessions.isEmpty && store.sessionIndex.isRunning) {
@@ -208,7 +208,7 @@ struct OverviewView: View {
         let missing = todayCost.missing
         return missing == todaySessions.count
             ? String(localized: "None of these sessions recorded its cost.")
-            : String(localized: "Partial cost: \(missing) sessions without a recorded cost.")
+            : String(localized: "Partial cost: \(missing) sessions without a recorded cost.", locale: AppFormat.locale)
     }
 
     private var insightsCard: some View {
@@ -276,13 +276,13 @@ struct OverviewView: View {
     private func sentence(_ insight: Insight) -> String {
         switch insight.kind {
         case .costUp(let fraction):
-            return String(localized: "Cost is up \(AppFormat.percent(fraction)) compared with the same point last week.")
+            return String(localized: "Cost is up \(AppFormat.percent(fraction)) compared with the same point last week.", locale: AppFormat.locale)
         case .costDown(let fraction):
-            return String(localized: "Cost is down \(AppFormat.percent(fraction)) compared with the same point last week.")
+            return String(localized: "Cost is down \(AppFormat.percent(fraction)) compared with the same point last week.", locale: AppFormat.locale)
         case .unpricedModel(let model):
-            return String(localized: "The model \(model) has no dedicated pricing: the Sonnet rate is applied to it.")
+            return String(localized: "The model \(model) has no dedicated pricing: the Sonnet rate is applied to it.", locale: AppFormat.locale)
         case .cacheHitRate(let rate):
-            return String(localized: "The cache is working well: \(AppFormat.percent(rate)) of reusable tokens are read back.")
+            return String(localized: "The cache is working well: \(AppFormat.percent(rate)) of reusable tokens are read back.", locale: AppFormat.locale)
         case .noNotableChange:
             return String(localized: "Nothing notable in the period analyzed.")
         }

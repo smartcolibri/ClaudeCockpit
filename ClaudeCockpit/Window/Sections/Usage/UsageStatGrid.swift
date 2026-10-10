@@ -11,7 +11,7 @@ struct UsageStatGrid: View {
     private let columns = [GridItem(.adaptive(minimum: 150, maximum: 260), spacing: 12)]
 
     private var rangeNote: String {
-        range == .all ? String(localized: "over all history") : String(localized: "over “\(range.displayName.lowercased())”")
+        range == .all ? String(localized: "over all history") : String(localized: "over “\(range.displayName.lowercased())”", locale: AppFormat.locale)
     }
 
     var body: some View {

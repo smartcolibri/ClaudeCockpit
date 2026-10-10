@@ -332,7 +332,7 @@ struct SessionsBrowserView: View {
                 Text("Indexing Transcripts…")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("\(String(localized: "\(store.sessionIndex.filesDone) files")) out of \(store.sessionIndex.filesTotal). The list fills in as it goes.")
+                Text("\(String(localized: "\(store.sessionIndex.filesDone) files", locale: AppFormat.locale)) out of \(store.sessionIndex.filesTotal). The list fills in as it goes.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .multilineTextAlignment(.center)
@@ -443,7 +443,9 @@ private struct SessionRowView: View {
             statsLine
             ForEach(Array(hits.prefix(3))) { hit in
                 Button { onSelectHit(hit) } label: {
-                    Text(SessionsPalette.oneLine(hit.snippet, limit: 180))
+                    Text(SessionsPalette.oneLine(hit.snippet(
+                        open: AppFormat.locale.quotationBeginDelimiter ?? "“",
+                        close: AppFormat.locale.quotationEndDelimiter ?? "”"), limit: 180))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .lineLimit(2)

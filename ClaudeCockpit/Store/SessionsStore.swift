@@ -178,7 +178,7 @@ extension CockpitStore {
             try await sessionService.setStarred(starred, sessionId: sessionId)
             await refreshSessionList()
         } catch {
-            notice = String(localized: "Could not change the favorite: \(error.localizedDescription)")
+            notice = String(localized: "Could not change the favorite: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 
@@ -188,7 +188,7 @@ extension CockpitStore {
             try await sessionService.rename(sessionId: sessionId, customName: (trimmed?.isEmpty ?? true) ? nil : trimmed)
             await refreshSessionList()
         } catch {
-            notice = String(localized: "Rename failed: \(error.localizedDescription)")
+            notice = String(localized: "Rename failed: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 
@@ -200,7 +200,7 @@ extension CockpitStore {
             await refreshSessionList()
             notice = String(localized: "Session hidden. It will reappear after the index is rebuilt.")
         } catch {
-            notice = String(localized: "Could not hide the session: \(error.localizedDescription)")
+            notice = String(localized: "Could not hide the session: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 
@@ -237,7 +237,7 @@ extension CockpitStore {
         let cwd = URL(fileURLWithPath: session.cwd, isDirectory: true)
         var isDir: ObjCBool = false
         if isCovered(cwd), !(FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDir) && isDir.boolValue) {
-            notice = String(localized: "Command copied, but the folder \(session.cwd) no longer exists.")
+            notice = String(localized: "Command copied, but the folder \(session.cwd) no longer exists.", locale: AppFormat.locale)
         } else {
             notice = String(localized: "Command copied: paste it into a terminal.")
         }
@@ -282,9 +282,9 @@ extension CockpitStore {
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try text.write(to: url, atomically: true, encoding: .utf8)
-            notice = String(localized: "Session exported: \(url.lastPathComponent)")
+            notice = String(localized: "Session exported: \(url.lastPathComponent)", locale: AppFormat.locale)
         } catch {
-            notice = String(localized: "Export failed: \(error.localizedDescription)")
+            notice = String(localized: "Export failed: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 

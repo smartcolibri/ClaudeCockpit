@@ -104,7 +104,7 @@ struct RTKView: View {
 
     private var subtitle: String {
         if databaseMissing { return String(localized: "rtk not detected") }
-        if let date = store.rtkState.lastSuccess { return String(localized: "Read \(AppFormat.relative(date))") }
+        if let date = store.rtkState.lastSuccess { return String(localized: "Read \(AppFormat.relative(date))", locale: AppFormat.locale) }
         if store.rtkState.isLoading { return String(localized: "Reading the database…") }
         return String(localized: "Waiting")
     }
@@ -127,7 +127,7 @@ struct RTKView: View {
         } else if let snapshot, let last = snapshot.lastActivity, inactiveDays(since: last) >= 7 {
             SourceBanner(
                 kind: .warning,
-                message: String(localized: "No rtk commands for \(inactiveDays(since: last)) days."))
+                message: String(localized: "No rtk commands for \(inactiveDays(since: last)) days.", locale: AppFormat.locale))
         }
     }
 
@@ -275,7 +275,7 @@ struct RTKView: View {
                 StatTile(
                     label: String(localized: "Saved"),
                     value: AppFormat.tokens(snapshot.allTime.savedTokens),
-                    note: String(localized: "\(AppFormat.percent(snapshot.allTime.savingsPct, fraction: false)) of input"),
+                    note: String(localized: "\(AppFormat.percent(snapshot.allTime.savingsPct, fraction: false)) of input", locale: AppFormat.locale),
                     tint: Theme.emerald,
                     icon: "leaf.fill")
             }

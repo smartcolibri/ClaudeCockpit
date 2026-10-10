@@ -145,7 +145,7 @@ struct WeekIntensityChart: View {
     }
 
     private var summary: String {
-        days.map { String(localized: "\(AppFormat.weekday($0.date)): \(AppFormat.tokens($0.savedTokens))") }
+        days.map { String(localized: "\(AppFormat.weekday($0.date)): \(AppFormat.tokens($0.savedTokens))", locale: AppFormat.locale) }
             .joined(separator: ", ")
     }
 }

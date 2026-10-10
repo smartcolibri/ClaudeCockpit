@@ -192,7 +192,7 @@ final class CockpitStore {
         pricing = UserDefaults.standard.string(forKey: SettingsKey.pricingJSON)
             .map(PricingSettings.decoded(fromJSONString:)) ?? .default
         access.onChange = { [weak self] in self?.accessDidChange() }
-        if let demoFailure { notice = String(localized: "Could not prepare the sample data: \(demoFailure)") }
+        if let demoFailure { notice = String(localized: "Could not prepare the sample data: \(demoFailure)", locale: AppFormat.locale) }
     }
 
     /// The one place paths are built: the demo's copy, or the real home with the Claude
@@ -228,7 +228,7 @@ final class CockpitStore {
         do {
             try Self.seedDemo()
         } catch {
-            notice = String(localized: "Could not prepare the sample data: \(error.localizedDescription)")
+            notice = String(localized: "Could not prepare the sample data: \(error.localizedDescription)", locale: AppFormat.locale)
             return
         }
         isDemo = true
@@ -254,7 +254,7 @@ final class CockpitStore {
             do {
                 try DemoSeeder.remove(root: Self.demoRoot)
             } catch {
-                self.notice = String(localized: "Sample data not deleted: \(error.localizedDescription)")
+                self.notice = String(localized: "Sample data not deleted: \(error.localizedDescription)", locale: AppFormat.locale)
             }
         }
     }
@@ -309,8 +309,8 @@ final class CockpitStore {
         guard !isDemo else { return .cancelled }
         let expected = target == .home ? paths.home : paths.claudeDir
         let message = target == .home
-            ? String(localized: "Select your home folder “\(paths.home.lastPathComponent)”, then click Allow.")
-            : String(localized: "Select the folder \(displayPath(paths.claudeDir)), then click Allow.")
+            ? String(localized: "Select your home folder “\(paths.home.lastPathComponent)”, then click Allow.", locale: AppFormat.locale)
+            : String(localized: "Select the folder \(displayPath(paths.claudeDir)), then click Allow.", locale: AppFormat.locale)
         // The panel opens on the folder asked for: the home, where a click on Allow picks
         // the home itself, or the Claude directory for the minimal grant.
         guard let url = access.runPanel(directory: target == .home ? paths.home : paths.claudeDir, message: message) else {
@@ -319,22 +319,22 @@ final class CockpitStore {
         let result: AccessRequestResult
         switch AccessCoverage.evaluate(selection: url, expected: expected, required: paths.claudeDir) {
         case .unrelated:
-            result = .rejected(String(localized: "The chosen folder (\(displayPath(url))) does not contain \(displayPath(paths.claudeDir)). No access was saved."))
+            result = .rejected(String(localized: "The chosen folder (\(displayPath(url))) does not contain \(displayPath(paths.claudeDir)). No access was saved.", locale: AppFormat.locale))
         case .requiredElsewhere:
             // The home is still worth keeping (rtk, project roots), but the app cannot start
             // without the config directory, which lives outside it.
             do {
                 try access.add(url)
-                result = .rejected(String(localized: "Access to \(displayPath(url)) saved, but the Claude configuration folder (\(displayPath(paths.claudeDir))) lies outside it: allow it separately with “Allow Only \(displayPath(paths.claudeDir))” or in Settings › Access."))
+                result = .rejected(String(localized: "Access to \(displayPath(url)) saved, but the Claude configuration folder (\(displayPath(paths.claudeDir))) lies outside it: allow it separately with “Allow Only \(displayPath(paths.claudeDir))” or in Settings › Access.", locale: AppFormat.locale))
             } catch {
-                result = .rejected(String(localized: "Could not save the access: \(error.localizedDescription)"))
+                result = .rejected(String(localized: "Could not save the access: \(error.localizedDescription)", locale: AppFormat.locale))
             }
         case .partial, .full:
             do {
                 try access.add(url)
                 result = .granted(full: access.covers(paths.home))
             } catch {
-                result = .rejected(String(localized: "Could not save the access: \(error.localizedDescription)"))
+                result = .rejected(String(localized: "Could not save the access: \(error.localizedDescription)", locale: AppFormat.locale))
             }
         }
         switch result {
@@ -342,7 +342,7 @@ final class CockpitStore {
             notice = text
         case .granted(full: false):
             // The onboarding gives way to the overview at once, so the toast is what remains.
-            notice = String(localized: "Access limited to \(displayPath(paths.claudeDir)): skills linked elsewhere, RTK and project scanning stay unavailable. Widen it in Settings › Access.")
+            notice = String(localized: "Access limited to \(displayPath(paths.claudeDir)): skills linked elsewhere, RTK and project scanning stay unavailable. Widen it in Settings › Access.", locale: AppFormat.locale)
         case .granted(full: true), .cancelled:
             break
         }
@@ -367,7 +367,7 @@ final class CockpitStore {
             try access.add(url)
             return true
         } catch {
-            notice = String(localized: "Could not save the access: \(error.localizedDescription)")
+            notice = String(localized: "Could not save the access: \(error.localizedDescription)", locale: AppFormat.locale)
             return false
         }
     }
@@ -384,17 +384,17 @@ final class CockpitStore {
         guard !isDemo else { return }
         let current = URL(fileURLWithPath: grant.path)
         guard let picked = access.runPanel(
-            directory: current, message: String(localized: "Confirm the folder \(displayPath(current)).")) else { return }
+            directory: current, message: String(localized: "Confirm the folder \(displayPath(current)).", locale: AppFormat.locale)) else { return }
         guard AccessCoverage.replacementKeepsRequired(
             old: grant.path, new: picked, required: paths.claudeDir, grantedPaths: access.grantedPaths)
         else {
-            notice = String(localized: "Folder refused: \(displayPath(picked)) does not contain \(displayPath(paths.claudeDir)), whose access would be lost. The access to \(displayPath(current)) is kept.")
+            notice = String(localized: "Folder refused: \(displayPath(picked)) does not contain \(displayPath(paths.claudeDir)), whose access would be lost. The access to \(displayPath(current)) is kept.", locale: AppFormat.locale)
             return
         }
         do {
             try access.replace(grant, with: picked)
         } catch {
-            notice = String(localized: "Could not save the access: \(error.localizedDescription)")
+            notice = String(localized: "Could not save the access: \(error.localizedDescription)", locale: AppFormat.locale)
         }
     }
 
@@ -725,8 +725,8 @@ final class CockpitStore {
         guard !isDemo else { throw Self.demoReadOnly }
         let result = try await skillsStore.transfer(resource, to: level, mode: mode, overwrite: overwrite)
         notice = mode == .copy
-            ? String(localized: "Copied “\(resource.name)” to \(level.label)")
-            : String(localized: "Moved “\(resource.name)” to \(level.label)")
+            ? String(localized: "Copied “\(resource.name)” to \(level.label)", locale: AppFormat.locale)
+            : String(localized: "Moved “\(resource.name)” to \(level.label)", locale: AppFormat.locale)
         await refreshSkills()
         return result
     }
@@ -735,7 +735,7 @@ final class CockpitStore {
     func importPlugin(_ plugin: PluginResource, to level: ResourceLevel, overwrite: Bool = false) async throws -> ClaudeResource {
         guard !isDemo else { throw Self.demoReadOnly }
         let result = try await skillsStore.importPlugin(plugin, to: level, overwrite: overwrite)
-        notice = String(localized: "Imported “\(plugin.name)” to \(level.label)")
+        notice = String(localized: "Imported “\(plugin.name)” to \(level.label)", locale: AppFormat.locale)
         await refreshSkills()
         return result
     }
@@ -744,7 +744,7 @@ final class CockpitStore {
     func delete(_ resource: ClaudeResource) async throws -> URL {
         guard !isDemo else { throw Self.demoReadOnly }
         let backup = try await skillsStore.delete(resource)
-        notice = String(localized: "Deleted “\(resource.name)” (backup: \(backup.path))")
+        notice = String(localized: "Deleted “\(resource.name)” (backup: \(backup.path))", locale: AppFormat.locale)
         await refreshSkills()
         return backup
     }

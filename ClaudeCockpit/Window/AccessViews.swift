@@ -132,7 +132,7 @@ struct AccessRequiredBanner: View {
     var body: some View {
         SourceBanner(
             kind: .warning,
-            message: String(localized: "Access not granted: \(message)"),
+            message: String(localized: "Access not granted: \(message)", locale: AppFormat.locale),
             action: { store.requestAccess(.home) },
             actionTitle: String(localized: "Allow…"))
     }

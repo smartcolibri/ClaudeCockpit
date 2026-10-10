@@ -1,4 +1,5 @@
 import SwiftUI
+import CockpitShared
 
 struct MainWindowView: View {
     static let windowID = "main"
@@ -76,11 +77,11 @@ struct MainWindowView: View {
             if store.claudeAccess { OverviewView() } else { OnboardingView() }
         case .usage:
             if store.claudeAccess { UsageView() } else {
-                NoAccessView(title: String(localized: "Local Usage"), message: String(localized: "Usage is computed from the transcripts in \(claude)/projects, which the app is not allowed to read."))
+                NoAccessView(title: String(localized: "Local Usage"), message: String(localized: "Usage is computed from the transcripts in \(claude)/projects, which the app is not allowed to read.", locale: AppFormat.locale))
             }
         case .sessions:
             if store.claudeAccess { SessionsView() } else {
-                NoAccessView(title: String(localized: "Sessions"), message: String(localized: "Sessions are indexed from the transcripts in \(claude)/projects, which the app is not allowed to read."))
+                NoAccessView(title: String(localized: "Sessions"), message: String(localized: "Sessions are indexed from the transcripts in \(claude)/projects, which the app is not allowed to read.", locale: AppFormat.locale))
             }
         case .rtk:
             if store.rtkAccess { RTKView() } else {
@@ -88,7 +89,7 @@ struct MainWindowView: View {
             }
         case .skills, .agents, .commands:
             if store.claudeAccess { ResourcesView(kind: section.resourceKind ?? .skill) } else {
-                NoAccessView(title: section.title, message: String(localized: "Resources are read from \(claude), which the app is not allowed to read."))
+                NoAccessView(title: section.title, message: String(localized: "Resources are read from \(claude), which the app is not allowed to read.", locale: AppFormat.locale))
             }
         case .settings: SettingsView()
         }

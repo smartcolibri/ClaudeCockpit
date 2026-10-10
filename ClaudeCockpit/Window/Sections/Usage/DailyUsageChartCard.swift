@@ -97,13 +97,13 @@ struct DailyUsageChartCard: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            SectionLabel(text: String(localized: "Daily usage — \(range.displayName)"))
+            SectionLabel(text: String(localized: "Daily usage — \(range.displayName)", locale: AppFormat.locale))
             Spacer()
             if !daily.isEmpty {
                 ForEach(UsageSeries.allCases) { series in
                     legendChip(series.displayName, color: series.color)
                 }
-                legendChip(String(localized: "Cost — max \(money(costMax))"), color: UsagePalette.cost)
+                legendChip(String(localized: "Cost — max \(money(costMax))", locale: AppFormat.locale), color: UsagePalette.cost)
             }
         }
     }

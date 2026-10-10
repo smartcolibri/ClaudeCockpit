@@ -172,12 +172,12 @@ private struct GeneralSettingsTab: View {
     private var indexStateLabel: String {
         let progress = store.sessionIndex
         if progress.isRunning {
-            return String(localized: "\(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) transcripts")
+            return String(localized: "\(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) transcripts", locale: AppFormat.locale)
         }
         guard let last = progress.lastRun else { return String(localized: "never indexed") }
         // `filesDone` counts the files the last pass actually read, which is a handful
         // on an incremental tick — so it is shown against `filesTotal`, never alone.
-        return String(localized: "last pass: \(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) · \(AppFormat.relative(last))")
+        return String(localized: "last pass: \(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) · \(AppFormat.relative(last))", locale: AppFormat.locale)
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
@@ -187,7 +187,7 @@ private struct GeneralSettingsTab: View {
             // Code 3 = the app must be installed in /Applications; common in debug builds.
             loginError = error.code == 3
                 ? String(localized: "The app must be in /Applications to launch at login.")
-                : String(localized: "Could not change the setting: \(error.localizedDescription)")
+                : String(localized: "Could not change the setting: \(error.localizedDescription)", locale: AppFormat.locale)
             launchAtLogin = store.launchAtLogin
         }
     }
@@ -265,7 +265,7 @@ private struct RTKSettingsTab: View {
                 message: String(localized: "Also allow the database folder: SQLite reads its journal (-wal) there.")),
                 AccessCoverage.isPath(folder.path, inside: confirmed.path)
             else {
-                store.notice = String(localized: "RTK database not saved: access to the folder \(store.displayPath(folder)) is needed, because SQLite reads its journal (-wal) there. Without it, the figures shown would be stale.")
+                store.notice = String(localized: "RTK database not saved: access to the folder \(store.displayPath(folder)) is needed, because SQLite reads its journal (-wal) there. Without it, the figures shown would be stale.", locale: AppFormat.locale)
                 return
             }
             grantTarget = confirmed
@@ -392,7 +392,7 @@ private struct AccessSettingsTab: View {
                     "Project roots",
                     store.inaccessibleProjectRoots.isEmpty,
                     detail: store.inaccessibleProjectRoots.isEmpty ? nil
-                        : String(localized: "\(store.inaccessibleProjectRoots.count) roots not accessible"))
+                        : String(localized: "\(store.inaccessibleProjectRoots.count) roots not accessible", locale: AppFormat.locale))
             }
 
             Section("Claude Configuration Folder") {
@@ -452,7 +452,7 @@ private struct AccessSettingsTab: View {
         switch status {
         case .active: String(localized: "Active")
         case .renewed: String(localized: "Active (permission renewed)")
-        case .broken(let reason): String(localized: "Not found: \(reason)")
+        case .broken(let reason): String(localized: "Not found: \(reason)", locale: AppFormat.locale)
         case .denied: String(localized: "Access denied by macOS: reauthorize this folder")
         }
     }

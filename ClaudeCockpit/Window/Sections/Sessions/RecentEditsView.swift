@@ -27,7 +27,7 @@ struct RecentEditsView: View {
                 if let message = store.sessionsState.errorMessage {
                     SourceBanner(
                         kind: .error,
-                        message: String(localized: "Could not read the index: \(message)"),
+                        message: String(localized: "Could not read the index: \(message)", locale: AppFormat.locale),
                         action: { Task { await store.indexSessions() } },
                         actionTitle: String(localized: "Reindex"))
                 }
@@ -136,7 +136,7 @@ struct RecentEditsView: View {
                 icon: "hourglass",
                 title: store.sessionIndex.isRunning ? String(localized: "Indexing in progress") : String(localized: "Reading edits…"),
                 message: store.sessionIndex.isRunning
-                    ? String(localized: "\(AppFormat.integer(store.sessionIndex.filesDone)) of \(AppFormat.integer(store.sessionIndex.filesTotal)) transcripts scanned.")
+                    ? String(localized: "\(AppFormat.integer(store.sessionIndex.filesDone)) of \(AppFormat.integer(store.sessionIndex.filesTotal)) transcripts scanned.", locale: AppFormat.locale)
                     : String(localized: "Looking for the files written by the indexed sessions."),
                 isBusy: true)
         } else if groups.isEmpty {
@@ -145,7 +145,7 @@ struct RecentEditsView: View {
                 title: search.isEmpty ? String(localized: "No edited files") : String(localized: "No matching files"),
                 message: search.isEmpty
                     ? String(localized: "No indexed session wrote a file for this project.")
-                    : String(localized: "No path contains “\(search)”. Clear the filter to see everything again."))
+                    : String(localized: "No path contains “\(search)”. Clear the filter to see everything again.", locale: AppFormat.locale))
         } else {
             LazyVStack(alignment: .leading, spacing: 16) {
                 ForEach(groups) { project in
@@ -160,7 +160,7 @@ struct RecentEditsView: View {
             HStack(alignment: .firstTextBaseline) {
                 SectionLabel(text: UsagePath.shorten(project.cwd))
                 Spacer()
-                Text(verbatim: "\(String(localized: "\(project.files.count) files")) · \(String(localized: "\(project.editCount) edits"))")
+                Text(verbatim: "\(String(localized: "\(project.files.count) files", locale: AppFormat.locale)) · \(String(localized: "\(project.editCount) edits", locale: AppFormat.locale))")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .monospacedDigit()

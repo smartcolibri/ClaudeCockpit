@@ -112,7 +112,7 @@ struct MenuBarPanelView: View {
                 Divider().opacity(0.4)
                 InfoRow(
                     label: String(localized: "Sessions this week"), value: AppFormat.integer(usage.sessionsThisWeekUnfilteredTotal),
-                    note: String(localized: "\(AppFormat.integer(usage.sessionsLastWeekUnfilteredTotal)) last week"))
+                    note: String(localized: "\(AppFormat.integer(usage.sessionsLastWeekUnfilteredTotal)) last week", locale: AppFormat.locale))
             } else if store.usageState.isUnauthorized {
                 AccessRequiredBanner(message: String(localized: "open the cockpit to allow reading your transcripts."))
                     .padding(.vertical, 6)
@@ -137,7 +137,7 @@ struct MenuBarPanelView: View {
                 InfoRow(
                     label: String(localized: "Tokens saved today"), value: AppFormat.tokens(rtk.today.savedTokens),
                     tint: Theme.emerald,
-                    note: String(localized: "\(AppFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) of \(AppFormat.tokens(rtk.today.inputTokens)) tokens, across \(AppFormat.integer(rtk.today.count)) filtered commands"))
+                    note: String(localized: "\(AppFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) of \(AppFormat.tokens(rtk.today.inputTokens)) tokens, across \(AppFormat.integer(rtk.today.count)) filtered commands", locale: AppFormat.locale))
                 Divider().opacity(0.4)
                 InfoRow(
                     label: String(localized: "Last 7 days"), value: AppFormat.tokens(week),
@@ -145,7 +145,7 @@ struct MenuBarPanelView: View {
                 Divider().opacity(0.4)
                 InfoRow(
                     label: String(localized: "Since install"), value: AppFormat.tokens(rtk.allTime.savedTokens),
-                    note: String(localized: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) saved across \(AppFormat.integer(rtk.allTime.count)) commands"))
+                    note: String(localized: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) saved across \(AppFormat.integer(rtk.allTime.count)) commands", locale: AppFormat.locale))
             } else if store.rtkState.isUnauthorized {
                 InfoRow(
                     label: String(localized: "rtk savings"), value: String(localized: "access not granted"),
@@ -214,6 +214,6 @@ struct MenuBarPanelView: View {
     /// Says when the transcripts were last read.
     private var refreshSubtitle: String {
         guard let scanned = store.usageLastScan else { return String(localized: "Transcripts never read") }
-        return String(localized: "Transcripts read \(AppFormat.relative(scanned, now: now))")
+        return String(localized: "Transcripts read \(AppFormat.relative(scanned, now: now))", locale: AppFormat.locale)
     }
 }

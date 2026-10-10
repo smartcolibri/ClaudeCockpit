@@ -112,7 +112,7 @@ struct ActivityHeatmapCard: View {
                 SectionLabel(text: String(localized: "Activity by hour"))
                 Spacer()
                 if peak > 0 {
-                    Text("peak: \(String(localized: "\(peak) turns"))")
+                    Text("peak: \(String(localized: "\(peak) turns", locale: AppFormat.locale))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .monospacedDigit()
@@ -197,8 +197,8 @@ struct ActivityHeatmapCard: View {
         let day = Self.standaloneWeekdays.indices.contains(weekday - 1)
             ? Self.standaloneWeekdays[weekday - 1]
             : ""
-        let count = turns == 0 ? String(localized: "no turns") : String(localized: "\(turns) turns")
-        return String(localized: "\(day) \(hour) h · \(count)")
+        let count = turns == 0 ? String(localized: "no turns") : String(localized: "\(turns) turns", locale: AppFormat.locale)
+        return String(localized: "\(day) \(hour) h · \(count)", locale: AppFormat.locale)
     }
 }
 
@@ -307,7 +307,7 @@ struct ActivityCostChart: View {
     }
 
     private var summary: String {
-        days.map { String(localized: "\(AppFormat.shortDate($0.day)): \(money($0.costUSD))") }.joined(separator: ", ")
+        days.map { String(localized: "\(AppFormat.shortDate($0.day)): \(money($0.costUSD))", locale: AppFormat.locale) }.joined(separator: ", ")
     }
 }
 

@@ -22,7 +22,7 @@ struct UsageView: View {
                 if let message = store.usageState.errorMessage {
                     SourceBanner(
                         kind: .error,
-                        message: String(localized: "Could not read the usage: \(message). No transcripts found in ~/.claude/projects?"),
+                        message: String(localized: "Could not read the usage: \(message). No transcripts found in ~/.claude/projects?", locale: AppFormat.locale),
                         action: { Task { await store.refreshUsage(rescan: true) } },
                         actionTitle: String(localized: "Rescan"))
                 }
@@ -66,7 +66,7 @@ struct UsageView: View {
 
     private var updatedLabel: String {
         guard let date = store.usageLastScan else { return String(localized: "Scanning transcripts…") }
-        return String(localized: "Updated \(AppFormat.relative(date))")
+        return String(localized: "Updated \(AppFormat.relative(date))", locale: AppFormat.locale)
     }
 
     // MARK: Body states

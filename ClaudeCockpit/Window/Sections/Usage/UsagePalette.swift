@@ -120,13 +120,13 @@ extension Insight {
     var displayText: String {
         switch kind {
         case .costUp(let fraction):
-            String(localized: "Cost up \(AppFormat.percent(fraction)) compared with the same point last week.")
+            String(localized: "Cost up \(AppFormat.percent(fraction)) compared with the same point last week.", locale: AppFormat.locale)
         case .costDown(let fraction):
-            String(localized: "Cost down \(AppFormat.percent(fraction)) compared with the same point last week.")
+            String(localized: "Cost down \(AppFormat.percent(fraction)) compared with the same point last week.", locale: AppFormat.locale)
         case .unpricedModel(let model):
-            String(localized: "\(model) has no dedicated pricing — the default Sonnet rate is applied.")
+            String(localized: "\(model) has no dedicated pricing — the default Sonnet rate is applied.", locale: AppFormat.locale)
         case .cacheHitRate(let rate):
-            String(localized: "Cache read rate at \(AppFormat.percent(rate)) — keeping costs down.")
+            String(localized: "Cache read rate at \(AppFormat.percent(rate)) — keeping costs down.", locale: AppFormat.locale)
         case .noNotableChange:
             String(localized: "No notable change in this period.")
         }
