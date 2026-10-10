@@ -1,4 +1,5 @@
 import Foundation
+import CockpitShared
 
 /// Turns a flat event list into everything the usage screens display. A pure function of its
 /// inputs — the computation the source app's `UsageViewModel` did in `recomputeFiltered` and
@@ -11,7 +12,7 @@ public enum UsageAggregator {
         pricing: PricingSettings = .default,
         now: Date = Date(),
         calendar: Calendar = .current,
-        home: URL = FileManager.default.homeDirectoryForCurrentUser
+        home: URL = ClaudePaths.realHome
     ) -> UsageSnapshot {
         // Model/project filtering only: the fixed day/week comparisons deliberately ignore
         // the range filter.
@@ -140,6 +141,12 @@ public enum UsageAggregator {
         let todayEvents = unranged.filter { $0.timestamp >= todayStart && $0.timestamp < todayEnd }
         let costTodayUSD = PricingCalculator.estimatedCostUSD(for: todayEvents, pricing: pricing)
         let tokensToday = todayEvents.reduce(0) { $0 + $1.totalTokens }
+        let allTodayEvents = allEvents.filter { $0.timestamp >= todayStart && $0.timestamp < todayEnd }
+        let costTodayUnfilteredUSD = PricingCalculator.estimatedCostUSD(for: allTodayEvents, pricing: pricing)
+        let tokensTodayUnfiltered = allTodayEvents.reduce(0) { $0 + $1.totalTokens }
+        let costThisWeekUnfiltered = weeklyCost(events: allEvents, weekStart: thisWeekStart, calendar: isoCalendar, pricing: pricing)
+        let sessionsThisWeekUnfiltered = weeklySessionTotal(events: allEvents, weekStart: thisWeekStart, calendar: isoCalendar)
+        let sessionsLastWeekUnfiltered = weeklySessionTotal(events: allEvents, weekStart: lastWeekStart, calendar: isoCalendar)
 
         let insights = InsightEngine.derive(
             events: filtered,
@@ -178,6 +185,11 @@ public enum UsageAggregator {
             insights: insights,
             costTodayUSD: costTodayUSD,
             tokensToday: tokensToday,
+            costTodayUnfilteredUSD: costTodayUnfilteredUSD,
+            tokensTodayUnfiltered: tokensTodayUnfiltered,
+            costThisWeekUnfilteredUSD: costThisWeekUnfiltered,
+            sessionsThisWeekUnfilteredTotal: sessionsThisWeekUnfiltered,
+            sessionsLastWeekUnfilteredTotal: sessionsLastWeekUnfiltered,
             availableProjects: availableProjects,
             availableModels: availableModels,
             availableModelFamilies: availableModelFamilies)

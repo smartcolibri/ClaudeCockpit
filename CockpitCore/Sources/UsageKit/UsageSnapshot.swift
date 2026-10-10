@@ -40,6 +40,14 @@ public struct UsageSnapshot: Sendable {
     /// Cost and tokens recorded since midnight, model/project filters applied, range ignored.
     public let costTodayUSD: Double
     public let tokensToday: Int
+    /// Cost and tokens recorded since midnight with no filter at all: the headline figures
+    /// (menu bar, overview) must not move when the Usage screen's pickers do.
+    public let costTodayUnfilteredUSD: Double
+    public let tokensTodayUnfiltered: Int
+    /// Same, for the headline's weekly context lines.
+    public let costThisWeekUnfilteredUSD: Double
+    public let sessionsThisWeekUnfilteredTotal: Int
+    public let sessionsLastWeekUnfilteredTotal: Int
 
     /// Options for the filter pickers, derived from the whole event set.
     public let availableProjects: [String]
@@ -69,6 +77,11 @@ public struct UsageSnapshot: Sendable {
         insights: [Insight],
         costTodayUSD: Double,
         tokensToday: Int,
+        costTodayUnfilteredUSD: Double,
+        tokensTodayUnfiltered: Int,
+        costThisWeekUnfilteredUSD: Double,
+        sessionsThisWeekUnfilteredTotal: Int,
+        sessionsLastWeekUnfilteredTotal: Int,
         availableProjects: [String],
         availableModels: [String],
         availableModelFamilies: [ModelFamily]
@@ -95,6 +108,11 @@ public struct UsageSnapshot: Sendable {
         self.insights = insights
         self.costTodayUSD = costTodayUSD
         self.tokensToday = tokensToday
+        self.costTodayUnfilteredUSD = costTodayUnfilteredUSD
+        self.tokensTodayUnfiltered = tokensTodayUnfiltered
+        self.costThisWeekUnfilteredUSD = costThisWeekUnfilteredUSD
+        self.sessionsThisWeekUnfilteredTotal = sessionsThisWeekUnfilteredTotal
+        self.sessionsLastWeekUnfilteredTotal = sessionsLastWeekUnfilteredTotal
         self.availableProjects = availableProjects
         self.availableModels = availableModels
         self.availableModelFamilies = availableModelFamilies

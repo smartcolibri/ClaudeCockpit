@@ -4,14 +4,14 @@ import Foundation
 enum SettingsKey {
     static let launchAtLogin = "settings.launchAtLogin"
     static let menuBarOnly = "settings.menuBarOnly"
-    static let menuBarMeter = "settings.menuBarMeter"             // MenuBarMeter, default .week
     static let usageRefreshSeconds = "settings.usageRefreshSeconds"   // Int, default 30
     static let rtkDBPath = "settings.rtkDBPath"                       // String, empty = auto
     static let projectRoots = "settings.projectRoots"                 // String, newline-separated
+    static let claudeConfigDir = "settings.claudeConfigDir"           // String, empty = CLAUDE_CONFIG_DIR or ~/.claude
+    static let settingsTab = "settings.tab"                           // last selected settings tab
     static let pricingJSON = "settings.pricingJSON"                   // PricingSettings JSON
     static let currency = "settings.currency"                         // "USD" | "EUR"
     static let eurRate = "settings.eurRate"                           // Double, USD→EUR
-    static let panelSectionLimits = "panel.section.limits"
     static let panelSectionToday = "panel.section.today"
     static let panelSectionSavings = "panel.section.savings"
     static let mainSection = "window.section"                         // last selected sidebar item
@@ -19,14 +19,12 @@ enum SettingsKey {
     static let sessionsShowSystemLines = "sessions.showSystemLines"   // Bool, default false
     static let sessionsGrouping = "sessions.grouping"                 // "day" | "project"
     static let sessionsSelectedId = "sessions.selectedId"             // last opened session
-    static let appStoreNoticeDismissed = "notice.appStoreMoveDismissed" // Bool, default false
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
             usageRefreshSeconds: 30,
             currency: "USD",
             eurRate: 0.92,
-            panelSectionLimits: true,
             panelSectionToday: true,
             panelSectionSavings: true,
             sessionsIndexEnabled: true,

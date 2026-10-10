@@ -67,6 +67,11 @@ struct ResourcesView: View {
                     .padding(.horizontal, 20)
                     .padding(.top, 12)
             }
+            if !store.homeAccess {
+                AccessRequiredBanner(message: "seul \(store.displayPath(store.paths.claudeDir)) est autorisé. Les éléments liés hors de ce dossier et les projets ne sont pas listés.")
+                    .padding(.horizontal, 20)
+                    .padding(.top, 12)
+            }
             HSplitView {
                 listPane
                     .frame(minWidth: 250, idealWidth: 320, maxWidth: 460)

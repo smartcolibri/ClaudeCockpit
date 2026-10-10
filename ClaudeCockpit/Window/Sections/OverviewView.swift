@@ -1,18 +1,16 @@
 import SwiftUI
 import CockpitShared
-import QuotaKit
 import RTKKit
 import SessionsKit
 import SkillsKit
 import UsageKit
 
-/// The landing screen: four KPI tiles, then the quota column on the left and the
-/// insights + RTK week on the right. Every block carries its own banner, so a
-/// failing source never blanks the page.
+/// The landing screen: four KPI tiles, then the insights and today's sessions on
+/// the left and the RTK week on the right. Every block carries its own banner, so
+/// a failing source never blanks the page.
 struct OverviewView: View {
     @Environment(CockpitStore.self) private var store
     @State private var now = Date()
-    @AppStorage(SettingsKey.appStoreNoticeDismissed) private var appStoreNoticeDismissed = false
 
     /// Today's sessions, from the store's own dedicated query rather than from
     /// `store.sessions`, which is the browser's filtered page.
@@ -30,16 +28,9 @@ struct OverviewView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 header
-                if !appStoreNoticeDismissed {
-                    SourceBanner(
-                        kind: .info,
-                        message: "Claude Cockpit devient « Cockpit for Claude » et rejoindra bientôt le Mac App Store. Cette version est la dernière distribuée hors App Store : elle continue de fonctionner, et vous serez prévenu ici dès que la nouvelle app sera disponible.",
-                        action: { appStoreNoticeDismissed = true },
-                        actionTitle: "Masquer")
-                }
                 tiles
                 HStack(alignment: .top, spacing: 16) {
-                    quotaColumn.frame(maxWidth: .infinity, alignment: .leading)
+                    mainColumn.frame(maxWidth: .infinity, alignment: .leading)
                     sideColumn.frame(maxWidth: .infinity, alignment: .leading)
                 }
             }
@@ -70,11 +61,10 @@ struct OverviewView: View {
         }
     }
 
-    /// The freshest of the four sources — what "mis à jour" means at a glance.
+    /// The freshest of the sources — what "mis à jour" means at a glance.
     private var updatedCaption: String {
         let dates = [
-            store.quotaState.lastSuccess, store.usageState.lastSuccess,
-            store.rtkState.lastSuccess, store.skillsState.lastSuccess,
+            store.usageState.lastSuccess, store.rtkState.lastSuccess, store.skillsState.lastSuccess,
         ].compactMap { $0 }
         guard let latest = dates.max() else { return "Aucune source lue pour l'instant" }
         return "Mis à jour \(FRFormat.relative(latest, now: now))"
@@ -85,17 +75,17 @@ struct OverviewView: View {
     private var tiles: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 190), spacing: 14)], spacing: 14) {
             StatTile(
-                label: "Quota semaine",
-                value: store.quota?.week.map { FRFormat.percent($0.utilization, fraction: false) } ?? "—",
-                note: quotaTileNote,
-                tint: QuotaFormat.tone(used: store.quota?.week?.utilization ?? 0, projection: store.weekProjection),
-                icon: "gauge.with.dots.needle.33percent")
-            StatTile(
                 label: "Coût du jour",
-                value: store.usage.map { store.money($0.costTodayUSD) } ?? "—",
-                note: store.usage.map { "\(FRFormat.tokens($0.tokensToday)) tokens depuis minuit" },
+                value: store.usage.map { store.money($0.costTodayUnfilteredUSD) } ?? "—",
+                note: store.usage.map { "\(store.money($0.costThisWeekUnfilteredUSD)) depuis lundi" },
                 tint: Theme.blue,
                 icon: "eurosign.circle")
+            StatTile(
+                label: "Tokens du jour",
+                value: store.usage.map { FRFormat.tokens($0.tokensTodayUnfiltered) } ?? "—",
+                note: store.usage == nil ? nil : "depuis minuit, cache compris",
+                tint: Theme.blue,
+                icon: "number.circle")
             StatTile(
                 label: "Tokens économisés RTK, 7 j",
                 value: store.rtk == nil ? "—" : FRFormat.tokens(rtkWeekSaved),
@@ -111,45 +101,21 @@ struct OverviewView: View {
         }
     }
 
-    private var quotaTileNote: String? {
-        guard let projection = store.weekProjection else { return nil }
-        return "Réinitialisation dans " + FRFormat.duration(projection.hoursLeft * 3600)
-    }
+    // MARK: Left column — insights & sessions
 
-    // MARK: Left column — quotas
-
-    private var quotaColumn: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionLabel(text: "Quota hebdomadaire")
-            if let message = store.quotaState.errorMessage {
-                SourceBanner(
-                    kind: .warning,
-                    message: QuotaFormat.bannerMessage(message),
-                    action: { Task { await store.refreshQuota(force: true) } })
-            }
-            if store.quota == nil && store.quotaState.isLoading {
-                QuotaSkeleton(rows: 3)
-            } else {
-                QuotaHeroCard(
-                    week: store.quota?.week,
-                    projection: store.weekProjection,
-                    isLoading: store.quotaState.isLoading)
-                if let session = store.quota?.session {
-                    QuotaMeterCard(meter: session, now: now)
-                }
-                QuotaBudgetCard(projection: store.weekProjection)
-            }
-        }
-    }
-
-    // MARK: Right column — insights & RTK
-
-    private var sideColumn: some View {
+    private var mainColumn: some View {
         VStack(alignment: .leading, spacing: 12) {
             SectionLabel(text: "Insights")
             insightsCard
             SectionLabel(text: "Sessions aujourd'hui")
             sessionsTodayCard
+        }
+    }
+
+    // MARK: Right column — RTK
+
+    private var sideColumn: some View {
+        VStack(alignment: .leading, spacing: 12) {
             SectionLabel(text: "7 derniers jours")
             rtkWeekCard
         }
@@ -168,7 +134,9 @@ struct OverviewView: View {
 
     private var sessionsTodayCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let message = store.sessionsState.errorMessage {
+            if store.sessionsState.isUnauthorized {
+                AccessRequiredBanner(message: "les transcripts ne sont pas lisibles.")
+            } else if let message = store.sessionsState.errorMessage {
                 SourceBanner(
                     kind: .info,
                     message: "Index des sessions indisponible : \(message)",
@@ -244,7 +212,9 @@ struct OverviewView: View {
 
     private var insightsCard: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let message = store.usageState.errorMessage {
+            if store.usageState.isUnauthorized {
+                AccessRequiredBanner(message: "les transcripts ne sont pas lisibles.")
+            } else if let message = store.usageState.errorMessage {
                 SourceBanner(kind: .error, message: message, action: { Task { await store.refreshUsage() } })
             } else if let insights = store.usage?.insights, !notable(insights).isEmpty {
                 let rows = notable(insights)
@@ -319,7 +289,9 @@ struct OverviewView: View {
 
     private var rtkWeekCard: some View {
         VStack(alignment: .leading, spacing: 10) {
-            if let message = store.rtkState.errorMessage {
+            if store.rtkState.isUnauthorized {
+                AccessRequiredBanner(message: "la base RTK est hors des dossiers autorisés.")
+            } else if let message = store.rtkState.errorMessage {
                 SourceBanner(kind: .info, message: message, action: { Task { await store.refreshRTK() } })
             } else if let days = store.rtk?.last7Days, !days.isEmpty {
                 let peak = max(1, days.map(\.savedTokens).max() ?? 1)

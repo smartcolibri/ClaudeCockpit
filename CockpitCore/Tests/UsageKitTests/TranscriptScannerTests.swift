@@ -1,4 +1,5 @@
 import XCTest
+import CockpitShared
 @testable import UsageKit
 
 final class TranscriptScannerTests: XCTestCase {
@@ -261,6 +262,39 @@ final class TranscriptScannerTests: XCTestCase {
     }
 
     /// A missing events cache must not silently produce an empty history.
+    /// Moving the Claude config directory builds a new scanner on the same app-data folder.
+    /// The caches it finds there describe the previous archive; restoring them would add
+    /// that archive's totals to the new one for good.
+    func testCacheFromAnotherConfigDirIsNotRestored() async throws {
+        let first = TranscriptScanner(paths: fixture.paths)
+        let firstResult = await first.scan()
+        XCTAssertEqual(firstResult.events.count, 4)
+        await first.flush()
+
+        let otherConfig = fixture.home.appendingPathComponent("other-claude", isDirectory: true)
+        let otherPaths = ClaudePaths(
+            home: fixture.home, configDir: otherConfig, appSupport: fixture.paths.appSupportDir)
+        let otherFile = otherPaths.projectsDir.appendingPathComponent("-Users-test-Other/sess-o.jsonl")
+        try FileManager.default.createDirectory(
+            at: otherFile.deletingLastPathComponent(), withIntermediateDirectories: true)
+        let line = TranscriptFixture.assistantLine(
+            uuid: "uuid-o1", messageId: "msg-o1", sessionId: "sess-o",
+            model: "claude-sonnet-5", timestamp: t0, cwd: "/Users/test/Other",
+            inputTokens: 10, outputTokens: 5)
+        try (line + "\n").write(to: otherFile, atomically: true, encoding: .utf8)
+
+        let second = TranscriptScanner(paths: otherPaths)
+        let result = await second.scan()
+        XCTAssertEqual(result.events.map(\.id), ["uuid-o1"], "only the current archive counts")
+        await second.flush()
+
+        // Its own cache still warms the next launch on that archive.
+        let warm = TranscriptScanner(paths: otherPaths)
+        let warmResult = await warm.scan()
+        XCTAssertEqual(warmResult.events.map(\.id), ["uuid-o1"])
+        XCTAssertEqual(warmResult.bytesRead, 0)
+    }
+
     func testMissingEventsCacheRebuildsEverythingFromTheTranscripts() async throws {
         let scanner = TranscriptScanner(paths: fixture.paths)
         _ = await scanner.scan()

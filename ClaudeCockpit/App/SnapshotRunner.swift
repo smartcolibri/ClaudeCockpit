@@ -13,10 +13,10 @@ enum SnapshotRunner {
         return URL(fileURLWithPath: raw, isDirectory: true)
     }
 
-    static func runIfRequested(store: CockpitStore, updater: UpdaterController, select: @escaping (CockpitSection) -> Void) async {
+    static func runIfRequested(store: CockpitStore, select: @escaping (CockpitSection) -> Void) async {
         guard let dir = requestedDirectory else { return }
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        // Let the data sources settle (transcripts, rtk, skills, quota).
+        // Let the data sources settle (transcripts, rtk, skills).
         try? await Task.sleep(for: .seconds(8))
         // The sessions index is the slow one: a first pass reads the whole archive.
         // Waiting on the flag rather than on a fixed delay keeps the shots meaningful
@@ -43,8 +43,7 @@ enum SnapshotRunner {
         }
 
         let sections: [(CockpitSection, String)] = [
-            (.overview, "overview"), (.usage, "usage"), (.sessions, "sessions"),
-            (.quotas, "quotas"), (.rtk, "rtk"),
+            (.overview, "overview"), (.usage, "usage"), (.sessions, "sessions"), (.rtk, "rtk"),
             (.skills, "skills"), (.agents, "agents"), (.commands, "commands"), (.settings, "settings"),
         ]
         for (section, name) in sections {
@@ -66,6 +65,16 @@ enum SnapshotRunner {
             }
         }
 
+        // The Accès tab: granted folders and what they cover. Under the sandbox with no
+        // grant yet, the overview shot above is the onboarding screen.
+        UserDefaults.standard.set(SettingsView.Tab.access.rawValue, forKey: SettingsKey.settingsTab)
+        select(.settings)
+        try? await Task.sleep(for: .seconds(1.5))
+        if let window = NSApp.windows.first(where: { $0.title == MainWindowView.windowTitle && $0.isVisible }) {
+            write(window, to: dir.appendingPathComponent("settings-access.png"))
+        }
+        UserDefaults.standard.set(SettingsView.Tab.general.rawValue, forKey: SettingsKey.settingsTab)
+
         // Menu-bar panel, hosted in a plain window of the same width.
         let panel = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: Theme.panelWidth, height: 720),
@@ -74,7 +83,7 @@ enum SnapshotRunner {
         panel.titlebarAppearsTransparent = true
         panel.isReleasedWhenClosed = false
         panel.contentView = NSHostingView(rootView:
-            MenuBarPanelView().environment(store).environmentObject(updater))
+            MenuBarPanelView().environment(store))
         panel.center()
         panel.orderFront(nil)
         try? await Task.sleep(for: .seconds(2))
@@ -87,15 +96,8 @@ enum SnapshotRunner {
         write(panel, to: dir.appendingPathComponent("panel.png"))
 
         // The menu-bar label lives in the system menu bar and never appears in a
-        // window capture, so record what each setting would render against the
-        // live quota. This is the only way to check the three modes at once.
-        let saved = store.menuBarMeter
-        let rendered = MenuBarMeter.allCases.map { meter -> String in
-            store.setMenuBarMeter(meter)
-            return "\(meter.rawValue)\t\(store.menuBarTitle)"
-        }.joined(separator: "\n")
-        store.setMenuBarMeter(saved)
-        try? rendered.write(to: dir.appendingPathComponent("menubar.txt"), atomically: true, encoding: .utf8)
+        // window capture, so record its text instead.
+        try? store.menuBarTitle.write(to: dir.appendingPathComponent("menubar.txt"), atomically: true, encoding: .utf8)
         panel.close()
 
         NSApp.terminate(nil)

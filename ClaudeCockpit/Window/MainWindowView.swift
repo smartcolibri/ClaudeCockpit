@@ -5,7 +5,6 @@ struct MainWindowView: View {
     /// Also how the AppKit side finds this window (`NSWindow.title`).
     static let windowTitle = "Cockpit for Claude"
     @Environment(CockpitStore.self) private var store
-    @EnvironmentObject private var updater: UpdaterController
     @AppStorage(SettingsKey.mainSection) private var sectionRaw: String = CockpitSection.overview.rawValue
 
     private var selection: Binding<CockpitSection?> {
@@ -18,7 +17,7 @@ struct MainWindowView: View {
         NavigationSplitView {
             List(selection: selection) {
                 Section("Tableau de bord") {
-                    row(.overview); row(.usage); row(.sessions); row(.quotas); row(.rtk)
+                    row(.overview); row(.usage); row(.sessions); row(.rtk)
                 }
                 Section("Atelier") {
                     row(.skills); row(.agents); row(.commands)
@@ -47,7 +46,7 @@ struct MainWindowView: View {
         }
         .overlay(alignment: .bottom) { NoticeToast() }
         .task {
-            await SnapshotRunner.runIfRequested(store: store, updater: updater) { sectionRaw = $0.rawValue }
+            await SnapshotRunner.runIfRequested(store: store) { sectionRaw = $0.rawValue }
         }
     }
 
@@ -59,15 +58,28 @@ struct MainWindowView: View {
 
     @ViewBuilder
     private func detail(for section: CockpitSection) -> some View {
+        // Under the sandbox a source the grants do not cover shows why, with the way
+        // to grant it, rather than an empty screen.
+        let claude = store.displayPath(store.paths.claudeDir)
         switch section {
-        case .overview: OverviewView()
-        case .usage: UsageView()
-        case .sessions: SessionsView()
-        case .quotas: QuotasView()
-        case .rtk: RTKView()
-        case .skills: ResourcesView(kind: .skill)
-        case .agents: ResourcesView(kind: .agent)
-        case .commands: ResourcesView(kind: .command)
+        case .overview:
+            if store.claudeAccess { OverviewView() } else { OnboardingView() }
+        case .usage:
+            if store.claudeAccess { UsageView() } else {
+                NoAccessView(title: "Usage local", message: "L'usage est calculé à partir des transcripts de \(claude)/projects, que l'app n'est pas autorisée à lire.")
+            }
+        case .sessions:
+            if store.claudeAccess { SessionsView() } else {
+                NoAccessView(title: "Sessions", message: "Les sessions sont indexées à partir des transcripts de \(claude)/projects, que l'app n'est pas autorisée à lire.")
+            }
+        case .rtk:
+            if store.rtkAccess { RTKView() } else {
+                NoAccessView(title: "RTK", message: "La base de RTK (~/Library/Application Support/rtk ou ~/.local/share/rtk) est hors des dossiers autorisés. Autorisez votre dossier personnel, ou choisissez la base dans Réglages › RTK.")
+            }
+        case .skills, .agents, .commands:
+            if store.claudeAccess { ResourcesView(kind: section.resourceKind ?? .skill) } else {
+                NoAccessView(title: section.title, message: "Les ressources sont lues dans \(claude), que l'app n'est pas autorisée à lire.")
+            }
         case .settings: SettingsView()
         }
     }

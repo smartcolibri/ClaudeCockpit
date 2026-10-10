@@ -1,4 +1,5 @@
 import Foundation
+import CockpitShared
 
 /// One assistant turn extracted from a Claude Code transcript, with its token usage.
 ///
@@ -71,7 +72,7 @@ public enum UsagePath {
     /// Replaces the home directory prefix with `~`, matching how paths are shown in a terminal.
     public static func shorten(
         _ path: String,
-        home: URL = FileManager.default.homeDirectoryForCurrentUser
+        home: URL = ClaudePaths.realHome
     ) -> String {
         let root = home.path
         // A whole path component only: home `/Users/vincent` must leave `/Users/vincent2` alone.

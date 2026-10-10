@@ -85,6 +85,24 @@ final class UsageAggregatorTests: XCTestCase {
         XCTAssertEqual(snapshot(.all, project: projB).costTodayUSD, 0, accuracy: 1e-9)
     }
 
+    /// The menu bar and the overview headline show today's cost whatever the Usage screen's
+    /// pickers say: switching a project there must not change the figure in the menu bar.
+    func testUnfilteredTodayFiguresIgnoreEveryFilter() {
+        let reference = snapshot(.all)
+        XCTAssertEqual(reference.costTodayUnfilteredUSD, 28.0, accuracy: 1e-9)
+        XCTAssertEqual(reference.tokensTodayUnfiltered, 2_000_000)
+        for snap in [snapshot(.all, project: projB), snapshot(.last7Days, models: [.opus]),
+                     snapshot(.today, models: [.haiku], project: projB)] {
+            XCTAssertEqual(snap.costTodayUnfilteredUSD, 28.0, accuracy: 1e-9)
+            XCTAssertEqual(snap.tokensTodayUnfiltered, 2_000_000)
+            XCTAssertEqual(snap.costThisWeekUnfilteredUSD, reference.costThisWeekUSD, accuracy: 1e-9)
+            XCTAssertEqual(snap.sessionsThisWeekUnfilteredTotal, reference.sessionsThisWeekTotal)
+            XCTAssertEqual(snap.sessionsLastWeekUnfilteredTotal, reference.sessionsLastWeekTotal)
+        }
+        // The filtered figure still follows the pickers, as the Usage screen expects.
+        XCTAssertEqual(snapshot(.all, models: [.opus]).costTodayUSD, reference.costTodayUSD - snapshot(.all, models: [.sonnet, .haiku]).costTodayUSD, accuracy: 1e-9)
+    }
+
     func testRangeFilterSelectsEvents() {
         XCTAssertEqual(snapshot(.today).totals.turnCount, 2)
         XCTAssertEqual(snapshot(.today).totals.estimatedCostUSD, 28.0, accuracy: 1e-9)

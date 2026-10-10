@@ -2,23 +2,90 @@ import Foundation
 
 /// Well-known locations used by every module. Paths are computed from `home`
 /// so tests can point the whole app at a temporary directory.
+///
+/// Under the App Sandbox, `FileManager.homeDirectoryForCurrentUser`,
+/// `NSHomeDirectory()` and `expandingTildeInPath` all answer the app's
+/// container (`~/Library/Containers/<id>/Data`). Claude Code's data lives in the
+/// user's real home, so `live` reads it from the password database instead, while
+/// the app's own files (`appSupportDir`) stay in the container, the one place the
+/// sandbox lets it write without a grant.
 public struct ClaudePaths: Sendable, Equatable {
     public let home: URL
     /// Explicit Claude config directory (honours `CLAUDE_CONFIG_DIR`); nil → `~/.claude`.
     public let configDirOverride: URL?
+    /// Explicit app-data directory; nil → derived from `home` (what tests rely on).
+    public let appSupportOverride: URL?
 
-    public init(home: URL = FileManager.default.homeDirectoryForCurrentUser, configDir: URL? = nil) {
+    public init(home: URL = ClaudePaths.realHome, configDir: URL? = nil, appSupport: URL? = nil) {
         self.home = home
         self.configDirOverride = configDir
+        self.appSupportOverride = appSupport
     }
 
-    /// Real home, with `CLAUDE_CONFIG_DIR` applied when set (as Claude Code does).
-    public static let live: ClaudePaths = {
-        let env = ProcessInfo.processInfo.environment["CLAUDE_CONFIG_DIR"]?
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let override = (env?.isEmpty == false) ? URL(fileURLWithPath: (env! as NSString).expandingTildeInPath, isDirectory: true) : nil
-        return ClaudePaths(configDir: override)
+    /// The user's real home directory, sandboxed or not: `getpwuid(getuid())`.
+    public static let realHome: URL = {
+        if let entry = getpwuid(getuid()), let dir = entry.pointee.pw_dir {
+            let path = String(cString: dir)
+            if !path.isEmpty { return URL(fileURLWithPath: path, isDirectory: true) }
+        }
+        return FileManager.default.homeDirectoryForCurrentUser
     }()
+
+    /// Where the app keeps its own data: the user-domain Application Support of this
+    /// process, which is the container's when sandboxed, plus the app folder.
+    public static var processAppSupportDir: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+            ?? realHome.appendingPathComponent("Library/Application Support", isDirectory: true)
+        return base.appendingPathComponent("ClaudeCockpit", isDirectory: true)
+    }
+
+    /// Real home, with the Claude config directory resolved from the app setting, then
+    /// `CLAUDE_CONFIG_DIR`, then `~/.claude`; app data in this process's Application Support.
+    public static var live: ClaudePaths { live(configDirSetting: nil) }
+
+    /// - Parameter configDirSetting: the "Dossier de configuration Claude" setting. An app
+    ///   launched from the Finder never sees the shell's `CLAUDE_CONFIG_DIR`, so the setting
+    ///   exists to say it explicitly; it wins over the variable when both are present.
+    public static func live(
+        configDirSetting: String?,
+        environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> ClaudePaths {
+        ClaudePaths(
+            home: realHome,
+            configDir: resolveConfigDir(setting: configDirSetting, environment: environment, home: realHome),
+            appSupport: processAppSupportDir)
+    }
+
+    /// Setting first, then `CLAUDE_CONFIG_DIR`, `~` expanded against `home`; nil when neither is set.
+    /// A relative value is skipped: it would resolve against whatever the working directory is.
+    public static func resolveConfigDir(setting: String?, environment: [String: String], home: URL) -> URL? {
+        for raw in [setting, environment["CLAUDE_CONFIG_DIR"]] {
+            let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            if !trimmed.isEmpty, isUsableConfigDirSetting(trimmed) {
+                return URL(fileURLWithPath: expandTilde(trimmed, home: home), isDirectory: true)
+            }
+        }
+        return nil
+    }
+
+    /// Whether a config-directory value can be used: empty (no override), absolute, or a
+    /// `~` / `~/…` form.
+    public static func isUsableConfigDirSetting(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty || trimmed == "~" || trimmed.hasPrefix("~/") || trimmed.hasPrefix("/")
+    }
+
+    /// `~` and `~/…` expanded against `home` (the real one by default). Unlike
+    /// `NSString.expandingTildeInPath`, this never lands in the sandbox container.
+    /// `~user` forms are left alone.
+    public static func expandTilde(_ path: String, home: URL = ClaudePaths.realHome) -> String {
+        if path == "~" { return home.path }
+        if path.hasPrefix("~/") { return home.path + String(path.dropFirst(1)) }
+        return path
+    }
+
+    /// `expandTilde` against this instance's home.
+    public func expandTilde(_ path: String) -> String { Self.expandTilde(path, home: home) }
 
     /// `~/.claude` (or `CLAUDE_CONFIG_DIR`)
     public var claudeDir: URL { configDirOverride ?? home.appendingPathComponent(".claude", isDirectory: true) }
@@ -35,9 +102,10 @@ public struct ClaudePaths: Sendable, Equatable {
     public var pluginsCacheDir: URL { claudeDir.appendingPathComponent("plugins/cache", isDirectory: true) }
     /// Backups written before any SkillsKit mutation.
     public var backupsDir: URL { claudeDir.appendingPathComponent("backups", isDirectory: true) }
-    /// `~/Library/Application Support/ClaudeCockpit`
+    /// The app's own data (session index, scan caches). `appSupport` when given, else
+    /// `~/Library/Application Support/ClaudeCockpit` under `home`.
     public var appSupportDir: URL {
-        home.appendingPathComponent("Library/Application Support/ClaudeCockpit", isDirectory: true)
+        appSupportOverride ?? home.appendingPathComponent("Library/Application Support/ClaudeCockpit", isDirectory: true)
     }
     /// rtk history database candidates, in priority order.
     public var rtkDatabaseCandidates: [URL] {

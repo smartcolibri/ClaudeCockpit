@@ -246,16 +246,16 @@ struct SessionDetailView: View {
             Button {
                 store.resumeSession(session)
             } label: {
-                Label("Reprendre dans le Terminal", systemImage: "play.circle")
+                Label("Copier la commande de reprise", systemImage: "doc.on.clipboard")
                     .labelStyle(.iconOnly)
             }
             .buttonStyle(.plain)
             .foregroundStyle(store.canResume(session) ? Theme.emerald : Theme.mist)
             .disabled(!store.canResume(session))
             .help(store.canResume(session)
-                  ? "Reprendre dans le Terminal"
-                  : "Le dossier de travail de cette session n'existe plus")
-            .accessibilityLabel("Reprendre dans le Terminal")
+                  ? "Copier la commande de reprise (cd + claude --resume) pour la coller dans un terminal"
+                  : "Dossier de travail inconnu pour cette session")
+            .accessibilityLabel("Copier la commande de reprise")
 
             Button {
                 Task { await store.revealTranscript(session) }

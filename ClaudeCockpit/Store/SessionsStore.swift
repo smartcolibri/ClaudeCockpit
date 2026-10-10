@@ -45,6 +45,8 @@ extension CockpitStore {
     /// every `fullWalkInterval`, otherwise a transcript deleted on disk would
     /// stay in the list until the next launch.
     func indexSessions(full: Bool = false, changedPaths: [String] = []) async {
+        // A pass that outlives a grant change must not overwrite what the change set.
+        let generation = accessGeneration
         if sessions.isEmpty && !full { sessionsState = .loading }
         if full { sessionsState = .loading }
         let due = Date().timeIntervalSince(lastFullSessionWalk) >= Self.fullWalkInterval
@@ -53,7 +55,10 @@ extension CockpitStore {
             let report: @Sendable (IndexProgress) -> Void = { [weak self] step in
                 // The closure is called from the indexer's own context; the UI owns
                 // `sessionIndex`, so hop to the main actor rather than mutating here.
-                Task { @MainActor in self?.sessionIndex = step }
+                Task { @MainActor in
+                    guard let self, self.accessGeneration == generation else { return }
+                    self.sessionIndex = step
+                }
             }
             let progress: IndexProgress
             if targeted {
@@ -62,10 +67,13 @@ extension CockpitStore {
                 progress = try await sessionService.index(full: full, progress: report)
                 lastFullSessionWalk = Date()
             }
+            guard generation == accessGeneration else { return }
             sessionIndex = progress
             await refreshSessionList()
+            guard generation == accessGeneration else { return }
             sessionsState = .ready(progress.lastRun ?? Date())
         } catch {
+            guard generation == accessGeneration else { return }
             sessionsState = .failed(error.localizedDescription)
             sessionIndex.isRunning = false
         }
@@ -78,16 +86,18 @@ extension CockpitStore {
 
     /// Re-runs the current filter. Cheap: it is one indexed query, not a scan.
     func refreshSessionList() async {
+        let generation = accessGeneration
         let filter = sessionFilter
         let service = sessionService
         do {
             let rows = try await service.listSessions(filter)
-            guard !Task.isCancelled else { return }
+            guard !Task.isCancelled, generation == accessGeneration else { return }
             sessions = rows
             // A page filled to the brim almost certainly has more behind it. Saying so is
             // the point: a silent cut makes the archive look smaller than it is.
             sessionsTruncated = rows.count >= filter.limit
         } catch {
+            guard generation == accessGeneration else { return }
             sessionsState = .failed(error.localizedDescription)
         }
     }
@@ -196,36 +206,34 @@ extension CockpitStore {
 
     // MARK: Actions
 
-    /// True when `claude --resume` can be offered: the working directory the session
-    /// ran in must still exist, or the command would open a shell nowhere useful.
+    /// True when `claude --resume` can be offered: the session is known with its working
+    /// directory. Copying text needs no file access, so the folder is not required to be
+    /// visible — under the sandbox it usually is not.
     func canResume(_ session: SessionRef) -> Bool {
-        var isDir: ObjCBool = false
-        return FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDir) && isDir.boolValue
+        !session.cwd.isEmpty
     }
 
-    /// Opens Terminal on `claude --resume <id>` in the session's own directory.
-    ///
-    /// Goes through a temporary `.command` script rather than an AppleScript: no
-    /// automation permission prompt, and the quoting stays under our control. The
-    /// flag was checked against the installed binary before being wired here.
+    /// Copies `cd <cwd> && claude --resume <id>` to the pasteboard for the user to
+    /// paste into a terminal. App Review forbids launching a script on the user's
+    /// behalf, so the app hands over the command instead of running it. The flag
+    /// was checked against the installed binary before being wired here.
     func resumeSession(_ session: SessionRef) {
         guard canResume(session) else {
-            notice = "Le dossier de cette session n'existe plus : \(session.cwd)"
+            notice = "Dossier de travail inconnu pour cette session."
             return
         }
-        let script = """
-        #!/bin/zsh
-        cd \(shellQuoted(session.cwd)) || exit 1
-        exec claude --resume \(shellQuoted(session.id))
-        """
-        let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("reprendre-session-\(session.id.prefix(8)).command")
-        do {
-            try script.write(to: url, atomically: true, encoding: .utf8)
-            try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
-            NSWorkspace.shared.open(url)
-        } catch {
-            notice = "Impossible de lancer la reprise : \(error.localizedDescription)"
+        let command = "cd \(shellQuoted(session.cwd)) && claude --resume \(shellQuoted(session.id))"
+        let pasteboard = NSPasteboard.general
+        pasteboard.clearContents()
+        pasteboard.setString(command, forType: .string)
+        // A missing folder can only be told where the app may look; elsewhere the
+        // command is copied as is.
+        let cwd = URL(fileURLWithPath: session.cwd, isDirectory: true)
+        var isDir: ObjCBool = false
+        if isCovered(cwd), !(FileManager.default.fileExists(atPath: session.cwd, isDirectory: &isDir) && isDir.boolValue) {
+            notice = "Commande copiée, mais le dossier \(session.cwd) n'existe plus."
+        } else {
+            notice = "Commande copiée : collez-la dans un terminal."
         }
     }
 

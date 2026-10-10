@@ -32,6 +32,9 @@ final class SessionStore {
     }
 
     private func configure() throws {
+        // Another connection to the same file (a pass still finishing while the app
+        // re-opens it) waits up to 5 s for its lock instead of failing "database is locked".
+        db.busyTimeout = 5
         try run("PRAGMA journal_mode = WAL")
         try run("PRAGMA synchronous = NORMAL")
         try run("PRAGMA temp_store = MEMORY")
