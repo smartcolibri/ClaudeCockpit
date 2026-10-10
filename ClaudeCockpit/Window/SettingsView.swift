@@ -399,6 +399,7 @@ private struct AccessSettingsTab: View {
         case .active: "Actif"
         case .renewed: "Actif (autorisation renouvelée)"
         case .broken(let reason): "Introuvable : \(reason)"
+        case .denied: "Accès refusé par macOS : réautorisez ce dossier"
         }
     }
 

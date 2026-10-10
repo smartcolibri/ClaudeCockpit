@@ -23,12 +23,20 @@ final class AccessStore {
             case renewed
             /// The bookmark no longer resolves (folder moved or deleted).
             case broken(String)
+            /// Resolved, but macOS refused to open its security scope: nothing under it
+            /// can be read, so it covers nothing until the user grants it again.
+            case denied
         }
         /// The path the user picked, as stored. Also the identity.
         let path: String
         var id: String { path }
         var status: Status
-        var isUsable: Bool { if case .broken = status { return false } else { return true } }
+        var isUsable: Bool {
+            switch status {
+            case .active, .renewed: true
+            case .broken, .denied: false
+            }
+        }
     }
 
     private struct Stored: Codable {
@@ -137,9 +145,12 @@ final class AccessStore {
         let path = AccessCoverage.normalized(url.path)
         let index = stored.firstIndex(where: { $0.path == entry.path })
         if let index { stored[index].path = path }
-        // Outside the sandbox `startAccessing…` returns false and nothing is needed.
+        // Outside the sandbox `startAccessing…` returns false and nothing is needed; inside
+        // it, false means the scope stayed closed and the grant gives no access at all.
         if url.startAccessingSecurityScopedResource() {
             openScopes[path] = url
+        } else if isSandboxed {
+            return Grant(path: path, status: .denied)
         }
         guard stale else { return Grant(path: path, status: .active) }
         // Recreated while the scope is open, as the API requires.
