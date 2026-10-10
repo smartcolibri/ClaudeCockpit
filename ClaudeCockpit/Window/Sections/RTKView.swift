@@ -69,7 +69,7 @@ struct RTKView: View {
                 .foregroundStyle(Theme.emerald)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 1) {
-                Text("rtk Savings")
+                Text("RTK Savings")
                     .font(.display(15))
                     .foregroundStyle(Theme.ink)
                 Text(subtitle)

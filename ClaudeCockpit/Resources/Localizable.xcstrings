@@ -1,22 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ %lld h · %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ %2$lldh · %3$@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$@ %2$lld h · %3$@"
-          }
-        }
-      }
-    },
     "%@ / %@ transcripts" : {
       "localizations" : {
         "en" : {
@@ -885,22 +869,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "%lld h" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lldh"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%lld h"
           }
         }
       }
@@ -2665,22 +2633,6 @@
         }
       }
     },
-    "Copy the Path" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copy the Path"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Copier le chemin"
-          }
-        }
-      }
-    },
     "Copy the path" : {
       "localizations" : {
         "en" : {
@@ -2713,12 +2665,12 @@
         }
       }
     },
-    "Copy the Session ID" : {
+    "Copy the session ID" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Copy the Session ID"
+            "value" : "Copy the session ID"
           }
         },
         "fr" : {
@@ -3513,22 +3465,6 @@
         }
       }
     },
-    "Export the Session" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Export the Session"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Exporter la session"
-          }
-        }
-      }
-    },
     "Export the session" : {
       "localizations" : {
         "en" : {
@@ -3609,12 +3545,12 @@
         }
       }
     },
-    "Find in the Session (Cmd+F)" : {
+    "Find in the session (Cmd+F)" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Find in the Session (Cmd+F)"
+            "value" : "Find in the session (Cmd+F)"
           }
         },
         "fr" : {
@@ -3753,12 +3689,12 @@
         }
       }
     },
-    "Health Grade Details" : {
+    "Health grade details" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Health Grade Details"
+            "value" : "Health grade details"
           }
         },
         "fr" : {
@@ -3849,12 +3785,12 @@
         }
       }
     },
-    "Hide This Session from the List" : {
+    "Hide this session from the list" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Hide This Session from the List"
+            "value" : "Hide this session from the list"
           }
         },
         "fr" : {
@@ -4825,12 +4761,12 @@
         }
       }
     },
-    "Next Turn (Cmd+] or ])" : {
+    "Next turn (Cmd+] or ])" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Next Turn (Cmd+] or ])"
+            "value" : "Next turn (Cmd+] or ])"
           }
         },
         "fr" : {
@@ -4889,12 +4825,12 @@
         }
       }
     },
-    "No allowed folder." : {
+    "No allowed folders." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No allowed folder."
+            "value" : "No allowed folders."
           }
         },
         "fr" : {
@@ -5665,12 +5601,12 @@
         }
       }
     },
-    "Open the Session" : {
+    "Open the session" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Open the Session"
+            "value" : "Open the session"
           }
         },
         "fr" : {
@@ -6041,12 +5977,12 @@
         }
       }
     },
-    "Previous Turn (Cmd+[ or [)" : {
+    "Previous turn (Cmd+[ or [)" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Previous Turn (Cmd+[ or [)"
+            "value" : "Previous turn (Cmd+[ or [)"
           }
         },
         "fr" : {
@@ -6633,22 +6569,6 @@
         }
       }
     },
-    "Rename the Session" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rename the Session"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Renommer la session"
-          }
-        }
-      }
-    },
     "Rename the session" : {
       "localizations" : {
         "en" : {
@@ -6953,28 +6873,12 @@
         }
       }
     },
-    "rtk savings" : {
+    "RTK savings" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "rtk savings"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Économies rtk"
-          }
-        }
-      }
-    },
-    "rtk Savings" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "rtk Savings"
+            "value" : "RTK savings"
           }
         },
         "fr" : {
@@ -7545,12 +7449,12 @@
         }
       }
     },
-    "Show the Transcript in Finder" : {
+    "Show the transcript in Finder" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Show the Transcript in Finder"
+            "value" : "Show the transcript in Finder"
           }
         },
         "fr" : {

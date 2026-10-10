@@ -1,5 +1,6 @@
 import SwiftUI
 import Charts
+import CockpitShared
 import UsageKit
 
 /// "Yesterday vs today, by hour" — yesterday is a wide context bar, today overlays as a
@@ -52,7 +53,7 @@ struct CostPerHourCard: View {
                     AxisGridLine().foregroundStyle(Theme.cardStroke)
                     AxisValueLabel {
                         if let hour = value.as(Int.self) {
-                            Text("\(hour) h").foregroundStyle(Theme.slate)
+                            Text(verbatim: AppFormat.hour(hour)).foregroundStyle(Theme.slate)
                         }
                     }
                 }

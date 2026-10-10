@@ -80,7 +80,7 @@ struct IndexStatusBadge: View {
                     .foregroundStyle(.orange)
                     .lineLimit(1)
             } else if let last = progress.lastRun {
-                Text("Index up to date · \(AppFormat.relative(last, now: Date()))")
+                Text("Index up to date · \(AppFormat.relative(last, now: Date(), standalone: true))")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

@@ -205,7 +205,7 @@ struct RecentEditsView: View {
                     .monospacedDigit()
                     .foregroundStyle(Theme.slate)
                 lineDelta(added: file.linesAdded, removed: file.linesRemoved)
-                Text(AppFormat.relative(file.lastTimestamp))
+                Text(AppFormat.relative(file.lastTimestamp, standalone: true))
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .frame(width: 96, alignment: .trailing)
@@ -247,7 +247,7 @@ struct RecentEditsView: View {
                 Image(systemName: "text.bubble")
             }
             .buttonStyle(.borderless)
-            .help("Open the Session")
+            .help("Open the session")
         }
         .font(.system(size: 12))
         .foregroundStyle(Theme.slate)
@@ -267,7 +267,7 @@ struct RecentEditsView: View {
                         .foregroundStyle(Theme.slate)
                     Spacer(minLength: 8)
                     lineDelta(added: edit.linesAdded, removed: edit.linesRemoved)
-                    Text(AppFormat.relative(edit.timestamp))
+                    Text(AppFormat.relative(edit.timestamp, standalone: true))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.mist)
                         .frame(width: 96, alignment: .trailing)

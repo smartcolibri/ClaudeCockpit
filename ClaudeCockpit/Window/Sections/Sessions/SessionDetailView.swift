@@ -119,7 +119,7 @@ struct SessionDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.mist)
-                .help("Rename the Session")
+                .help("Rename the session")
                 .accessibilityLabel("Rename the session")
             }
         }
@@ -213,7 +213,7 @@ struct SessionDetailView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .help("Health Grade Details")
+            .help("Health grade details")
             .popover(isPresented: $showHealth, arrowEdge: .bottom) {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
@@ -287,7 +287,7 @@ struct SessionDetailView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Show the Transcript in Finder")
+            .help("Show the transcript in Finder")
             .accessibilityLabel("Show the transcript")
 
             Menu {
@@ -299,7 +299,7 @@ struct SessionDetailView: View {
             .menuStyle(.borderlessButton)
             .menuIndicator(.hidden)
             .frame(width: 22)
-            .help("Export the Session")
+            .help("Export the session")
             .accessibilityLabel("Export the session")
 
             Button {
@@ -309,7 +309,7 @@ struct SessionDetailView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Copy the Session ID")
+            .help("Copy the session ID")
             .accessibilityLabel("Copy the ID")
 
             Button {
@@ -321,7 +321,7 @@ struct SessionDetailView: View {
             .buttonStyle(.plain)
             .foregroundStyle(findVisible ? Theme.accent : Theme.mist)
             .keyboardShortcut("f", modifiers: .command)
-            .help("Find in the Session (Cmd+F)")
+            .help("Find in the session (Cmd+F)")
             .accessibilityLabel("Find in the session")
 
             Button {
@@ -331,7 +331,7 @@ struct SessionDetailView: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Hide This Session from the List")
+            .help("Hide this session from the list")
             .accessibilityLabel("Hide the session")
         }
         .font(.system(size: 13))
@@ -366,14 +366,14 @@ struct SessionDetailView: View {
                 .foregroundStyle(Theme.mist)
                 .keyboardShortcut("[", modifiers: .command)
                 .disabled(findMatches.isEmpty)
-                .help("Previous Turn (Cmd+[ or [)")
+                .help("Previous turn (Cmd+[ or [)")
                 .accessibilityLabel("Previous turn")
             Button { step(1) } label: { Image(systemName: "chevron.down") }
                 .buttonStyle(.plain)
                 .foregroundStyle(Theme.mist)
                 .keyboardShortcut("]", modifiers: .command)
                 .disabled(findMatches.isEmpty)
-                .help("Next Turn (Cmd+] or ])")
+                .help("Next turn (Cmd+] or ])")
                 .accessibilityLabel("Next turn")
             Button {
                 findVisible = false

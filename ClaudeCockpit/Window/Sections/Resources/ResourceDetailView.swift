@@ -35,12 +35,6 @@ struct ResourceDetailView: View {
 
     private var otherLevels: [ResourceLevel] { levels.filter { $0.id != resource.level.id } }
 
-    private static let bytes: ByteCountFormatter = {
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        return formatter
-    }()
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             headerBlock
@@ -108,7 +102,7 @@ struct ResourceDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             PathRow(url: resource.url) { copyPath() }
-            Text("Modified \(AppFormat.relative(resource.modifiedAt)) · \(Self.bytes.string(fromByteCount: resource.sizeBytes))")
+            Text("Modified \(AppFormat.relative(resource.modifiedAt)) · \(AppFormat.bytes(resource.sizeBytes))")
                 .font(.label(10))
                 .foregroundStyle(Theme.mist)
         }
@@ -377,7 +371,7 @@ private struct PathRow: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Copy the Path")
+            .help("Copy the path")
             .accessibilityLabel("Copy the path")
         }
     }

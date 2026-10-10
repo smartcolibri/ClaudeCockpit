@@ -286,16 +286,9 @@ struct RTKTracePanel: View {
 private struct TraceRow: View {
     let record: CommandRecord
 
-    private static let clock: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.locale = AppFormat.locale
-        formatter.dateFormat = "HH:mm:ss"
-        return formatter
-    }()
-
     var body: some View {
         HStack(spacing: 8) {
-            Text(Self.clock.string(from: record.timestamp))
+            Text(AppFormat.timeWithSeconds(record.timestamp))
                 .font(.data(10))
                 .foregroundStyle(Theme.slate)
                 .frame(width: 56, alignment: .leading)
@@ -325,6 +318,6 @@ private struct TraceRow: View {
         .background(Color.primary.opacity(0.02))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(record.originalCommand)
-        .accessibilityValue("\(AppFormat.percent(record.savingsPct, fraction: false)) saved at \(Self.clock.string(from: record.timestamp))")
+        .accessibilityValue("\(AppFormat.percent(record.savingsPct, fraction: false)) saved at \(AppFormat.timeWithSeconds(record.timestamp))")
     }
 }

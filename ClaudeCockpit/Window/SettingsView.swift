@@ -57,12 +57,6 @@ private struct GeneralSettingsTab: View {
     @State private var loginError: String?
     @State private var confirmRebuild = false
 
-    private static let byteFormatter: ByteCountFormatter = {
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        return formatter
-    }()
-
     var body: some View {
         Form {
             Section("Startup") {
@@ -161,7 +155,7 @@ private struct GeneralSettingsTab: View {
                     ProgressView().controlSize(.small)
                 }
                 Spacer()
-                Text("Size: \(Self.byteFormatter.string(fromByteCount: store.sessionIndex.dbSizeBytes))")
+                Text("Size: \(AppFormat.bytes(store.sessionIndex.dbSizeBytes))")
                     .font(.system(size: 11))
                     .monospacedDigit()
                     .foregroundStyle(Theme.slate)
@@ -177,7 +171,7 @@ private struct GeneralSettingsTab: View {
         guard let last = progress.lastRun else { return String(localized: "never indexed") }
         // `filesDone` counts the files the last pass actually read, which is a handful
         // on an incremental tick — so it is shown against `filesTotal`, never alone.
-        return String(localized: "last pass: \(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) · \(AppFormat.relative(last))", locale: AppFormat.locale)
+        return String(localized: "last pass: \(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) · \(AppFormat.relative(last, standalone: true))", locale: AppFormat.locale)
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
@@ -355,7 +349,7 @@ private struct AccessSettingsTab: View {
                         .foregroundStyle(Theme.slate)
                 }
                 if store.access.grants.isEmpty {
-                    Text("No allowed folder.")
+                    Text("No allowed folders.")
                         .font(.system(size: 12))
                         .foregroundStyle(Theme.slate)
                 }

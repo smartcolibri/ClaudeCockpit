@@ -198,7 +198,7 @@ struct ActivityHeatmapCard: View {
             ? Self.standaloneWeekdays[weekday - 1]
             : ""
         let count = turns == 0 ? String(localized: "no turns") : String(localized: "\(turns) turns", locale: AppFormat.locale)
-        return String(localized: "\(day) \(hour) h · \(count)", locale: AppFormat.locale)
+        return "\(day) \(AppFormat.hour(hour)) · \(count)"
     }
 }
 

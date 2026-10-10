@@ -148,11 +148,11 @@ struct MenuBarPanelView: View {
                     note: String(localized: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) saved across \(String(localized: "\(rtk.allTime.count) commands", locale: AppFormat.locale))"))
             } else if store.rtkState.isUnauthorized {
                 InfoRow(
-                    label: String(localized: "rtk savings"), value: String(localized: "access not granted"),
+                    label: String(localized: "RTK savings"), value: String(localized: "access not granted"),
                     note: String(localized: "RTK database outside the allowed folders (Settings › Access)"))
             } else {
                 InfoRow(
-                    label: String(localized: "rtk savings"), value: String(localized: "no data"),
+                    label: String(localized: "RTK savings"), value: String(localized: "no data"),
                     note: String(localized: "rtk has not recorded anything yet"))
             }
         }
