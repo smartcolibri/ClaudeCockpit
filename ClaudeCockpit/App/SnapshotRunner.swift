@@ -151,9 +151,10 @@ enum SnapshotRunner {
             contentRect: NSRect(x: 0, y: 0, width: width, height: 800),
             styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
-        // The real pointer may rest where the window opens: no hover tooltip in the shot.
+        // Far off-screen, where the real pointer cannot rest: no hover tooltip in the shot.
         window.ignoresMouseEvents = true
         window.contentView = host
+        window.setFrameOrigin(NSPoint(x: -30_000, y: -30_000))
         window.orderFront(nil)
         host.layoutSubtreeIfNeeded()
         let height = host.fittingSize.height
