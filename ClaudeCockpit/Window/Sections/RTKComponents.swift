@@ -286,12 +286,21 @@ struct RTKTracePanel: View {
 private struct TraceRow: View {
     let record: CommandRecord
 
+    private static let widestTime = Calendar.current.date(
+        from: DateComponents(year: 2026, month: 1, day: 1, hour: 22, minute: 58, second: 58)) ?? Date()
+
     var body: some View {
         HStack(spacing: 8) {
-            Text(AppFormat.timeWithSeconds(record.timestamp))
-                .font(.data(10))
-                .foregroundStyle(Theme.slate)
-                .frame(width: 56, alignment: .leading)
+            // As wide as the locale's longest time ("10:58:58 PM" / "22:58:58"), so the
+            // command column lines up and a 12-hour time never wraps.
+            ZStack(alignment: .leading) {
+                Text(verbatim: AppFormat.timeWithSeconds(Self.widestTime)).hidden()
+                Text(verbatim: AppFormat.timeWithSeconds(record.timestamp))
+            }
+            .font(.data(10))
+            .foregroundStyle(Theme.slate)
+            .lineLimit(1)
+            .fixedSize()
             VStack(alignment: .leading, spacing: 1) {
                 Text(record.originalCommand)
                     .font(.data(11))
