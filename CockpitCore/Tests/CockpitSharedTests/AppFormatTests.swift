@@ -129,6 +129,20 @@ final class AppFormatTests: XCTestCase {
         XCTAssertEqual(AppFormat.relative(old, now: now, standalone: true, locale: fr), "7 oct.")
     }
 
+    /// Under a minute is "just now": rounding 45-59 s down gave "0 min ago".
+    func testUnderAMinuteIsJustNow() {
+        for (locale, justNow, oneMinute) in [(en, "just now", "1 min ago"), (fr, "à l'instant", "il y a 1 min")] {
+            for seconds in [30.0, 59.0] {
+                let date = now.addingTimeInterval(-seconds)
+                XCTAssertEqual(AppFormat.relative(date, now: now, locale: locale), justNow, "\(seconds) s")
+                XCTAssertEqual(AppFormat.relative(date, now: now, standalone: true, locale: locale), justNow, "\(seconds) s")
+            }
+            let date = now.addingTimeInterval(-61)
+            XCTAssertEqual(AppFormat.relative(date, now: now, locale: locale), oneMinute)
+            XCTAssertEqual(AppFormat.relative(date, now: now, standalone: true, locale: locale), oneMinute)
+        }
+    }
+
     /// A language without its own wording falls back to English words, in its own numbers.
     func testOtherLanguagesUseEnglishWords() {
         let de = Locale(identifier: "de_DE")
