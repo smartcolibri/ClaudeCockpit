@@ -5,14 +5,15 @@ import SQLite3
 /// Claude Code archive and no folder grant (App Review has neither).
 ///
 /// The bundle (`Resources/Demo`, written by `Scripts/make-demo-data.swift`) holds a
-/// `manifest.json` naming the instant its timestamps were written against, and a `home/`
-/// tree. Directories that must start with a dot are stored as `_dot_<name>`, so neither the
+/// `manifest.json` naming the instant its timestamps were written against and the fictional
+/// home its paths start with, and a `home/` tree. Directories that must start with a dot are stored as `_dot_<name>`, so neither the
 /// app bundle copy nor a Finder view can hide them.
 ///
 /// Seeding always starts from scratch: the previous copy and the demo app data (the session
 /// index) are dropped, the tree is copied, then every timestamp is moved so the sample looks
-/// recent — a session written on the anchor's day ends shortly before `now`, older ones keep
-/// their day offset and time of day.
+/// recent — a session written on the anchor's day lies between the start of today and `now`,
+/// older ones keep their day offset and time of day — and every path under the fictional home
+/// is pointed at the copy, so the sample's projects are the folders the app scans.
 public enum DemoSeeder {
 
     public enum SeedError: Error, LocalizedError {
@@ -40,15 +41,16 @@ public enum DemoSeeder {
     public static func seed(
         from source: URL, into root: URL, now: Date = Date(), calendar: Calendar = .current
     ) throws {
-        let anchor = try readAnchor(source)
+        let manifest = try readManifest(source)
         try remove(root: root)
         do {
             let paths = ClaudePaths.demo(root: root)
+            let homes = manifest.home.map { (sample: $0, copy: paths.home.path) }
             try copyTree(from: source.appendingPathComponent("home", isDirectory: true), to: paths.home)
             try FileManager.default.createDirectory(at: paths.appSupportDir, withIntermediateDirectories: true)
-            try retimeTranscripts(in: paths.projectsDir, anchor: anchor, now: now, calendar: calendar)
+            try rewriteTranscripts(in: paths.projectsDir, anchor: manifest.anchor, now: now, calendar: calendar, homes: homes)
             for database in paths.rtkDatabaseCandidates where FileManager.default.fileExists(atPath: database.path) {
-                try retimeRTK(database, anchor: anchor, now: now)
+                try rewriteRTK(database, anchor: manifest.anchor, now: now, homes: homes)
             }
         } catch {
             try? remove(root: root)
@@ -70,7 +72,7 @@ public enum DemoSeeder {
     /// and in `calendar` on `now`'s side. An instant on the anchor's day keeps its distance to
     /// the anchor, squeezed when the current day is shorter so far than that distance — it
     /// always lands between the start of today and `now`. An older one keeps its day offset
-    /// and its time of day.
+    /// and its time of day, held inside its day when that day is short (a DST change).
     static func retime(_ date: Date, anchor: Date, now: Date, calendar: Calendar) -> Date {
         let anchorDay = utc.startOfDay(for: anchor)
         let dayOffset = utc.dateComponents([.day], from: anchorDay, to: utc.startOfDay(for: date)).day ?? 0
@@ -84,7 +86,26 @@ public enum DemoSeeder {
         }
         let timeOfDay = date.timeIntervalSince(utc.startOfDay(for: date))
         let day = calendar.date(byAdding: .day, value: dayOffset, to: today) ?? today
-        return day.addingTimeInterval(timeOfDay)
+        let nextDay = calendar.date(byAdding: .day, value: 1, to: day) ?? today
+        return min(day.addingTimeInterval(timeOfDay), nextDay.addingTimeInterval(-1))
+    }
+
+    /// How a whole session moves: by one delta, so its lines keep their order and spacing,
+    /// chosen to bring its last line where `retime` puts it. A session of the anchor's day too
+    /// long for the day so far (early in the morning) is squeezed between the start of today
+    /// and that point instead, so none of it falls on yesterday.
+    static func sessionMapping(
+        first: Date, last: Date, anchor: Date, now: Date, calendar: Calendar
+    ) -> (Date) -> Date {
+        let end = retime(last, anchor: anchor, now: now, calendar: calendar)
+        let today = calendar.startOfDay(for: now)
+        let span = last.timeIntervalSince(first)
+        if end >= today, span > 0, end.addingTimeInterval(-span) < today {
+            let scale = end.timeIntervalSince(today) / span
+            return { today.addingTimeInterval($0.timeIntervalSince(first) * scale) }
+        }
+        let delta = end.timeIntervalSince(last)
+        return { $0.addingTimeInterval(delta) }
     }
 
     private static let utc: Calendar = {
@@ -93,14 +114,20 @@ public enum DemoSeeder {
         return calendar
     }()
 
-    private static func readAnchor(_ source: URL) throws -> Date {
+    private static func readManifest(_ source: URL) throws -> (anchor: Date, home: String?) {
         let manifest = source.appendingPathComponent("manifest.json")
         guard let data = try? Data(contentsOf: manifest),
               let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let raw = object["anchor"] as? String,
               let anchor = ISO8601DateFormatter().date(from: raw)
         else { throw SeedError.missingManifest(manifest) }
-        return anchor
+        return (anchor, object["home"] as? String)
+    }
+
+    /// `sample` (a whole path component) replaced by `copy`, for a path stored as is.
+    private static func rehome(_ path: String, _ homes: (sample: String, copy: String)?) -> String {
+        guard let homes, path == homes.sample || path.hasPrefix(homes.sample + "/") else { return path }
+        return homes.copy + path.dropFirst(homes.sample.count)
     }
 
     // MARK: - Copy
@@ -131,10 +158,12 @@ public enum DemoSeeder {
     private static let timestampField = try! NSRegularExpression(pattern: #""timestamp":"([^"]+)""#)
     private static let startTimeField = try! NSRegularExpression(pattern: #""startTime":(\d+)"#)
 
-    /// Moves every `timestamp` (and `cost-state`'s `startTime`) of a session by one delta, so
-    /// its lines keep their order and spacing; the delta is the one that brings the session's
-    /// last line where `retime` puts it. A sub-agent transcript moves with its parent.
-    private static func retimeTranscripts(in projects: URL, anchor: Date, now: Date, calendar: Calendar) throws {
+    /// Moves every `timestamp` (and `cost-state`'s `startTime`) of a session with
+    /// `sessionMapping`; a sub-agent transcript moves with its parent. Paths under the sample
+    /// home, wherever they appear in a line, are pointed at the copy.
+    private static func rewriteTranscripts(
+        in projects: URL, anchor: Date, now: Date, calendar: Calendar, homes: (sample: String, copy: String)?
+    ) throws {
         var files: [String: [URL]] = [:]
         let base = projects.standardizedFileURL.resolvingSymlinksInPath().path
         let walker = FileManager.default.enumerator(at: projects, includingPropertiesForKeys: nil)
@@ -147,13 +176,27 @@ public enum DemoSeeder {
             let session = parts.count == 2 ? String(parts[1].dropLast(".jsonl".count)) : String(parts[1])
             files["\(parts[0])/\(session)", default: []].append(item)
         }
+        let samplePath = homes.map {
+            try! NSRegularExpression(pattern: NSRegularExpression.escapedPattern(for: $0.sample) + #"(?=[/"])"#)
+        }
+        // The copy's path goes into JSON strings: a quote or backslash in it must be escaped.
+        let copyPath = homes.map {
+            NSRegularExpression.escapedTemplate(for: $0.copy
+                .replacingOccurrences(of: "\\", with: "\\\\")
+                .replacingOccurrences(of: "\"", with: "\\\""))
+        }
         for group in files.values {
             let texts = try group.map { try String(contentsOf: $0, encoding: .utf8) }
-            let last = texts.flatMap { stamps(in: $0) }.max()
-            guard let last else { continue }
-            let delta = retime(last, anchor: anchor, now: now, calendar: calendar).timeIntervalSince(last)
+            let dates = texts.flatMap { stamps(in: $0) }
+            guard let first = dates.min(), let last = dates.max() else { continue }
+            let move = sessionMapping(first: first, last: last, anchor: anchor, now: now, calendar: calendar)
             for (url, text) in zip(group, texts) {
-                try shift(text, by: delta).write(to: url, atomically: true, encoding: .utf8)
+                var result = shift(text, with: move)
+                if let samplePath, let copyPath {
+                    result = samplePath.stringByReplacingMatches(
+                        in: result, range: NSRange(result.startIndex..., in: result), withTemplate: copyPath)
+                }
+                try result.write(to: url, atomically: true, encoding: .utf8)
             }
         }
     }
@@ -165,12 +208,15 @@ public enum DemoSeeder {
         }
     }
 
-    private static func shift(_ text: String, by delta: TimeInterval) -> String {
+    private static func shift(_ text: String, with move: (Date) -> Date) -> String {
         var result = replace(timestampField, in: text) { raw in
-            parseISO(raw).map { "\"timestamp\":\"\(formatISO($0.addingTimeInterval(delta)))\"" }
+            parseISO(raw).map { "\"timestamp\":\"\(formatISO(move($0)))\"" }
         }
         result = replace(startTimeField, in: result) { raw in
-            Double(raw).map { "\"startTime\":\(Int64(($0 + delta * 1000).rounded()))" }
+            Double(raw).map {
+                let moved = move(Date(timeIntervalSince1970: $0 / 1000))
+                return "\"startTime\":\(Int64((moved.timeIntervalSince1970 * 1000).rounded()))"
+            }
         }
         return result
     }
@@ -205,9 +251,12 @@ public enum DemoSeeder {
     // MARK: - RTK
 
     /// Rewrites the `timestamp` column of rtk's `commands` table, row by row, in rtk's own
-    /// format (microseconds, explicit UTC offset). rtk buckets its days in UTC, so that is
-    /// the calendar used here whatever the user's time zone.
-    private static func retimeRTK(_ database: URL, anchor: Date, now: Date) throws {
+    /// format (microseconds, explicit UTC offset), and `project_path` when the table has it.
+    /// rtk buckets its days in UTC, so that is the calendar used here whatever the user's
+    /// time zone.
+    private static func rewriteRTK(
+        _ database: URL, anchor: Date, now: Date, homes: (sample: String, copy: String)?
+    ) throws {
         var handle: OpaquePointer?
         guard sqlite3_open(database.path, &handle) == SQLITE_OK, let handle else {
             sqlite3_close(handle)
@@ -220,25 +269,42 @@ public enum DemoSeeder {
             }
         }
 
-        var rows: [(Int64, String)] = []
+        var columns: Set<String> = []
+        var info: OpaquePointer?
+        try check(sqlite3_prepare_v2(handle, "PRAGMA table_info(commands)", -1, &info, nil))
+        while sqlite3_step(info) == SQLITE_ROW { columns.insert(String(cString: sqlite3_column_text(info, 1))) }
+        sqlite3_finalize(info)
+        let project = columns.contains("project_path") ? "project_path" : "''"
+
+        var rows: [(id: Int64, timestamp: String, project: String)] = []
         var select: OpaquePointer?
-        try check(sqlite3_prepare_v2(handle, "SELECT id, timestamp FROM commands", -1, &select, nil))
+        try check(sqlite3_prepare_v2(handle, "SELECT id, timestamp, \(project) FROM commands", -1, &select, nil))
         while sqlite3_step(select) == SQLITE_ROW {
-            rows.append((sqlite3_column_int64(select, 0), String(cString: sqlite3_column_text(select, 1))))
+            rows.append((sqlite3_column_int64(select, 0),
+                         String(cString: sqlite3_column_text(select, 1)),
+                         sqlite3_column_text(select, 2).map { String(cString: $0) } ?? ""))
         }
         sqlite3_finalize(select)
 
         let transient = unsafeBitCast(-1, to: sqlite3_destructor_type.self)
+        let sql = project == "project_path"
+            ? "UPDATE commands SET timestamp = ?, project_path = ? WHERE id = ?"
+            : "UPDATE commands SET timestamp = ? WHERE id = ?"
         var update: OpaquePointer?
-        try check(sqlite3_prepare_v2(handle, "UPDATE commands SET timestamp = ? WHERE id = ?", -1, &update, nil))
+        try check(sqlite3_prepare_v2(handle, sql, -1, &update, nil))
         defer { sqlite3_finalize(update) }
         try check(sqlite3_exec(handle, "BEGIN", nil, nil, nil))
-        for (id, raw) in rows {
-            guard let date = parseRTK(raw) else { continue }
+        for row in rows {
+            guard let date = parseRTK(row.timestamp) else { continue }
             let moved = formatRTK(retime(date, anchor: anchor, now: now, calendar: utc))
             sqlite3_reset(update)
             sqlite3_bind_text(update, 1, moved, -1, transient)
-            sqlite3_bind_int64(update, 2, id)
+            if project == "project_path" {
+                sqlite3_bind_text(update, 2, rehome(row.project, homes), -1, transient)
+                sqlite3_bind_int64(update, 3, row.id)
+            } else {
+                sqlite3_bind_int64(update, 2, row.id)
+            }
             try check(sqlite3_step(update))
         }
         try check(sqlite3_exec(handle, "COMMIT", nil, nil, nil))

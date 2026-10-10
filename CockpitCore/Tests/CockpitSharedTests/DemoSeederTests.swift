@@ -115,7 +115,7 @@ final class DemoSeederTests: XCTestCase {
         XCTAssertEqual(child[0].timeIntervalSince(parent[0]), 20 * 60, accuracy: 0.001)
     }
 
-    func testRewriteTouchesOnlyTimestamps() throws {
+    func testRewriteKeepsTheOtherFields() throws {
         let now = iso("2026-10-10T13:00:00Z")
         try DemoSeeder.seed(from: source, into: root, now: now, calendar: calendar(Self.paris))
         let text = try String(contentsOf: paths.projectsDir
@@ -131,6 +131,62 @@ final class DemoSeederTests: XCTestCase {
         let first = try XCTUnwrap(try timestamps(in: "-Users-demo-DevApps-weather-app/s-today.jsonl").first)
         XCTAssertEqual(start.timeIntervalSince(first), 0, accuracy: 0.001)
         XCTAssertEqual(cost["totalCostUSD"] as? Double, 1.25)
+    }
+
+    func testAnchorDaySessionFitsTodayEarlyInTheMorning() throws {
+        let cal = calendar(Self.paris)
+        // 00:30 in Paris: the 55-minute session has to be squeezed into half an hour.
+        let now = iso("2026-10-09T22:30:00Z")
+        try DemoSeeder.seed(from: source, into: root, now: now, calendar: cal)
+        let dates = try timestamps(in: "-Users-demo-DevApps-weather-app/s-today.jsonl")
+            + timestamps(in: "-Users-demo-DevApps-weather-app/s-today/subagents/agent-ahelper-1.jsonl")
+        let today = cal.startOfDay(for: now)
+        XCTAssertEqual(dates.count, 4)
+        for date in dates {
+            XCTAssertGreaterThanOrEqual(date, today)
+            XCTAssertLessThanOrEqual(date, now)
+        }
+        let parent = try timestamps(in: "-Users-demo-DevApps-weather-app/s-today.jsonl")
+        XCTAssertEqual(parent, parent.sorted())
+    }
+
+    func testOlderDayStaysBeforeTodayAfterADSTShift() throws {
+        let cal = calendar(Self.paris)
+        // Paris skipped an hour on 2026-03-29: that day is 23 hours long.
+        let now = iso("2026-03-30T08:00:00Z")
+        try DemoSeeder.seed(from: source, into: root, now: now, calendar: cal)
+        let dates = try timestamps(in: "-Users-demo-DevApps-notes-api/s-late.jsonl")
+        let today = cal.startOfDay(for: now)
+        let yesterday = cal.date(byAdding: .day, value: -1, to: today)!
+        XCTAssertEqual(dates.count, 2)
+        for date in dates {
+            XCTAssertLessThan(date, today)
+            XCTAssertGreaterThanOrEqual(date, yesterday)
+        }
+        XCTAssertEqual(dates, dates.sorted())
+    }
+
+    // MARK: Paths
+
+    func testSamplePathsPointIntoTheDemoHome() throws {
+        try DemoSeeder.seed(from: source, into: root, now: iso("2026-10-10T13:00:00Z"), calendar: calendar(Self.paris))
+        let text = try String(contentsOf: paths.projectsDir
+            .appendingPathComponent("-Users-demo-DevApps-weather-app/s-today.jsonl"), encoding: .utf8)
+        let first = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(text.split(separator: "\n")[0].utf8)) as? [String: Any])
+        XCTAssertEqual(first["cwd"] as? String, paths.home.path + "/DevApps/weather-app")
+        XCTAssertFalse(text.contains("/Users/demo"))
+
+        var handle: OpaquePointer?
+        XCTAssertEqual(sqlite3_open_v2(paths.rtkDatabaseCandidates[0].path, &handle, SQLITE_OPEN_READONLY, nil), SQLITE_OK)
+        defer { sqlite3_close(handle) }
+        var statement: OpaquePointer?
+        XCTAssertEqual(sqlite3_prepare_v2(handle, "SELECT project_path FROM commands ORDER BY id", -1, &statement, nil), SQLITE_OK)
+        defer { sqlite3_finalize(statement) }
+        var projects: [String] = []
+        while sqlite3_step(statement) == SQLITE_ROW { projects.append(String(cString: sqlite3_column_text(statement, 0))) }
+        XCTAssertEqual(projects, [
+            paths.home.path + "/DevApps/weather-app", paths.home.path + "/DevApps/notes-api", "/opt/elsewhere",
+        ])
     }
 
     // MARK: RTK
@@ -158,7 +214,7 @@ final class DemoSeederTests: XCTestCase {
 
     private func writeSource() throws {
         let home = source.appendingPathComponent("home", isDirectory: true)
-        try write(#"{"anchor":"2026-03-18T17:30:00Z"}"#, to: source.appendingPathComponent("manifest.json"))
+        try write(#"{"anchor":"2026-03-18T17:30:00Z","home":"/Users/demo"}"#, to: source.appendingPathComponent("manifest.json"))
         try write("---\nname: weather-tips\ndescription: Tips\n---\n",
                   to: home.appendingPathComponent("_dot_claude/skills/weather-tips/SKILL.md"))
         try write("---\nname: ship\ndescription: Ship it\n---\n",
@@ -177,6 +233,11 @@ final class DemoSeederTests: XCTestCase {
         ].joined(separator: "\n") + "\n", to: projects.appendingPathComponent("-Users-demo-DevApps-weather-app/s-today.jsonl"))
         try write(line("x1", "2026-03-18T16:50:00.000Z", session: "s-today") + "\n",
                   to: projects.appendingPathComponent("-Users-demo-DevApps-weather-app/s-today/subagents/agent-ahelper-1.jsonl"))
+        // The day before, late: on a 23-hour (DST) day it must not spill into today.
+        try write([
+            line("l1", "2026-03-17T23:30:00.000Z", session: "s-late"),
+            line("l2", "2026-03-17T23:40:00.000Z", session: "s-late"),
+        ].joined(separator: "\n") + "\n", to: projects.appendingPathComponent("-Users-demo-DevApps-notes-api/s-late.jsonl"))
         // Three days earlier.
         try write([
             line("o1", "2026-03-15T09:00:00.000Z", session: "s-old"),
@@ -188,15 +249,15 @@ final class DemoSeederTests: XCTestCase {
         try sqlite(rtk.appendingPathComponent("history.db"), """
             CREATE TABLE commands (id INTEGER PRIMARY KEY, timestamp TEXT NOT NULL, original_cmd TEXT NOT NULL,
               rtk_cmd TEXT NOT NULL, input_tokens INTEGER NOT NULL, output_tokens INTEGER NOT NULL,
-              saved_tokens INTEGER NOT NULL, savings_pct REAL NOT NULL);
-            INSERT INTO commands VALUES (1, '2026-03-18T17:20:00.123456+00:00', 'git status', 'rtk git status', 100, 20, 80, 80.0);
-            INSERT INTO commands VALUES (2, '2026-03-17T23:50:00.000000+00:00', 'cat a', 'rtk read', 100, 50, 50, 50.0);
-            INSERT INTO commands VALUES (3, '2026-03-12T08:00:00.000000+00:00', 'ls', 'rtk ls', 100, 40, 60, 60.0);
+              saved_tokens INTEGER NOT NULL, savings_pct REAL NOT NULL, project_path TEXT DEFAULT '');
+            INSERT INTO commands VALUES (1, '2026-03-18T17:20:00.123456+00:00', 'git status', 'rtk git status', 100, 20, 80, 80.0, '/Users/demo/DevApps/weather-app');
+            INSERT INTO commands VALUES (2, '2026-03-17T23:50:00.000000+00:00', 'cat a', 'rtk read', 100, 50, 50, 50.0, '/Users/demo/DevApps/notes-api');
+            INSERT INTO commands VALUES (3, '2026-03-12T08:00:00.000000+00:00', 'ls', 'rtk ls', 100, 40, 60, 60.0, '/opt/elsewhere');
             """)
     }
 
     private func line(_ uuid: String, _ stamp: String, session: String = "s-today", text: String = "hi") -> String {
-        #"{"message":{"content":"\#(text)","role":"user"},"sessionId":"\#(session)","timestamp":"\#(stamp)","type":"user","uuid":"\#(uuid)"}"#
+        #"{"cwd":"/Users/demo/DevApps/weather-app","message":{"content":"\#(text)","role":"user"},"sessionId":"\#(session)","timestamp":"\#(stamp)","type":"user","uuid":"\#(uuid)"}"#
     }
 
     private func write(_ text: String, to url: URL) throws {

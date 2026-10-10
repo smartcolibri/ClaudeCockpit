@@ -2,8 +2,9 @@
 //
 //  make-demo-data.swift — sample data for Cockpit for Claude's demo mode
 //
-//  Writes ClaudeCockpit/Resources/Demo/: a manifest naming the anchor instant, and a
-//  fictional home holding Claude Code transcripts (three projects, eight sessions with
+//  Writes ClaudeCockpit/Resources/Demo/: a manifest naming the anchor instant and the sample
+//  home `/Users/demo` (the seeder points those paths at the demo copy), and a fictional home
+//  holding Claude Code transcripts (three projects, eight sessions with
 //  sub-agents, edits, titles and costs), skills / agents / commands at every level, a
 //  plugin, and an rtk history.db over seven UTC days. Everything is invented and in
 //  English; no path or name comes from a real machine.
@@ -44,7 +45,7 @@ func write(_ text: String, to url: URL) {
 // Start clean: only the two things this script owns.
 try? fm.removeItem(at: homeDir)
 try? fm.removeItem(at: outputDir.appendingPathComponent("manifest.json"))
-write("{\"anchor\":\"\(anchorString)\"}\n", to: outputDir.appendingPathComponent("manifest.json"))
+write("{\"anchor\":\"\(anchorString)\",\"home\":\"\(demoUser)\"}\n", to: outputDir.appendingPathComponent("manifest.json"))
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MARK: - Transcript lines
