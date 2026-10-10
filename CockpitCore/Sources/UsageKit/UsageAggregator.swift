@@ -12,7 +12,8 @@ public enum UsageAggregator {
         pricing: PricingSettings = .default,
         now: Date = Date(),
         calendar: Calendar = .current,
-        home: URL = ClaudePaths.realHome
+        home: URL = ClaudePaths.realHome,
+        overview precomputed: UsageOverview? = nil
     ) -> UsageSnapshot {
         // Model/project filtering only: the fixed day/week comparisons deliberately ignore
         // the range filter.
@@ -190,7 +191,7 @@ public enum UsageAggregator {
             costThisWeekUnfilteredUSD: costThisWeekUnfiltered,
             sessionsThisWeekUnfilteredTotal: sessionsThisWeekUnfiltered,
             sessionsLastWeekUnfilteredTotal: sessionsLastWeekUnfiltered,
-            overview: overview(events: allEvents, pricing: pricing, now: now, calendar: calendar, home: home),
+            overview: precomputed ?? overview(events: allEvents, pricing: pricing, now: now, calendar: calendar, home: home),
             availableProjects: availableProjects,
             availableModels: availableModels,
             availableModelFamilies: availableModelFamilies)

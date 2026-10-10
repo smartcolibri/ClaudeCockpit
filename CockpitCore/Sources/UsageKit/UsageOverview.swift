@@ -58,18 +58,25 @@ public struct UsageOverview: Hashable, Sendable {
     public let cost30DaysUSD: Double
     /// The project that spent the most on Opus over the last 30 days, `~`-shortened.
     public let topOpusProject: String?
-    /// Cache read tokens over cacheable tokens (cache read + input) for the last 30 days —
-    /// the same ratio `InsightEngine` reports, so the two screens never disagree. `nil`
-    /// when nothing cacheable was sent.
+    /// Cache read tokens over everything sent as prompt (cache read + cache write + input) for
+    /// the last 30 days. Unlike `InsightEngine`'s ratio, cache writes count: Claude Code writes
+    /// its cache on nearly every turn, and without them any account reads close to 100 %.
+    /// `nil` when nothing was sent.
     public let cacheHitRate: Double?
     /// The ratio's denominator: a rate over a handful of tokens means little.
     public let cacheableTokens30Days: Int
     /// Model ids seen over the last 30 days that have no pricing tier of their own.
     public let unpricedModels: [String]
+    /// Opus's share of the cost over the 30 days before the last 30, 0 when nothing was spent:
+    /// what the current share is compared with.
+    public let opusSharePrevious30Days: Double
 
-    /// Mean daily cost of the 30 full days before today, idle days counted as zero. Today is
-    /// left out: it is the figure being compared with the mean, and it is not over yet.
+    /// Mean daily cost of the full days before today, over the last 30 or since the first
+    /// recorded event if that is more recent, idle days counted as zero. Today is left out: it
+    /// is the figure being compared with the mean, and it is not over yet.
     public let meanDailyCostUSD: Double
+    /// How many days `meanDailyCostUSD` averages: 0 on the first day of use.
+    public let historyDays: Int
     /// Today's tokens by kind and cost.
     public let today: UsageSummary
 
@@ -100,7 +107,9 @@ public struct UsageOverview: Hashable, Sendable {
         cacheHitRate: Double?,
         cacheableTokens30Days: Int,
         unpricedModels: [String],
+        opusSharePrevious30Days: Double,
         meanDailyCostUSD: Double,
+        historyDays: Int,
         today: UsageSummary,
         monthToDateCostUSD: Double,
         monthProjectionUSD: Double?,
@@ -123,7 +132,9 @@ public struct UsageOverview: Hashable, Sendable {
         self.cacheHitRate = cacheHitRate
         self.cacheableTokens30Days = cacheableTokens30Days
         self.unpricedModels = unpricedModels
+        self.opusSharePrevious30Days = opusSharePrevious30Days
         self.meanDailyCostUSD = meanDailyCostUSD
+        self.historyDays = historyDays
         self.today = today
         self.monthToDateCostUSD = monthToDateCostUSD
         self.monthProjectionUSD = monthProjectionUSD
@@ -169,6 +180,7 @@ extension UsageAggregator {
         let tomorrowStart = calendar.date(byAdding: .day, value: 1, to: todayStart) ?? now
         let yesterdayStart = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart)
         let last30Start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -29, to: todayStart) ?? todayStart)
+        let previous30Start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -59, to: todayStart) ?? todayStart)
         let meanStart = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -30, to: todayStart) ?? todayStart)
         let activityStart = UsageOverview.activityStart(now: now, calendar: calendar)
 
@@ -184,7 +196,7 @@ extension UsageAggregator {
         let lastWeekToDateEnd = min(iso.date(byAdding: .day, value: -7, to: now) ?? thisWeekStart, thisWeekStart)
 
         // Every day any window needs, so each event is placed with one dictionary lookup.
-        let firstDay = [activityStart, meanStart, lastMonthStart, lastWeekStart, yesterdayStart].min() ?? todayStart
+        let firstDay = [activityStart, meanStart, previous30Start, lastMonthStart, lastWeekStart, yesterdayStart].min() ?? todayStart
         var dayStarts: [Date] = []
         var cursor = firstDay
         while cursor < tomorrowStart, dayStarts.count < 800 {
@@ -207,13 +219,21 @@ extension UsageAggregator {
         var models = Set<String>()
         var cost30 = 0.0
         var cacheRead30 = 0
-        var input30 = 0
+        var prompt30 = 0
+        var previousCost = 0.0
+        var previousOpus = 0.0
+        var todaySessions = Set<String>()
+        var firstEvent: Date?
         var monthToDate = 0.0
         var lastMonth = 0.0
         var thisWeek = 0.0
         var lastWeekToDate = 0.0
 
-        for event in events where event.timestamp >= firstDay && event.timestamp < tomorrowStart {
+        for event in events {
+            if event.timestamp < firstEvent ?? .distantFuture { firstEvent = event.timestamp }
+            guard event.timestamp >= firstDay, event.timestamp < tomorrowStart else { continue }
+            // `<synthetic>` placeholders and turns that used no token say nothing about a model.
+            let isModelUsage = event.model != "<synthetic>" && event.totalTokens > 0
             let family = ModelFamily.detect(from: event.model)
             let cost = pricing.pricing(for: family).cost(for: event)
             let time = event.timestamp
@@ -224,8 +244,14 @@ extension UsageAggregator {
             if time >= thisWeekStart { thisWeek += cost }
             if time >= lastWeekStart, time < lastWeekToDateEnd { lastWeekToDate += cost }
 
+            if time >= previous30Start, time < last30Start {
+                previousCost += cost
+                if family == .opus { previousOpus += cost }
+            }
+
             if time >= todayStart {
-                today.turnCount += 1
+                todaySessions.insert(event.sessionId)
+                if isModelUsage { today.turnCount += 1 }
                 today.inputTokens += event.inputTokens
                 today.outputTokens += event.outputTokens
                 today.cacheReadTokens += event.cacheReadTokens
@@ -241,8 +267,8 @@ extension UsageAggregator {
             familyCost[family, default: 0] += cost
             cost30 += cost
             cacheRead30 += event.cacheReadTokens
-            input30 += event.inputTokens
-            models.insert(event.model)
+            prompt30 += event.cacheReadTokens + event.cacheCreationTokens + event.inputTokens
+            if isModelUsage { models.insert(event.model) }
             let project: String
             if let cached = shortened[event.cwd] {
                 project = cached
@@ -257,7 +283,7 @@ extension UsageAggregator {
             projectBuckets[project] = bucket
             if family == .opus { opusByProject[project, default: 0] += cost }
         }
-        today.sessionCount = Set(events.lazy.filter { $0.timestamp >= todayStart && $0.timestamp < tomorrowStart }.map(\.sessionId)).count
+        today.sessionCount = todaySessions.count
 
         let last30Days = dayStarts.filter { $0 >= last30Start }
         let costByDayAndFamily = last30Days.flatMap { day in
@@ -268,8 +294,9 @@ extension UsageAggregator {
         }
         let dailyCost = dayStarts.filter { $0 >= activityStart }
             .map { UsageOverview.DayCost(day: $0, costUSD: costPerDay[$0] ?? 0) }
-        let meanDays = dayStarts.filter { $0 >= meanStart && $0 < todayStart }
-        let meanDaily = meanDays.reduce(0) { $0 + (costPerDay[$1] ?? 0) } / 30
+        let historyStart = max(meanStart, calendar.startOfDay(for: firstEvent ?? now))
+        let meanDays = dayStarts.filter { $0 >= historyStart && $0 < todayStart }
+        let meanDaily = meanDays.isEmpty ? 0 : meanDays.reduce(0) { $0 + (costPerDay[$1] ?? 0) } / Double(meanDays.count)
 
         let topProjects = projectBuckets
             .map { BreakdownRow(label: $0.key, turnCount: $0.value.turns, totalTokens: $0.value.tokens, estimatedCostUSD: $0.value.cost) }
@@ -286,7 +313,6 @@ extension UsageAggregator {
         let daysInMonth = calendar.range(of: .day, in: .month, for: now)?.count ?? 30
         let projection = monthElapsed >= 1 ? monthToDate / monthElapsed * Double(daysInMonth) : nil
 
-        let cacheable = cacheRead30 + input30
         return UsageOverview(
             last30Days: last30Days,
             costByDayAndFamily: costByDayAndFamily,
@@ -301,10 +327,12 @@ extension UsageAggregator {
             },
             cost30DaysUSD: cost30,
             topOpusProject: topOpusProject,
-            cacheHitRate: cacheable > 0 ? Double(cacheRead30) / Double(cacheable) : nil,
-            cacheableTokens30Days: cacheable,
+            cacheHitRate: prompt30 > 0 ? Double(cacheRead30) / Double(prompt30) : nil,
+            cacheableTokens30Days: prompt30,
             unpricedModels: models.filter { !pricing.hasDedicatedTier(forModel: $0) }.sorted(),
+            opusSharePrevious30Days: previousCost > 0 ? previousOpus / previousCost : 0,
             meanDailyCostUSD: meanDaily,
+            historyDays: meanDays.count,
             today: today,
             monthToDateCostUSD: monthToDate,
             monthProjectionUSD: projection,

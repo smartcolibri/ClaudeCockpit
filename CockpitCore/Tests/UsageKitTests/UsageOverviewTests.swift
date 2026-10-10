@@ -87,6 +87,17 @@ final class UsageOverviewTests: XCTestCase {
         XCTAssertEqual(result.meanDailyCostUSD, 6.0 / 30, accuracy: 1e-9)
     }
 
+    /// A new user's mean covers the days they have used Claude Code, not 30 days of zeros.
+    func testMeanCoversOnlyTheDaysWithHistory() {
+        let result = overview([sonnet("2026-10-25 10:00"), sonnet("2026-10-27 10:00"), opus("2026-10-28 09:00")])
+        XCTAssertEqual(result.historyDays, 3, "the 25th (25 hours long), 26th and 27th")
+        XCTAssertEqual(result.meanDailyCostUSD, 6.0 / 3, accuracy: 1e-9)
+
+        let firstDay = overview([opus("2026-10-28 09:00")])
+        XCTAssertEqual(firstDay.historyDays, 0)
+        XCTAssertEqual(firstDay.meanDailyCostUSD, 0)
+    }
+
     func testMonthProjectionCountsCalendarDays() {
         // October 1st to now: 27 full days plus 15 of today's 24 hours.
         let result = overview([sonnet("2026-10-01 10:00"), sonnet("2026-10-26 10:00"), sonnet("2026-09-30 22:00")])
@@ -162,14 +173,38 @@ final class UsageOverviewTests: XCTestCase {
         XCTAssertEqual(result.topOpusProject, "~/DevApps/ProjB", "ProjA costs more overall but less on Opus")
     }
 
-    func testCacheRateMatchesTheInsightFormula() {
+    /// Cache writes count as cacheable too: Claude Code writes its prompt cache on almost every
+    /// turn, and leaving them out made the rate look near-perfect on any account.
+    func testCacheRateCountsCacheWrites() {
         let result = overview([
             EventFactory.make(model: "claude-sonnet-5", timestamp: local("2026-10-20 10:00"),
-                              inputTokens: 250, cacheCreationTokens: 999, cacheReadTokens: 750),
+                              inputTokens: 250, cacheCreationTokens: 1_000, cacheReadTokens: 750),
         ])
-        XCTAssertEqual(result.cacheHitRate ?? 0, 0.75, accuracy: 1e-9)
-        XCTAssertEqual(result.cacheableTokens30Days, 1000)
+        XCTAssertEqual(result.cacheHitRate ?? 0, 750.0 / 2_000, accuracy: 1e-9)
+        XCTAssertEqual(result.cacheableTokens30Days, 2_000)
         XCTAssertNil(overview([]).cacheHitRate)
+    }
+
+    func testOpusShareOfThePrevious30Days() {
+        let result = overview([
+            opus("2026-10-20 10:00"),  // last 30 days: Opus only
+            opus("2026-09-10 10:00"), sonnet("2026-09-11 10:00"),  // days 30–59 back: 5 of 8
+            opus("2026-08-28 10:00"),  // 61 days back: outside both
+        ])
+        XCTAssertEqual(result.opusShare, 1, accuracy: 1e-9)
+        XCTAssertEqual(result.opusSharePrevious30Days, 5.0 / 8, accuracy: 1e-9)
+    }
+
+    /// `<synthetic>` lines (Claude Code's own placeholders) and turns that used no token say
+    /// nothing about a model: they must not raise a pricing warning nor count as turns.
+    func testSyntheticAndEmptyTurnsAreNotModelUsage() {
+        let result = overview([
+            EventFactory.make(model: "<synthetic>", timestamp: local("2026-10-28 10:00")),
+            EventFactory.make(model: "mystery-2", timestamp: local("2026-10-28 10:05")),
+            EventFactory.make(model: "claude-sonnet-5", timestamp: local("2026-10-28 10:10"), inputTokens: 5),
+        ])
+        XCTAssertEqual(result.unpricedModels, [])
+        XCTAssertEqual(result.today.turnCount, 1)
     }
 
     func testUnpricedModelsOverThirtyDays() {
@@ -198,9 +233,10 @@ final class UsageOverviewTests: XCTestCase {
     /// Where summer time starts at midnight the day begins at 01:00. Every day of the series
     /// must still be the calendar's own start of day, or no event finds its bucket.
     func testDaysStayAtStartOfDayWhereDSTStartsAtMidnight() {
-        for (zone, now, switchDay) in [
-            ("America/Santiago", "2025-09-20 15:00", "2025-09-07"),
-            ("America/Havana", "2026-03-20 15:00", "2026-03-08"),
+        // The last element is how many days of history the switch day starts.
+        for (zone, now, switchDay, history) in [
+            ("America/Santiago", "2025-09-20 15:00", "2025-09-07", 13.0),
+            ("America/Havana", "2026-03-20 15:00", "2026-03-08", 12.0),
         ] {
             var calendar = Calendar(identifier: .gregorian)
             calendar.timeZone = TimeZone(identifier: zone)!
@@ -218,7 +254,7 @@ final class UsageOverviewTests: XCTestCase {
             XCTAssertTrue(result.last30Days.allSatisfy { calendar.startOfDay(for: $0) == $0 }, zone)
             XCTAssertEqual(result.dailyCost.reduce(0) { $0 + $1.costUSD }, 6, accuracy: 1e-9, zone)
             XCTAssertEqual(result.costByDayAndFamily.reduce(0) { $0 + $1.costUSD }, 6, accuracy: 1e-9, zone)
-            XCTAssertEqual(result.meanDailyCostUSD, 3.0 / 30, accuracy: 1e-9, zone)
+            XCTAssertEqual(result.meanDailyCostUSD, 3.0 / history, accuracy: 1e-9, zone)
         }
     }
 }
