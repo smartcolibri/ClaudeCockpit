@@ -1,0 +1,32 @@
+/* legal.css — layout for the privacy and support pages (on top of base.css). */
+:root{--bg:#000;--txt:#f5f5f7;--muted:#a1a1a6;--line:#26282c;--line-soft:#1a1b1e;--accent:#d97757;--surface:#111214}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--txt);font-size:17px;line-height:1.6}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+nav{position:sticky;top:0;background:rgba(0,0,0,.78);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-bottom:1px solid var(--line-soft);z-index:10}
+nav .wrap{display:flex;align-items:center;gap:16px;height:52px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;color:var(--txt);text-decoration:none;white-space:nowrap}
+.brand img{width:24px;height:24px;border-radius:6px}
+.nav-links{display:flex;gap:18px;margin-left:auto;align-items:center;font-size:13px}
+.nav-links a{color:var(--muted);text-decoration:none}
+.nav-links a:hover{color:var(--txt)}
+.langtog{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.langtog button{background:none;border:0;color:var(--muted);font:600 11px/1 inherit;padding:7px 10px;cursor:pointer}
+.langtog button.on{background:var(--txt);color:#000}
+.doc{padding-top:48px;padding-bottom:64px}
+.doc h1{font-size:clamp(32px,6vw,44px);letter-spacing:-.03em;line-height:1.1;margin:0 0 8px}
+.doc h2{font-size:21px;letter-spacing:-.01em;margin:36px 0 8px}
+.doc .meta{color:var(--muted);font-size:14px;margin:0 0 24px}
+.doc .lead{font-size:19px;color:var(--txt);border-left:3px solid var(--accent);padding-left:16px;margin:24px 0}
+.doc p,.doc li{color:#d2d2d7}
+.doc ul{padding-left:22px}
+.doc li{margin:6px 0}
+.doc a{color:var(--accent)}
+.doc code{font:14px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 5px;overflow-wrap:anywhere}
+.contact{display:flex;flex-direction:column;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px;margin:28px 0}
+.contact a{font-size:19px;font-weight:600}
+.contact span{color:var(--muted);font-size:14px}
+details{border-bottom:1px solid var(--line);padding:14px 0}
+summary{cursor:pointer;font-weight:600;color:var(--txt);list-style-position:outside}
+details p{margin:10px 0 2px}
+footer{border-top:1px solid var(--line-soft);color:var(--muted);font-size:13px;padding:28px 0 40px;text-align:center}
+footer a{color:var(--muted)}
