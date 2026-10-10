@@ -385,6 +385,8 @@ aucun droit réseau). Dans la sandbox, `homeDirectoryForCurrentUser`, `NSHomeDir
 
 ### Mode démo
 
+Diagramme interactif : [https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-demo-mode.html](https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-demo-mode.html) (source `docs/diagrams/claude-cockpit-demo-mode.architecture.json`).
+
 Pour la revue Apple, qui n'a aucune donnée Claude Code. `Scripts/make-demo-data.swift` écrit un arbre
 fictif et déterministe dans `ClaudeCockpit/Resources/Demo/` (embarqué comme référence de dossier) :
 `manifest.json` (ancre temporelle, home d'origine `/Users/demo`) et `home/` avec 3 projets, 8 sessions

@@ -355,6 +355,8 @@ no network entitlement). Inside the sandbox `homeDirectoryForCurrentUser`, `NSHo
 
 ### Demo mode
 
+Interactive diagram: [https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-demo-mode.html](https://smartcolibri.github.io/ClaudeCockpit/diagrams/claude-cockpit-demo-mode.html) (source `docs/diagrams/claude-cockpit-demo-mode.architecture.json`).
+
 For App Review, which has no Claude Code data. `Scripts/make-demo-data.swift` writes a deterministic,
 fictional tree to `ClaudeCockpit/Resources/Demo/` (bundled as a folder reference): `manifest.json` (time
 anchor, original home `/Users/demo`) and `home/` with 3 projects, 8 sessions (2 with subagents), skills,
