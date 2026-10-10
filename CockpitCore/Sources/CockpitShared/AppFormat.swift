@@ -137,7 +137,8 @@ public enum AppFormat {
     ) -> String {
         let french = isFrench(locale)
         let delta = now.timeIntervalSince(date)
-        if delta < 45 { return french ? "à l'instant" : "just now" }
+        // Under a minute: rounded down, 45-59 s would read "0 min ago".
+        if delta < 60 { return french ? "à l'instant" : "just now" }
         if delta < 3600 {
             let minutes = Int(delta / 60)
             return french ? "il y a \(minutes) min" : "\(minutes) min ago"

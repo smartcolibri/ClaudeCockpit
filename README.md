@@ -73,12 +73,12 @@ preferences; numbers, dates and currencies follow that language and your region.
 
 | What you see | Detail |
 |---|---|
-| Stat grid | Sessions, turns, input, output, cache read and cache creation tokens, estimated cost |
-| Daily chart | Stacked per-day token series over the selected range |
-| Filters | By model family, by project (working directory) and by date range, from Today to All |
-| Breakdown table | Cost and tokens grouped by project, by agent or by skill, sorted by cost |
+| One rule | The whole screen follows the filters: model families, project (working directory) and period, from Today to All, on one line |
+| Four tiles | Estimated cost with a sparkline and the change against the previous period of equal length, sessions per day, turns per session (means over the days the history covers), tokens split into input, output, cache read and cache written |
+| Cost over the period | Bars stacked by model family, or tokens stacked by kind; hourly for Today, daily up to two months, then weekly, then monthly; hover for the detail |
+| Breakdown | Cost by model family as a donut, and cost and sessions by project, model, agent or skill, top five with "Show all" |
+| Rhythm | Mean cost per hour of day with its peak, and sessions per weekday with the weekday share |
 | Sessions list | Named sessions, most recent first, with a per-session detail pane |
-| Insights | Automatic signals: cost swings against the same point last week (from the second day, above $1), models with no dedicated pricing tier, cache hit rate |
 | Editable pricing | The four per-model-family rates are yours to correct when Anthropic changes prices |
 | Incremental scanning | Only bytes appended since the last pass are read, and the cache survives relaunches |
 
@@ -232,7 +232,7 @@ ClaudeCockpit/
 │   └── Resources/              Assets.xcassets, Info.plist, entitlements
 ├── CockpitCore/                local SwiftPM package — all the logic, no UI
 │   ├── Sources/CockpitShared/  paths, locale-aware formatters, watchers, front matter
-│   ├── Sources/UsageKit/       transcript scanner, pricing, aggregation, insights
+│   ├── Sources/UsageKit/       transcript scanner, pricing, aggregation, period series
 │   ├── Sources/SessionsKit/    session index (SQLite/FTS5), transcript parser, health, export
 │   ├── Sources/QuotaKit/       credentials, usage API, pace math, rate limiting
 │   ├── Sources/RTKKit/         read-only SQLite repository and database watcher

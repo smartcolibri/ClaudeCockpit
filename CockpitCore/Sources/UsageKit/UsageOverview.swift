@@ -59,7 +59,7 @@ public struct UsageOverview: Hashable, Sendable {
     /// The project that spent the most on Opus over the last 30 days, `~`-shortened.
     public let topOpusProject: String?
     /// Cache read tokens over everything sent as prompt (cache read + cache write + input) for
-    /// the last 30 days. Unlike `InsightEngine`'s ratio, cache writes count: Claude Code writes
+    /// the last 30 days. Cache writes count: Claude Code writes
     /// its cache on nearly every turn, and without them any account reads close to 100 %.
     /// `nil` when nothing was sent.
     public let cacheHitRate: Double?
@@ -233,7 +233,7 @@ extension UsageAggregator {
             if event.timestamp < firstEvent ?? .distantFuture { firstEvent = event.timestamp }
             guard event.timestamp >= firstDay, event.timestamp < tomorrowStart else { continue }
             // `<synthetic>` placeholders and turns that used no token say nothing about a model.
-            let isModelUsage = event.model != "<synthetic>" && event.totalTokens > 0
+            let isModelUsage = event.model != UsageEvent.syntheticModel && event.totalTokens > 0
             let family = ModelFamily.detect(from: event.model)
             let cost = pricing.pricing(for: family).cost(for: event)
             let time = event.timestamp

@@ -65,22 +65,6 @@
         }
       }
     },
-    "%@ has no dedicated pricing — the default Sonnet rate is applied." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ has no dedicated pricing — the default Sonnet rate is applied."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%@ n'a pas de tarif dédié — le tarif Sonnet par défaut est appliqué."
-          }
-        }
-      }
-    },
     "%@ in total, all levels" : {
       "localizations" : {
         "en" : {
@@ -2137,22 +2121,6 @@
         }
       }
     },
-    "Breakdown by model" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Breakdown by model"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Répartition par modèle"
-          }
-        }
-      }
-    },
     "By command" : {
       "localizations" : {
         "en" : {
@@ -2265,22 +2233,6 @@
         }
       }
     },
-    "Cache read rate at %@ — keeping costs down." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cache read rate at %@ — keeping costs down."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Taux de lecture du cache à %@ — cela contient les coûts."
-          }
-        }
-      }
-    },
     "Cache Write" : {
       "localizations" : {
         "en" : {
@@ -2293,22 +2245,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Création cache"
-          }
-        }
-      }
-    },
-    "cache writes" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cache writes"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "écritures dans le cache"
           }
         }
       }
@@ -2841,22 +2777,6 @@
         }
       }
     },
-    "Cost down %@ compared with the same point last week." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cost down %@ compared with the same point last week."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coût en baisse de %@ par rapport à la même période de la semaine dernière."
-          }
-        }
-      }
-    },
     "Cost over the last 14 days" : {
       "localizations" : {
         "en" : {
@@ -2901,54 +2821,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coût par jour, 30 j"
-          }
-        }
-      }
-    },
-    "Cost per hour" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cost per hour"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coût par heure"
-          }
-        }
-      }
-    },
-    "Cost up %@ compared with the same point last week." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cost up %@ compared with the same point last week."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coût en hausse de %@ par rapport à la même période de la semaine dernière."
-          }
-        }
-      }
-    },
-    "Cost — max %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cost — max %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Coût — max %@"
           }
         }
       }
@@ -3029,22 +2901,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lecture de l'index impossible : %@"
-          }
-        }
-      }
-    },
-    "Could not read the usage: %@. No transcripts found in ~/.claude/projects?" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Could not read the usage: %@. No transcripts found in ~/.claude/projects?"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lecture de l'usage impossible : %@. Aucun transcript trouvé dans ~/.claude/projects ?"
           }
         }
       }
@@ -3157,22 +3013,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "coupé"
-          }
-        }
-      }
-    },
-    "Daily usage — %@" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Daily usage — %@"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Usage quotidien — %@"
           }
         }
       }
@@ -3669,22 +3509,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Premier jour d'utilisation"
-          }
-        }
-      }
-    },
-    "First scan of ~/.claude/projects; this can take a few seconds." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "First scan of ~/.claude/projects; this can take a few seconds."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Premier scan de ~/.claude/projects, cela peut prendre quelques secondes."
           }
         }
       }
@@ -4437,22 +4261,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Dernier tour"
-          }
-        }
-      }
-    },
-    "Last week" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Last week"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Semaine dernière"
           }
         }
       }
@@ -5241,22 +5049,6 @@
         }
       }
     },
-    "No notable change in this period." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "No notable change in this period."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Aucun changement notable sur cette période."
-          }
-        }
-      }
-    },
     "No path contains “%@”. Clear the filter to see everything again." : {
       "localizations" : {
         "en" : {
@@ -5665,22 +5457,6 @@
         }
       }
     },
-    "now" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "now"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "maintenant"
-          }
-        }
-      }
-    },
     "OK" : {
       "localizations" : {
         "en" : {
@@ -5969,22 +5745,6 @@
         }
       }
     },
-    "over all history" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "over all history"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sur tout l'historique"
-          }
-        }
-      }
-    },
     "over the chosen period" : {
       "localizations" : {
         "en" : {
@@ -6029,22 +5789,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "sur les 7 derniers jours"
-          }
-        }
-      }
-    },
-    "over “%@”" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "over “%@”"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "sur « %@ »"
           }
         }
       }
@@ -6337,22 +6081,6 @@
         }
       }
     },
-    "prompt cache reads" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "prompt cache reads"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "lectures du cache de prompt"
-          }
-        }
-      }
-    },
     "Quit" : {
       "localizations" : {
         "en" : {
@@ -6509,22 +6237,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Lecture des transcripts"
-          }
-        }
-      }
-    },
-    "Reading transcripts…" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Reading transcripts…"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Lecture des transcripts…"
           }
         }
       }
@@ -7521,22 +7233,6 @@
         }
       }
     },
-    "Sessions per week" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sessions per week"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Sessions par semaine"
-          }
-        }
-      }
-    },
     "Sessions this week" : {
       "localizations" : {
         "en" : {
@@ -7765,22 +7461,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "affiché"
-          }
-        }
-      }
-    },
-    "Signals and alerts" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signals and alerts"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Signaux et alertes"
           }
         }
       }
@@ -8553,22 +8233,6 @@
         }
       }
     },
-    "tokens generated" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "tokens generated"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "tokens générés"
-          }
-        }
-      }
-    },
     "Tokens saved" : {
       "localizations" : {
         "en" : {
@@ -8629,22 +8293,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Jetons économisés · depuis toujours"
-          }
-        }
-      }
-    },
-    "tokens sent" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "tokens sent"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "tokens envoyés"
           }
         }
       }
@@ -9333,6 +8981,870 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "▼ %1$@ vs moy. %2$lld j"
+          }
+        }
+      }
+    },
+    "%@ of the cost" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ of the cost"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ du coût"
+          }
+        }
+      }
+    },
+    "%@ on weekdays" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ on weekdays"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ en semaine"
+          }
+        }
+      }
+    },
+    "%@ per day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per day"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ par jour"
+          }
+        }
+      }
+    },
+    "%@ per day on average" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per day on average"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ par jour en moyenne"
+          }
+        }
+      }
+    },
+    "%@ per session" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ per session"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ par session"
+          }
+        }
+      }
+    },
+    "+ %lld more · Show all" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "+ %lld more · Show all"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "+ %lld more · Show all"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "+ %lld autre · tout afficher"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "+ %lld autres · tout afficher"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "7 d" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "7 j"
+          }
+        }
+      }
+    },
+    "30 d" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "30 j"
+          }
+        }
+      }
+    },
+    "90 d" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "90 d"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "90 j"
+          }
+        }
+      }
+    },
+    "All recorded history" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "All recorded history"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tout l'historique enregistré"
+          }
+        }
+      }
+    },
+    "Bucket" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Bucket"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Intervalle"
+          }
+        }
+      }
+    },
+    "By agent" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By agent"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par agent"
+          }
+        }
+      }
+    },
+    "By model" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By model"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par modèle"
+          }
+        }
+      }
+    },
+    "By project" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By project"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par projet"
+          }
+        }
+      }
+    },
+    "By skill" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "By skill"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Par skill"
+          }
+        }
+      }
+    },
+    "Chart values" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Chart values"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valeurs du graphique"
+          }
+        }
+      }
+    },
+    "Cost by model family" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost by model family"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût par famille de modèles"
+          }
+        }
+      }
+    },
+    "Cost per day — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost per day — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût par jour — %@"
+          }
+        }
+      }
+    },
+    "Cost per hour — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost per hour — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût par heure — %@"
+          }
+        }
+      }
+    },
+    "Cost per month — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost per month — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût par mois — %@"
+          }
+        }
+      }
+    },
+    "Cost per week — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cost per week — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût par semaine — %@"
+          }
+        }
+      }
+    },
+    "Mean cost per hour of day" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mean cost per hour of day"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût moyen par heure de la journée"
+          }
+        }
+      }
+    },
+    "No spend in the previous period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No spend in the previous period"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune dépense sur la période précédente"
+          }
+        }
+      }
+    },
+    "No spend in this period." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No spend in this period."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune dépense sur cette période."
+          }
+        }
+      }
+    },
+    "Peak: %@–%@ · %@ of the cost" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Peak: %1$@–%2$@ · %3$@ of the cost"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pic : %1$@–%2$@ · %3$@ du coût"
+          }
+        }
+      }
+    },
+    "Prev. month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Prev. month"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mois préc."
+          }
+        }
+      }
+    },
+    "Rhythm over the period" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rhythm over the period"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Rythme sur la période"
+          }
+        }
+      }
+    },
+    "Sessions per weekday" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions per weekday"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sessions par jour de la semaine"
+          }
+        }
+      }
+    },
+    "Show less" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Show less"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Réduire"
+          }
+        }
+      }
+    },
+    "Tokens per day — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens per day — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens par jour — %@"
+          }
+        }
+      }
+    },
+    "Tokens per hour — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens per hour — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens par heure — %@"
+          }
+        }
+      }
+    },
+    "Tokens per month — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens per month — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens par mois — %@"
+          }
+        }
+      }
+    },
+    "Tokens per week — %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens per week — %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens par semaine — %@"
+          }
+        }
+      }
+    },
+    "Turns: %@ · Tokens: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Turns: %1$@ · Tokens: %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tours : %1$@ · Tokens : %2$@"
+          }
+        }
+      }
+    },
+    "Value" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Value"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Valeur"
+          }
+        }
+      }
+    },
+    "Weekday" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Weekday"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Jour de la semaine"
+          }
+        }
+      }
+    },
+    "over %lld days" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "over %lld day"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "over %lld days"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "sur %lld jour"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "sur %lld jours"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "vs last week at this point" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs last week at this point"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs la semaine dernière au même stade"
+          }
+        }
+      }
+    },
+    "vs the month before" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs the month before"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs le mois d'avant"
+          }
+        }
+      }
+    },
+    "vs the previous 30 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs the previous 30 days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs les 30 jours précédents"
+          }
+        }
+      }
+    },
+    "vs the previous 7 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs the previous 7 days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs les 7 jours précédents"
+          }
+        }
+      }
+    },
+    "vs the previous 90 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs the previous 90 days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs les 90 jours précédents"
+          }
+        }
+      }
+    },
+    "vs yesterday at this time" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs yesterday at this time"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs hier à la même heure"
+          }
+        }
+      }
+    },
+    "vs the same span of last month" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs the same span of last month"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "vs la même durée le mois dernier"
+          }
+        }
+      }
+    },
+    "Not enough history to compare" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Not enough history to compare"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pas assez d'historique pour comparer"
+          }
+        }
+      }
+    },
+    "No change %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No change %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sans changement %@"
+          }
+        }
+      }
+    },
+    "Up %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Up %1$@ %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En hausse de %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Down %@ %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Down %1$@ %2$@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En baisse de %1$@ %2$@"
+          }
+        }
+      }
+    },
+    "Tokens: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tokens : %@"
+          }
+        }
+      }
+    },
+    "Reading transcripts…" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reading transcripts…"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lecture des transcripts…"
+          }
+        }
+      }
+    },
+    "First scan of ~/.claude/projects; this can take a few seconds." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First scan of ~/.claude/projects; this can take a few seconds."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premier scan de ~/.claude/projects, cela peut prendre quelques secondes."
           }
         }
       }

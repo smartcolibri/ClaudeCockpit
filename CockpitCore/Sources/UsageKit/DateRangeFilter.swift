@@ -54,6 +54,39 @@ public enum DateRangeFilter: String, CaseIterable, Identifiable, Codable, Hashab
         }
     }
 
+    /// The window this range is compared with: the same length just before it, ending at the
+    /// same point. Today, this week and N days end at `now`, so their previous window ends at
+    /// `now` moved back by the same calendar step, wall-clock time kept across a DST switch.
+    /// This month compares the same elapsed duration from the previous month's start, capped
+    /// at that month's end; the previous month is the whole month before. `nil` for `.all`,
+    /// which has nothing before it.
+    public func previousBounds(
+        now: Date = Date(),
+        calendar: Calendar = .current
+    ) -> (start: Date, end: Date)? {
+        let (start, end) = bounds(now: now, calendar: calendar)
+        guard let start else { return nil }
+        let step: DateComponents
+        switch self {
+        case .today: step = DateComponents(day: -1)
+        case .thisWeek: step = DateComponents(day: -7)
+        case .thisMonth, .prevMonth: step = DateComponents(month: -1)
+        case .last7Days: step = DateComponents(day: -7)
+        case .last30Days: step = DateComponents(day: -30)
+        case .last90Days: step = DateComponents(day: -90)
+        case .all: return nil
+        }
+        guard let previousStart = calendar.date(byAdding: step, to: start).map(calendar.startOfDay(for:)) else { return nil }
+        if self == .thisMonth {
+            // Months differ in length: the same elapsed duration from the previous month's
+            // start, never past that month's end.
+            return (previousStart, min(previousStart.addingTimeInterval(now.timeIntervalSince(start)), start))
+        }
+        // Only the previous month is closed; today's own end (tomorrow) is not reached yet.
+        guard let previousEnd = calendar.date(byAdding: step, to: self == .prevMonth ? (end ?? now) : now) else { return nil }
+        return (previousStart, min(previousEnd, start))
+    }
+
     /// Whether `date` falls inside this range.
     public func contains(_ date: Date, now: Date = Date(), calendar: Calendar = .current) -> Bool {
         let (start, end) = bounds(now: now, calendar: calendar)
