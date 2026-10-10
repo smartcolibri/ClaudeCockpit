@@ -310,6 +310,39 @@ initializer, so a fresh install and an upgraded one read the same values.
 
 The app writes nowhere else. Transcripts, credentials and rtk's database are read-only, always.
 
+Under the App Sandbox, "Application Support" above is the container's:
+`~/Library/Containers/fr.smartcolibri.cockpitforclaude/Data/Library/Application Support/ClaudeCockpit`.
+Nothing is migrated from a previous non-sandboxed install; the index is rebuilt.
+
+### Sandbox access
+
+The app ships sandboxed (`app-sandbox`, `files.user-selected.read-write`, `files.bookmarks.app-scope`,
+no network entitlement). Inside the sandbox `homeDirectoryForCurrentUser`, `NSHomeDirectory()` and
+`expandingTildeInPath` all answer the container, so:
+
+- `ClaudePaths.live` takes the real home from `getpwuid(getuid())` and expands `~` with
+  `ClaudePaths.expandTilde`; app data (`appSupportDir`) comes from
+  `FileManager.urls(for: .applicationSupportDirectory)`, i.e. the container. `init(home:configDir:appSupport:)`
+  with an explicit home still derives everything from it (tests).
+- The Claude config directory is the "Dossier de configuration Claude" setting, then `CLAUDE_CONFIG_DIR`,
+  then `~/.claude` (a Finder-launched app never sees the shell environment).
+- `AccessStore` (app target) keeps the user's grants as app-scope security-scoped bookmarks in
+  UserDefaults (`access.bookmarks`), resolves them at launch, recreates stale ones, and keeps each scope
+  open for the process lifetime (watchers are long-lived). A bookmark that no longer resolves stays listed
+  as broken in Réglages › Accès.
+- `AccessCoverage` (CockpitShared, pure) decides whether a path is covered (whole-component prefix,
+  no symlink resolution) and judges a folder picked in the grant panel (`full` / `partial` / `unrelated`).
+  Outside the sandbox everything counts as covered, so unsigned Debug builds behave as before.
+- `CockpitStore` checks coverage before reading or watching anything: an uncovered source is
+  `SourceState.unauthorized`, which the views render as "Accès non autorisé" with the grant button.
+  The overview becomes the onboarding while `claudeDir` is uncovered. Any grant change calls
+  `accessDidChange()`, which rebuilds the services if the config directory moved and restarts usage,
+  sessions, skills and RTK.
+- The recommended grant is the home folder: symlinks leaving a granted tree are denied
+  (`~/.claude/skills/x -> ~/.agents/skills/x`), and RTK and project roots live elsewhere in the home.
+  The RTK picker bookmarks the database's folder, since SQLite's WAL needs the `-wal`/`-shm` siblings; the
+  read-a-copy fallback writes to `FileManager.temporaryDirectory`, the container's `tmp`.
+
 ## Error handling
 
 The policy is one sentence: **every source fails alone, and a failure never destroys what was
