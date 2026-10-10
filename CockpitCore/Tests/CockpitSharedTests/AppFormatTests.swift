@@ -94,18 +94,36 @@ final class AppFormatTests: XCTestCase {
         XCTAssertEqual(AppFormat.tokens(12_345, locale: de), "12,3K")
     }
 
-    /// The resolved locale is the app's language with the user's region: English with a
-    /// French region keeps English words but the region's conventions — "US$0,36", not
-    /// "$0.36". The language is the one the bundle resolved, never the region's own.
-    func testResolvedLocaleCombinesAppLanguageWithUserRegion() {
-        let resolved = AppFormat.resolvedLocale(bundle: .main, current: Locale(identifier: "fr_FR"))
-        XCTAssertEqual(resolved.region, .france)
-        let language = Bundle.main.preferredLocalizations.first.map { Locale(identifier: $0) }
-        XCTAssertEqual(resolved.language.languageCode, language?.language.languageCode ?? .english)
+    /// The formats follow the app's language, not the Mac's region: English on a French Mac
+    /// still reads "$0.36" and "Oct 10", French reads "0,36 $US" and "10 oct." everywhere.
+    func testResolvedLocaleFollowsTheAppLanguageOnly() throws {
+        XCTAssertEqual(AppFormat.formattingLocales["en"], "en_US")
+        XCTAssertEqual(AppFormat.formattingLocales["fr"], "fr_FR")
+        let resolved = AppFormat.resolvedLocale(bundle: .main)
+        XCTAssertTrue(["en_US", "fr_FR"].contains(resolved.identifier), resolved.identifier)
 
-        let enFR = Locale(identifier: "en_FR")
-        XCTAssertEqual(AppFormat.money(0.36, locale: enFR), "US$0,36")
-        XCTAssertEqual(AppFormat.shortDate(now, locale: enFR), "10 Oct")
-        XCTAssertEqual(AppFormat.relative(now.addingTimeInterval(-180), now: now, locale: enFR), "3 min ago")
+        for (language, expected) in [("en", "en_US"), ("fr", "fr_FR"), ("de", "en_US")] {
+            let bundle = try Self.bundle(localizedIn: language)
+            XCTAssertEqual(AppFormat.resolvedLocale(bundle: bundle).identifier, expected, language)
+        }
+
+        let english = Locale(identifier: "en_US")
+        XCTAssertEqual(AppFormat.money(0.36, locale: english), "$0.36")
+        XCTAssertEqual(AppFormat.percent(1, locale: english), "100%")
+        XCTAssertEqual(AppFormat.shortDate(now, locale: english), "Oct 10")
+        XCTAssertEqual(AppFormat.integer(1_234, locale: english), "1,234")
+    }
+
+    /// A throwaway bundle whose only localisation is `language`, so `preferredLocalizations`
+    /// resolves to it whatever the machine's own preferences.
+    private static func bundle(localizedIn language: String) throws -> Bundle {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("AppFormatTests-\(language)-\(UUID().uuidString).bundle")
+        let lproj = root.appendingPathComponent("Contents/Resources/\(language).lproj")
+        try FileManager.default.createDirectory(at: lproj, withIntermediateDirectories: true)
+        try Data("\"k\" = \"v\";".utf8).write(to: lproj.appendingPathComponent("Localizable.strings"))
+        let info: [String: Any] = ["CFBundleIdentifier": "test.\(language)", "CFBundleDevelopmentRegion": language]
+        try (info as NSDictionary).write(to: root.appendingPathComponent("Contents/Info.plist"))
+        return try XCTUnwrap(Bundle(url: root))
     }
 }

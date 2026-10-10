@@ -2,23 +2,27 @@ import Foundation
 
 /// Number, date and duration formatting shared by every screen. Pure functions.
 ///
-/// Every function takes the locale to write in, defaulting to ``locale``: the language the
-/// app resolved (English unless the user prefers a translation it ships) with the user's
-/// region. Tests pass an explicit locale so their output does not depend on the machine.
+/// Every function takes the locale to write in, defaulting to ``locale``: the formatting
+/// locale of the language the app resolved (English unless the user prefers a translation
+/// it ships). Tests pass an explicit locale so their output does not depend on the machine.
 ///
 /// The few words written here ("just now", "2 h 05") follow the locale's language, not the
 /// process's: the String Catalogs pick the language from the process, so a formatter that
 /// looked words up there could not be pinned by a test.
 public enum AppFormat {
-    /// The app's resolved language combined with the user's region, composed the way macOS
-    /// composes its own: English with a French region is `en_FR` ("US$0,36", "10 Oct").
+    /// The formatting locale of the language the app resolved: English formats as `en_US`
+    /// ("$0.36", "Oct 10", "1,234") and French as `fr_FR` ("0,36 $US", "10 oct.", "1 234"),
+    /// whatever the Mac's region. Numbers then read the way the surrounding words do.
     public static let locale: Locale = resolvedLocale()
 
-    static func resolvedLocale(bundle: Bundle = .main, current: Locale = .current) -> Locale {
+    /// One formatting locale per language the app ships; anything else formats as English,
+    /// which is also the language the interface falls back to.
+    static let formattingLocales: [String: String] = ["en": "en_US", "fr": "fr_FR"]
+
+    static func resolvedLocale(bundle: Bundle = .main) -> Locale {
         let preferred = bundle.preferredLocalizations.first.flatMap { $0 == "Base" ? nil : $0 }
         let language = Locale(identifier: preferred ?? "en").language.languageCode?.identifier ?? "en"
-        guard let region = current.region?.identifier else { return Locale(identifier: language) }
-        return Locale(identifier: "\(language)_\(region)")
+        return Locale(identifier: formattingLocales[language] ?? "en_US")
     }
 
     private static func isFrench(_ locale: Locale) -> Bool {
