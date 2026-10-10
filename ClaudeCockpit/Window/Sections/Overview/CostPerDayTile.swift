@@ -48,7 +48,11 @@ struct CostPerDayTile: View {
     }
 
     private func chart(_ overview: UsageOverview) -> some View {
-        let money = { (value: Double) in store.money(value) }
+        // Whole units once the scale reaches ten: "$1,000.00" says nothing "$1,000" does not,
+        // while a demo-sized scale still needs its cents ("$0.50").
+        let peak = Dictionary(overview.costByDayAndFamily.map { ($0.day, $0.costUSD) }, uniquingKeysWith: +).values.max() ?? 0
+        let digits = peak >= 10 ? 0 : 2
+        let money = { (value: Double) in store.money(value, digits: digits) }
         return Chart {
             ForEach(overview.costByDayAndFamily) { point in
                 BarMark(x: .value("Day", point.day, unit: .day), y: .value("Cost", point.costUSD))
