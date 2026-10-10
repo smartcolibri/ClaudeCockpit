@@ -190,6 +190,7 @@ public enum UsageAggregator {
             costThisWeekUnfilteredUSD: costThisWeekUnfiltered,
             sessionsThisWeekUnfilteredTotal: sessionsThisWeekUnfiltered,
             sessionsLastWeekUnfilteredTotal: sessionsLastWeekUnfiltered,
+            overview: overview(events: allEvents, pricing: pricing, now: now, calendar: calendar, home: home),
             availableProjects: availableProjects,
             availableModels: availableModels,
             availableModelFamilies: availableModelFamilies)
