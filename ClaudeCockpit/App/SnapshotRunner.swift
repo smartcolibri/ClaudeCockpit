@@ -65,6 +65,16 @@ enum SnapshotRunner {
             }
         }
 
+        // The Accès tab: granted folders and what they cover. Under the sandbox with no
+        // grant yet, the overview shot above is the onboarding screen.
+        UserDefaults.standard.set(SettingsView.Tab.access.rawValue, forKey: SettingsKey.settingsTab)
+        select(.settings)
+        try? await Task.sleep(for: .seconds(1.5))
+        if let window = NSApp.windows.first(where: { $0.title == MainWindowView.windowTitle && $0.isVisible }) {
+            write(window, to: dir.appendingPathComponent("settings-access.png"))
+        }
+        UserDefaults.standard.set(SettingsView.Tab.general.rawValue, forKey: SettingsKey.settingsTab)
+
         // Menu-bar panel, hosted in a plain window of the same width.
         let panel = NSWindow(
             contentRect: NSRect(x: 0, y: 0, width: Theme.panelWidth, height: 720),

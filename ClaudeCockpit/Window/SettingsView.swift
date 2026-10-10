@@ -5,17 +5,21 @@ import CockpitShared
 /// The preferences surface, shown both in the `Settings` scene (⌘,) and embedded in the
 /// main window's detail area — hence flexible sizing rather than a fixed frame.
 struct SettingsView: View {
-    private enum Tab: String, Hashable {
-        case general, pricing, rtk, projects, about
+    enum Tab: String, Hashable {
+        case general, access, pricing, rtk, projects, about
     }
 
-    @State private var selection: Tab = .general
+    /// Persisted so the snapshot mode can capture a given tab.
+    @AppStorage(SettingsKey.settingsTab) private var selection: Tab = .general
 
     var body: some View {
         TabView(selection: $selection) {
             GeneralSettingsTab()
                 .tabItem { Label("Général", systemImage: "gearshape") }
                 .tag(Tab.general)
+            AccessSettingsTab()
+                .tabItem { Label("Accès", systemImage: "lock.open") }
+                .tag(Tab.access)
             PricingEditorView()
                 .tabItem { Label("Tarifs", systemImage: "dollarsign.circle") }
                 .tag(Tab.pricing)
@@ -226,15 +230,33 @@ private struct RTKSettingsTab: View {
         .formStyle(.grouped)
     }
 
+    /// Picks `history.db` or the folder holding it. Under the sandbox the choice is kept
+    /// as a bookmark when no grant covers it, and on the **folder**: rtk runs SQLite in WAL
+    /// mode, so reading needs the `-wal`/`-shm` siblings, and `rtk reset` recreates the file,
+    /// which a bookmark on the file alone would not survive.
     private func chooseDatabase() {
-        let panel = NSOpenPanel()
-        panel.title = "Choisir la base de données RTK"
-        panel.canChooseFiles = true
-        panel.canChooseDirectories = false
-        panel.allowsMultipleSelection = false
-        panel.showsHiddenFiles = true
-        guard panel.runModal() == .OK, let url = panel.url else { return }
-        rtkPath = url.path
+        let start = store.rtkDatabaseURL?.deletingLastPathComponent()
+            ?? store.paths.home.appendingPathComponent("Library/Application Support/rtk", isDirectory: true)
+        guard let picked = store.access.runPanel(
+            directory: start,
+            message: "Choisissez history.db, ou le dossier qui le contient (recommandé).",
+            prompt: "Choisir",
+            chooseFiles: true) else { return }
+        var isDir: ObjCBool = false
+        let pickedFolder = FileManager.default.fileExists(atPath: picked.path, isDirectory: &isDir) && isDir.boolValue
+        let folder = pickedFolder ? picked : picked.deletingLastPathComponent()
+        let database = pickedFolder ? picked.appendingPathComponent("history.db") : picked
+        if !store.isCovered(folder) {
+            if pickedFolder {
+                store.grant(folder)
+            } else if store.grantFolder(
+                startingAt: folder,
+                message: "Autorisez aussi le dossier de la base : SQLite y lit son journal (-wal).") == nil {
+                // Without the folder the file alone still reads, minus what sits in the journal.
+                store.grant(picked)
+            }
+        }
+        rtkPath = database.path
         store.rtkPathDidChange()
     }
 }
@@ -255,16 +277,155 @@ private struct ProjectsSettingsTab: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .fixedSize(horizontal: false, vertical: true)
+                if !store.inaccessibleProjectRoots.isEmpty {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Racines non accessibles (hors des dossiers autorisés, ignorées) :")
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(.orange)
+                        ForEach(store.inaccessibleProjectRoots, id: \.path) { root in
+                            Text(store.displayPath(root)).font(.data(11)).foregroundStyle(Theme.slate)
+                        }
+                    }
+                }
                 HStack {
+                    Button("Ajouter une racine…") { addRoot() }
                     Button("Rescanner") { Task { await store.refreshSkills() } }
                     Spacer()
-                    Text(FRFormat.plural(store.projectRoots.count, "racine analysée"))
+                    Text(FRFormat.plural(store.projectRoots.count - store.inaccessibleProjectRoots.count, "racine analysée"))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
             }
         }
         .formStyle(.grouped)
+    }
+
+    /// Picks a folder, grants it when needed and appends it to the list.
+    private func addRoot() {
+        guard let url = store.access.runPanel(
+            directory: store.paths.home, message: "Choisissez un dossier contenant vos projets.", prompt: "Ajouter")
+        else { return }
+        if !store.isCovered(url) { store.grant(url) }
+        var lines = projectRoots.split(whereSeparator: \.isNewline).map(String.init).filter {
+            !$0.trimmingCharacters(in: .whitespaces).isEmpty
+        }
+        // An empty list stands for the defaults: keep them when adding the first custom root.
+        if lines.isEmpty { lines = store.paths.defaultProjectRoots.map { store.displayPath($0) } }
+        let entry = store.displayPath(url)
+        if !lines.contains(entry) { lines.append(entry) }
+        projectRoots = lines.joined(separator: "\n")
+        Task { await store.refreshSkills() }
+    }
+}
+
+// MARK: - Accès
+
+private struct AccessSettingsTab: View {
+    @Environment(CockpitStore.self) private var store
+    @AppStorage(SettingsKey.claudeConfigDir) private var configDir = ""
+
+    var body: some View {
+        Form {
+            Section("Dossiers autorisés") {
+                if !store.access.isSandboxed {
+                    Text("Cette version n'est pas isolée (sandbox) : elle lit tous vos dossiers sans autorisation.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.slate)
+                }
+                if store.access.grants.isEmpty {
+                    Text("Aucun dossier autorisé.")
+                        .font(.system(size: 12))
+                        .foregroundStyle(Theme.slate)
+                }
+                ForEach(store.access.grants) { grant in
+                    HStack(spacing: 8) {
+                        Image(systemName: grant.isUsable ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
+                            .foregroundStyle(grant.isUsable ? Theme.emerald : .orange)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(store.displayPath(URL(fileURLWithPath: grant.path))).font(.data(11))
+                            Text(statusLabel(grant.status)).font(.system(size: 10)).foregroundStyle(Theme.slate)
+                        }
+                        Spacer()
+                        Button("Réautoriser") { reauthorize(grant) }
+                        Button("Retirer", role: .destructive) { store.access.remove(grant) }
+                    }
+                }
+                HStack {
+                    Button("Ajouter…") {
+                        store.grantFolder(startingAt: store.paths.home, message: "Choisissez un dossier à autoriser.")
+                    }
+                    Spacer()
+                }
+            }
+
+            Section("Couverture") {
+                coverageRow("Données Claude (\(store.displayPath(store.paths.claudeDir)))", store.claudeAccess)
+                coverageRow("Dossier personnel (skills liés, projets)", store.homeAccess)
+                coverageRow("Base RTK", store.rtkAccess)
+                coverageRow(
+                    "Racines de projets",
+                    store.inaccessibleProjectRoots.isEmpty,
+                    detail: store.inaccessibleProjectRoots.isEmpty ? nil
+                        : "\(FRFormat.plural(store.inaccessibleProjectRoots.count, "racine")) non accessible(s)")
+            }
+
+            Section("Dossier de configuration Claude") {
+                TextField("Dossier", text: $configDir, prompt: Text("~/.claude"))
+                    .font(.data(11))
+                    .onSubmit { store.accessDidChange() }
+                HStack {
+                    Button("Choisir…") { chooseConfigDir() }
+                    Button("Par défaut") {
+                        configDir = ""
+                        store.accessDidChange()
+                    }
+                    .disabled(configDir.isEmpty)
+                    Spacer()
+                    Text("Utilisé : \(store.displayPath(store.paths.claudeDir))")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.slate)
+                }
+                Text("Équivalent de la variable CLAUDE_CONFIG_DIR, qu'une app ouverte depuis le Finder ne voit pas. Vide = la variable si elle est définie, sinon ~/.claude.")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.slate)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func statusLabel(_ status: AccessStore.Grant.Status) -> String {
+        switch status {
+        case .active: "Actif"
+        case .renewed: "Actif (autorisation renouvelée)"
+        case .broken(let reason): "Introuvable : \(reason)"
+        }
+    }
+
+    private func coverageRow(_ label: String, _ ok: Bool, detail: String? = nil) -> some View {
+        LabeledContent(label) {
+            Text(detail ?? (ok ? "autorisé" : "non autorisé"))
+                .font(.system(size: 11))
+                .foregroundStyle(ok ? Theme.emerald : .orange)
+        }
+    }
+
+    private func reauthorize(_ grant: AccessStore.Grant) {
+        let url = URL(fileURLWithPath: grant.path)
+        guard let picked = store.access.runPanel(
+            directory: url, message: "Confirmez le dossier \(store.displayPath(url)).") else { return }
+        if AccessCoverage.normalized(picked.path) != grant.path { store.access.remove(grant) }
+        store.grant(picked)
+    }
+
+    private func chooseConfigDir() {
+        let start = store.paths.claudeDir
+        guard let picked = store.access.runPanel(
+            directory: start, message: "Choisissez le dossier de configuration de Claude Code.", prompt: "Choisir")
+        else { return }
+        configDir = store.displayPath(picked)
+        // Granting fires `accessDidChange`, which also picks up the new directory.
+        if store.isCovered(picked) { store.accessDidChange() } else { store.grant(picked) }
     }
 }
 
