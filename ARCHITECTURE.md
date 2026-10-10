@@ -383,6 +383,34 @@ aucun droit réseau). Dans la sandbox, `homeDirectoryForCurrentUser`, `NSHomeDir
   (un accès au seul fichier afficherait des données périmées) ; la lecture d'une copie écrit dans
   `FileManager.temporaryDirectory`, le `tmp` du conteneur.
 
+### Mode démo
+
+Pour la revue Apple, qui n'a aucune donnée Claude Code. `Scripts/make-demo-data.swift` écrit un arbre
+fictif et déterministe dans `ClaudeCockpit/Resources/Demo/` (embarqué comme référence de dossier) :
+`manifest.json` (ancre temporelle, home d'origine `/Users/demo`) et `home/` avec 3 projets, 8 sessions
+(dont 2 avec sous-agents), des skills, agents et commandes à tous les niveaux plus un plugin, et une base
+RTK `history.db`. Les dossiers cachés sont stockés en `_dot_x` pour que Xcode et git les gardent.
+
+- « Explorer avec des données d'exemple » (onboarding) ou `CLAUDECOCKPIT_DEMO=1` appelle `enterDemo()`.
+  `DemoSeeder` (CockpitShared) copie l'arbre dans `<conteneur>/Application Support/ClaudeCockpit/demo/home`,
+  restaure les dossiers cachés, décale chaque horodatage JSONL par session (les sous-agents suivent leur
+  parent ; les sessions du jour de l'ancre tiennent dans `[début d'aujourd'hui, maintenant]`, les jours plus
+  anciens gardent leur décalage, bornés avant le jour suivant pour l'heure d'été) et la colonne RTK
+  `timestamp` par jour UTC, et remplace `/Users/demo` par le home démo dans les chemins JSONL et RTK
+  `project_path`.
+- `ClaudePaths.demo(root:)` fait du home démo *le* home (SkillsKit refuse les chemins hors `home`), avec un
+  `demo/appdata` séparé. `CockpitStore.makePaths(demo:)` est le seul endroit où les chemins sont construits ;
+  le `SessionService` est reconstruit à chaque changement de dossier de données, donc la démo ne s'indexe
+  jamais dans le vrai `sessions.db`. `UsagePath.displayHome` suit le home courant pour afficher `~/…`.
+- `isDemo` vit en mémoire seulement. La couverture est vraie dans le home démo ; le chemin RTK personnalisé
+  est ignoré. Transfert, import, suppression, purge des sauvegardes, autorisations, lancement à la connexion,
+  dossier de config, chemin RTK et racines de projets sont refusés dans le store et désactivés dans
+  l'interface ; `cache.projects` et `sessions.selectedId` ne sont pas écrits ; « reprendre » affiche un avis
+  au lieu de copier une commande. Étoiles, renommages et masquages ne touchent que l'index démo.
+- « Quitter la démo » ramène à l'onboarding ; une fois les anciens services sessions et usage terminés, le
+  dossier démo est supprimé, sauf si la démo a été relancée entre-temps. Un lancement normal supprime tout
+  reste de démo.
+
 ## Gestion des erreurs
 
 La politique tient en une phrase : **chaque source échoue seule, et un échec ne détruit jamais ce
