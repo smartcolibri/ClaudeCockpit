@@ -123,7 +123,8 @@ struct UsageTurnsTile: View {
         let perDay = Double(totals.turnCount) / Double(max(1, usage.period.elapsedDays))
         return [
             String(localized: "\(AppFormat.integer(perSession)) per session", locale: AppFormat.locale),
-            String(localized: "\(AppFormat.decimal(perDay)) per day", locale: AppFormat.locale),
+            // A tenth of a turn says nothing once there are a hundred a day.
+            String(localized: "\(AppFormat.decimal(perDay, digits: perDay >= 100 ? 0 : 1)) per day", locale: AppFormat.locale),
         ]
     }
 
