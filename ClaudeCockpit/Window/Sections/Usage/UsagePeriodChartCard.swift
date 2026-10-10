@@ -151,7 +151,7 @@ struct UsagePeriodChartCard: View {
         switch granularity {
         case .hour: AppFormat.hour(Calendar.current.component(.hour, from: bucket.start))
         case .day, .week: AppFormat.shortDate(bucket.start)
-        case .month: bucket.start.formatted(.dateTime.month(.abbreviated).year(.twoDigits).locale(AppFormat.locale))
+        case .month: bucket.start.formatted(.dateTime.month(.abbreviated).year().locale(AppFormat.locale))
         }
     }
 
