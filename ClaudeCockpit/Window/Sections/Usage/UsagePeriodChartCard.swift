@@ -105,9 +105,12 @@ struct UsagePeriodChartCard: View {
         .chartLegend(.hidden)
         .chartXScale(domain: buckets.map(Self.key))
         .chartXAxis {
-            AxisMarks(values: labelKeys(buckets)) { value in
+            // On a categorical axis `AxisMarks(values:)` still labels every category: the
+            // thinning is done by leaving the others blank.
+            let shown = Set(labelKeys(buckets))
+            AxisMarks { value in
                 AxisValueLabel(centered: true) {
-                    if let key = value.as(String.self), let index = Int(key), buckets.indices.contains(index) {
+                    if let key = value.as(String.self), shown.contains(key), let index = Int(key), buckets.indices.contains(index) {
                         Text(verbatim: Self.label(buckets[index], period.granularity)).foregroundStyle(Theme.slate)
                     }
                 }

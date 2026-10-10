@@ -44,9 +44,10 @@ struct CostByHourCard: View {
         }
         .chartXScale(domain: (0..<24).map(String.init))
         .chartXAxis {
-            AxisMarks(values: ["0", "6", "12", "18"]) { value in
+            // Blank labels rather than `values:`, which a categorical axis ignores.
+            AxisMarks { value in
                 AxisValueLabel(centered: true) {
-                    if let key = value.as(String.self), let hour = Int(key) {
+                    if let key = value.as(String.self), let hour = Int(key), hour % 6 == 0 {
                         Text(verbatim: AppFormat.hour(hour)).foregroundStyle(Theme.slate)
                     }
                 }
