@@ -73,11 +73,13 @@ def code_keys(files):
 def staleness(name, sources_dir, files, catalog_path, compiled):
     """Problems when the build predates a Swift file or the catalog it is checked against."""
     problems = []
-    # The compiler rewrites a `.stringsdata` only when its strings change, so the time a file
-    # was last compiled is its object file's, next to it.
+    # The compiler rewrites a `.stringsdata`, and even the `.o`, only when their content
+    # changes; its diagnostics and dependency files beside them (`.d`, `.dia`, `.swiftdeps`)
+    # are rewritten on every compile, so the newest of them dates the last compile.
     def compiled_at(path):
-        objects = os.path.splitext(path)[0] + ".o"
-        return max(os.path.getmtime(path), os.path.getmtime(objects) if os.path.exists(objects) else 0)
+        stem = os.path.splitext(path)[0]
+        siblings = [stem + ext for ext in (".stringsdata", ".o", ".d", ".dia", ".swiftdeps")]
+        return max(os.path.getmtime(f) for f in siblings if os.path.exists(f))
     built = {os.path.realpath(source): compiled_at(path) for path, source in files}
     for swift in glob.glob(os.path.join(sources_dir, "**", "*.swift"), recursive=True):
         extracted = built.get(os.path.realpath(swift))
