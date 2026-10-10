@@ -355,7 +355,7 @@ private struct AccessSettingsTab: View {
                             Text(statusLabel(grant.status)).font(.system(size: 10)).foregroundStyle(Theme.slate)
                         }
                         Spacer()
-                        Button("Réautoriser") { reauthorize(grant) }
+                        Button("Réautoriser") { store.reauthorize(grant) }
                         Button("Retirer", role: .destructive) { store.access.remove(grant) }
                     }
                 }
@@ -418,14 +418,6 @@ private struct AccessSettingsTab: View {
                 .font(.system(size: 11))
                 .foregroundStyle(ok ? Theme.emerald : .orange)
         }
-    }
-
-    private func reauthorize(_ grant: AccessStore.Grant) {
-        let url = URL(fileURLWithPath: grant.path)
-        guard let picked = store.access.runPanel(
-            directory: url, message: "Confirmez le dossier \(store.displayPath(url)).") else { return }
-        if AccessCoverage.normalized(picked.path) != grant.path { store.access.remove(grant) }
-        store.grant(picked)
     }
 
     private func chooseConfigDir() {

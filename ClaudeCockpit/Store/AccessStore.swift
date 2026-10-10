@@ -97,6 +97,22 @@ final class AccessStore {
         return grant
     }
 
+    /// Swaps `grant` for a newly picked URL in one step, so the sources reload once.
+    func replace(_ grant: Grant, with url: URL) throws {
+        let path = AccessCoverage.normalized(url.path)
+        let bookmark = try url.bookmarkData(
+            options: [.withSecurityScope], includingResourceValuesForKeys: nil, relativeTo: nil)
+        closeScope(grant.path)
+        closeScope(path)
+        stored.removeAll { $0.path == grant.path || $0.path == path }
+        grants.removeAll { $0.path == grant.path || $0.path == path }
+        let entry = Stored(path: path, bookmark: bookmark)
+        stored.append(entry)
+        grants.append(resolve(entry))
+        persist()
+        onChange?()
+    }
+
     func remove(_ grant: Grant) {
         closeScope(grant.path)
         stored.removeAll { $0.path == grant.path }

@@ -31,6 +31,26 @@ final class AccessCoverageTests: XCTestCase {
         XCTAssertEqual(AccessCoverage.evaluate(selection: home.appendingPathComponent("Documents"), expected: home, required: claude), .unrelated)
         XCTAssertEqual(AccessCoverage.evaluate(selection: claude.appendingPathComponent("projects"), expected: home, required: claude), .unrelated)    }
 
+    /// "Réautoriser" must never trade the grant the app depends on for one that misses it.
+    func testReplacingAGrantKeepsTheRequiredFolderCovered() {
+        let claude = URL(fileURLWithPath: "/Users/x/.claude")
+        // The home covered the Claude folder: the replacement has to as well.
+        XCTAssertFalse(AccessCoverage.replacementKeepsRequired(
+            old: "/Users/x", new: URL(fileURLWithPath: "/Users/x/Documents"), required: claude, grantedPaths: ["/Users/x"]))
+        XCTAssertTrue(AccessCoverage.replacementKeepsRequired(
+            old: "/Users/x", new: URL(fileURLWithPath: "/Users/x"), required: claude, grantedPaths: ["/Users/x"]))
+        XCTAssertTrue(AccessCoverage.replacementKeepsRequired(
+            old: "/Users/x", new: URL(fileURLWithPath: "/Users/x/.claude"), required: claude, grantedPaths: ["/Users/x"]))
+        // Another grant still covers it: anything goes.
+        XCTAssertTrue(AccessCoverage.replacementKeepsRequired(
+            old: "/Users/x/.claude", new: URL(fileURLWithPath: "/tmp"), required: claude,
+            grantedPaths: ["/Users/x/.claude", "/Users/x"]))
+        // An RTK or project-root grant never covered it: swapping it is always fine.
+        XCTAssertTrue(AccessCoverage.replacementKeepsRequired(
+            old: "/Users/x/Library/Application Support/rtk", new: URL(fileURLWithPath: "/opt/rtk"),
+            required: claude, grantedPaths: ["/Users/x/.claude", "/Users/x/Library/Application Support/rtk"]))
+    }
+
     /// A Claude config directory on another volume: picking the home covers what was asked
     /// for but not what the app cannot work without, so it must never read as `.full`.
     func testSelectionVerdictWhenRequiredLiesOutsideExpected() {

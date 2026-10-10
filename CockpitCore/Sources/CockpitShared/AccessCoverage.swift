@@ -57,6 +57,17 @@ public enum AccessCoverage {
         }
     }
 
+    /// Whether swapping the grant at `old` for `new` keeps `required` readable. A grant that
+    /// never covered `required` can be replaced by anything; one that did must be replaced by
+    /// a folder that does, unless another usable grant (`grantedPaths`) covers it anyway.
+    public static func replacementKeepsRequired(
+        old: String, new: URL, required: URL, grantedPaths: [String]
+    ) -> Bool {
+        guard isPath(required.path, inside: old) else { return true }
+        let after = grantedPaths.filter { normalized($0) != normalized(old) } + [new.path]
+        return after.contains { isPath(required.path, inside: $0) }
+    }
+
     /// True when the process runs inside the App Sandbox.
     public static var isSandboxed: Bool {
         ProcessInfo.processInfo.environment["APP_SANDBOX_CONTAINER_ID"] != nil

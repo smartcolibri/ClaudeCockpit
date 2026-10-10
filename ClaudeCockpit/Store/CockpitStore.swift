@@ -268,6 +268,25 @@ final class CockpitStore {
         }
     }
 
+    /// "Réautoriser": the user confirms (or moves) a granted folder. Refused when the new
+    /// folder would lose the Claude config directory; the old grant is then kept as is.
+    func reauthorize(_ grant: AccessStore.Grant) {
+        let current = URL(fileURLWithPath: grant.path)
+        guard let picked = access.runPanel(
+            directory: current, message: "Confirmez le dossier \(displayPath(current)).") else { return }
+        guard AccessCoverage.replacementKeepsRequired(
+            old: grant.path, new: picked, required: paths.claudeDir, grantedPaths: access.grantedPaths)
+        else {
+            notice = "Dossier refusé : \(displayPath(picked)) ne contient pas \(displayPath(paths.claudeDir)), dont l'accès serait perdu. L'autorisation de \(displayPath(current)) est conservée."
+            return
+        }
+        do {
+            try access.replace(grant, with: picked)
+        } catch {
+            notice = "Impossible d'enregistrer l'accès : \(error.localizedDescription)"
+        }
+    }
+
     /// `~/…` form of a path under the real home.
     func displayPath(_ url: URL) -> String {
         let path = url.standardizedFileURL.path
