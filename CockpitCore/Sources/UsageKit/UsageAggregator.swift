@@ -74,6 +74,7 @@ public enum UsageAggregator {
         // gets its own flat local dictionary for the same reason — a nested
         // `[Dimension: [String: …]]` would copy the inner dictionary on every write.
         var projectBuckets: [String: Bucket] = [:]
+        var modelBuckets: [String: Bucket] = [:]
         var agentBuckets: [String: Bucket] = [:]
         var skillBuckets: [String: Bucket] = [:]
         // Project labels repeat heavily, so the `~`-shortening is memoized per `cwd`.
@@ -91,11 +92,13 @@ public enum UsageAggregator {
                 projectKey = UsagePath.shorten(event.cwd, home: home)
                 shortenedPaths[event.cwd] = projectKey
             }
-            projectBuckets[projectKey, default: Bucket()].add(tokens: tokens, cost: cost)
+            let session = event.sessionId
+            projectBuckets[projectKey, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
+            modelBuckets[event.model, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
             agentBuckets[event.attributionAgent ?? BreakdownDimension.directLabel, default: Bucket()]
-                .add(tokens: tokens, cost: cost)
+                .add(tokens: tokens, cost: cost, session: session)
             skillBuckets[event.attributionSkill ?? BreakdownDimension.directLabel, default: Bucket()]
-                .add(tokens: tokens, cost: cost)
+                .add(tokens: tokens, cost: cost, session: session)
         }
 
         let costByFamily = ModelFamily.allCases.compactMap { family -> ModelCostRow? in
@@ -104,6 +107,7 @@ public enum UsageAggregator {
         }
         let breakdowns: [BreakdownDimension: [BreakdownRow]] = [
             .project: rows(from: projectBuckets),
+            .model: rows(from: modelBuckets),
             .agent: rows(from: agentBuckets),
             .skill: rows(from: skillBuckets),
         ]
@@ -192,6 +196,7 @@ public enum UsageAggregator {
             sessionsThisWeekUnfilteredTotal: sessionsThisWeekUnfiltered,
             sessionsLastWeekUnfilteredTotal: sessionsLastWeekUnfiltered,
             overview: precomputed ?? overview(events: allEvents, pricing: pricing, now: now, calendar: calendar, home: home),
+            period: period(ranged: filtered, unranged: unranged, range: filters.range, pricing: pricing, now: now, calendar: calendar),
             availableProjects: availableProjects,
             availableModels: availableModels,
             availableModelFamilies: availableModelFamilies)
@@ -224,11 +229,13 @@ public enum UsageAggregator {
         var turns = 0
         var tokens = 0
         var cost = 0.0
+        var sessions = Set<String>()
 
-        mutating func add(tokens newTokens: Int, cost newCost: Double) {
+        mutating func add(tokens newTokens: Int, cost newCost: Double, session: String) {
             turns += 1
             tokens += newTokens
             cost += newCost
+            sessions.insert(session)
         }
     }
 
@@ -239,7 +246,8 @@ public enum UsageAggregator {
                     label: key,
                     turnCount: bucket.turns,
                     totalTokens: bucket.tokens,
-                    estimatedCostUSD: bucket.cost)
+                    estimatedCostUSD: bucket.cost,
+                    sessionCount: bucket.sessions.count)
             }
             .sorted { lhs, rhs in
                 // Cost descending, then label ascending so the order is stable.

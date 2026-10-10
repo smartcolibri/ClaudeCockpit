@@ -50,6 +50,8 @@ public struct UsageSnapshot: Sendable {
     public let sessionsLastWeekUnfilteredTotal: Int
     /// The Overview screen's figures, from every event whatever the filters.
     public let overview: UsageOverview
+    /// The Usage screen's series over the filtered period.
+    public let period: UsagePeriod
 
     /// Options for the filter pickers, derived from the whole event set.
     public let availableProjects: [String]
@@ -85,6 +87,7 @@ public struct UsageSnapshot: Sendable {
         sessionsThisWeekUnfilteredTotal: Int,
         sessionsLastWeekUnfilteredTotal: Int,
         overview: UsageOverview,
+        period: UsagePeriod = .empty,
         availableProjects: [String],
         availableModels: [String],
         availableModelFamilies: [ModelFamily]
@@ -117,6 +120,7 @@ public struct UsageSnapshot: Sendable {
         self.sessionsThisWeekUnfilteredTotal = sessionsThisWeekUnfilteredTotal
         self.sessionsLastWeekUnfilteredTotal = sessionsLastWeekUnfilteredTotal
         self.overview = overview
+        self.period = period
         self.availableProjects = availableProjects
         self.availableModels = availableModels
         self.availableModelFamilies = availableModelFamilies
