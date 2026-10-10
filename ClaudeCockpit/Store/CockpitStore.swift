@@ -306,9 +306,6 @@ final class CockpitStore {
             sessionsWatcher?.stop()
             paths = fresh
             usageService = UsageService(paths: fresh)
-            // Also done by the watch task; repeated here for when indexing is turned off.
-            let service = sessionService
-            Task { await service.setPaths(fresh) }
             skillsStore = ResourceStore(paths: fresh)
             sessions = []
             // Another archive: what is on screen no longer describes it. Otherwise the current
