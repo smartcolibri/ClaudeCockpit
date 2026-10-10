@@ -16,6 +16,13 @@ extension CockpitStore {
         return (try? await sessionService.listSessions(filter)) ?? []
     }
 
+    /// Top-level sessions that hit an error in a message dated today.
+    func sessionsWithErrorsToday(now: Date = Date(), calendar: Calendar = .current) async -> Set<String> {
+        let start = calendar.startOfDay(for: now)
+        let end = calendar.date(byAdding: .day, value: 1, to: start) ?? now
+        return (try? await sessionService.sessionsWithErrors(since: start, until: end)) ?? []
+    }
+
     // MARK: Navigation
 
     /// Selects a sidebar section. The window binds the same defaults key, so it follows.

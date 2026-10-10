@@ -14,7 +14,7 @@ struct TopProjectsTile: View {
             icon: "folder.fill",
             summary: (rows ?? []).map { "\(name($0.label)) \(store.money($0.estimatedCostUSD))" }.joined(separator: ", "),
             destination: CockpitSection.usage.title,
-            action: { store.show(.usage) }
+            action: store.usageState.showsBanner ? nil : { store.show(.usage) }
         ) {
             TileSource(
                 state: store.usageState, ready: rows != nil,

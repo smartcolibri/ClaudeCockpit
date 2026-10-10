@@ -20,7 +20,7 @@ struct RTKWeekTile: View {
             tint: Theme.emerald,
             summary: summary,
             destination: "RTK",
-            action: { store.show(.rtk) }
+            action: store.rtkState.showsBanner ? nil : { store.show(.rtk) }
         ) {
             TileSource(
                 state: store.rtkState, ready: store.rtk != nil,
@@ -48,15 +48,15 @@ struct RTKWeekTile: View {
     private var bars: some View {
         Chart {
             ForEach(days) { day in
-                BarMark(x: .value("Day", day.date, unit: .day), y: .value("Tokens", day.savedTokens))
+                BarMark(x: .value("Day", Self.localDay(day.date), unit: .day), y: .value("Tokens", day.savedTokens))
                     .foregroundStyle(day.savedTokens > 0 ? Theme.emerald : Theme.track)
                     .opacity(hovered == nil || sameDay(hovered, day.date) ? 1 : 0.45)
             }
             if let day = days.first(where: { sameDay(hovered, $0.date) }) {
-                RuleMark(x: .value("Day", day.date, unit: .day))
+                RuleMark(x: .value("Day", Self.localDay(day.date), unit: .day))
                     .foregroundStyle(.clear)
                     .annotation(position: .top, overflowResolution: .init(x: .fit(to: .chart), y: .disabled)) {
-                        ChartTooltip(lines: [AppFormat.weekday(day.date), AppFormat.tokens(day.savedTokens)])
+                        ChartTooltip(lines: [AppFormat.weekday(Self.localDay(day.date)), AppFormat.tokens(day.savedTokens)])
                     }
             }
         }
@@ -66,12 +66,20 @@ struct RTKWeekTile: View {
         .frame(height: 30)
     }
 
-    /// rtk buckets by UTC day, so the comparison is made in UTC too.
-    private func sameDay(_ lhs: Date?, _ rhs: Date) -> Bool {
-        guard let lhs else { return false }
+    /// rtk buckets by UTC day and stamps each with its UTC midnight, which is the previous
+    /// evening west of UTC. The chart plots, labels and hovers the same calendar date at local
+    /// midnight instead, so a bar sits on the day its label names.
+    static func localDay(_ utcMidnight: Date, calendar: Calendar = .current) -> Date {
         var utc = Calendar(identifier: .gregorian)
         utc.timeZone = TimeZone(identifier: "UTC")!
-        return utc.isDate(lhs, inSameDayAs: rhs)
+        let parts = utc.dateComponents([.year, .month, .day], from: utcMidnight)
+        return calendar.date(from: parts).map { calendar.startOfDay(for: $0) } ?? utcMidnight
+    }
+
+    /// `hovered` is a local date read off the chart; `utcMidnight` is rtk's bucket.
+    private func sameDay(_ hovered: Date?, _ utcMidnight: Date) -> Bool {
+        guard let hovered else { return false }
+        return Calendar.current.isDate(hovered, inSameDayAs: Self.localDay(utcMidnight))
     }
 
     private var summary: String {

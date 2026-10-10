@@ -21,6 +21,8 @@ struct OverviewView: View {
     @State private var todaySessions: [SessionRef] = []
     @State private var weekSessions: [SessionRef] = []
     @State private var activity: [DayCost] = []
+    /// Sessions with an error in a message dated today, not every active session that ever failed.
+    @State private var erroredToday: Set<String> = []
     @State private var sessionsLoaded = false
 
     static let wideLayout: CGFloat = 920
@@ -65,12 +67,14 @@ struct OverviewView: View {
         async let today = store.todaySessions(now: asOf)
         async let week = store.sessions(since: weekStart)
         async let report = store.sessionActivity(since: start, until: asOf)
-        let (todayRows, weekRows, activityReport) = await (today, week, report)
+        async let errored = store.sessionsWithErrorsToday(now: asOf)
+        let (todayRows, weekRows, activityReport, erroredRows) = await (today, week, report, errored)
         guard !Task.isCancelled else { return }
         now = asOf
         todaySessions = todayRows
         weekSessions = weekRows
         activity = activityReport.days
+        erroredToday = erroredRows
         sessionsLoaded = true
     }
 
@@ -109,7 +113,7 @@ struct OverviewView: View {
             .frame(height: Self.rowHeights[1])
             GridRow {
                 HourlyTile()
-                SessionHealthTile(today: todaySessions, week: weekSessions, loaded: sessionsLoaded)
+                SessionHealthTile(today: todaySessions, week: weekSessions, erroredToday: erroredToday.count, loaded: sessionsLoaded)
                 ActiveSkillsTile()
             }
             .frame(height: Self.rowHeights[2])
@@ -143,7 +147,7 @@ struct OverviewView: View {
             usage: store.usage.map { Self.usageFacts($0.overview) },
             sessions: sessionsLoaded && store.sessionsState.errorMessage == nil && !store.sessionsState.isUnauthorized
                 ? RecommendationInput.Sessions(
-                    withErrorsToday: todaySessions.filter(\.hasErrors).count,
+                    withErrorsToday: erroredToday.count,
                     lowHealthToday: todaySessions.filter { $0.healthScore < SessionHealthTile.lowScore }.count)
                 : nil,
             rtk: rtkFacts))
@@ -156,6 +160,7 @@ struct OverviewView: View {
             elapsedThisWeek: overview.elapsedThisWeek,
             cost30DaysUSD: overview.cost30DaysUSD,
             opusShare30Days: overview.opusShare,
+            opusSharePrevious30Days: overview.opusSharePrevious30Days,
             topOpusProject: overview.topOpusProject,
             hourlyCostToday: overview.hourlyToday.map(\.estimatedCostUSD),
             cacheHitRate30Days: overview.cacheHitRate,
@@ -169,12 +174,15 @@ struct OverviewView: View {
     /// RTK is "missing" only when the source answered that no database exists; unread,
     /// refused or failing for another reason, it says nothing either way.
     private var rtkFacts: RecommendationInput.RTK {
+        if store.rtkIsMissing { return .missing }
+        // A failing read keeps the last snapshot on screen; its figures are not advice material.
+        guard store.rtkState.errorMessage == nil, !store.rtkState.isUnauthorized else { return .unknown }
         if let rtk = store.rtk {
             let saved = rtk.last7Days.reduce(0) { $0 + $1.savedTokens }
             let input = rtk.last7Days.reduce(0) { $0 + $1.inputTokens }
             let commands = rtk.last7Days.reduce(0) { $0 + $1.count }
             return .active(savedFraction: input > 0 ? Double(saved) / Double(input) : 0, commands: commands)
         }
-        return store.rtkIsMissing ? .missing : .unknown
+        return .unknown
     }
 }

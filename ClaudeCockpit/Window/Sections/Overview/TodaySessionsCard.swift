@@ -16,12 +16,6 @@ struct TodaySessionsCard: View {
                 Image(systemName: "text.bubble.fill").font(.system(size: 10, weight: .semibold)).foregroundStyle(Theme.violet)
                 SectionLabel(text: String(localized: "Today's sessions"))
                 Spacer(minLength: 0)
-                if loaded, !sessions.isEmpty {
-                    Text(verbatim: totalLabel)
-                        .font(.system(size: 11, weight: .semibold))
-                        .monospacedDigit()
-                        .foregroundStyle(Theme.blue)
-                }
             }
             if store.sessionsState.isUnauthorized {
                 AccessRequiredBanner(message: String(localized: "the transcripts cannot be read."))
@@ -50,6 +44,7 @@ struct TodaySessionsCard: View {
                         row(session)
                     }
                 }
+                costFooter
                 if sessions.count > Self.maximumRows {
                     Button(String(localized: "All \(sessions.count) sessions today", locale: AppFormat.locale)) {
                         store.showSessions(day: Date())
@@ -93,10 +88,21 @@ struct TodaySessionsCard: View {
         store.sessionCost(session).map { store.money($0.usd) } ?? "—"
     }
 
-    private var totalLabel: String {
+    /// What these sessions cost in full — including what they spent before midnight, which is
+    /// why it can differ from Today's cost — and how many have no cost to add.
+    @ViewBuilder
+    private var costFooter: some View {
         let costs = sessions.compactMap { store.sessionCost($0)?.usd }
-        // Every session lacking its cost: a total would be a fabricated zero.
-        if costs.isEmpty { return String(localized: "cost unknown") }
-        return store.money(costs.reduce(0, +))
+        let missing = sessions.count - costs.count
+        VStack(alignment: .leading, spacing: 2) {
+            // Every session lacking its cost: a total would be a fabricated zero.
+            if !costs.isEmpty {
+                TileCaption(text: String(localized: "Full cost of these sessions: \(store.money(costs.reduce(0, +)))", locale: AppFormat.locale))
+            }
+            if missing > 0 {
+                TileCaption(text: String(localized: "\(missing) without a recorded cost", locale: AppFormat.locale))
+            }
+        }
+        .padding(.top, 2)
     }
 }

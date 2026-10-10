@@ -23,6 +23,9 @@ enum SourceState: Equatable {
     var isUnauthorized: Bool { self == .unauthorized }
     var errorMessage: String? { if case .failed(let m) = self { return m } else { return nil } }
     var lastSuccess: Date? { if case .ready(let d) = self { return d } else { return nil } }
+    /// The source shows a banner (the grant flow, or an error with its retry) instead of
+    /// figures, so the view holding it must not be a button around it.
+    var showsBanner: Bool { isUnauthorized || errorMessage != nil }
 }
 
 /// Sidebar sections of the main window.
@@ -629,6 +632,7 @@ final class CockpitStore {
         let generation = accessGeneration
         guard rtkAccess else {
             rtk = nil
+            rtkIsMissing = false
             rtkState = .unauthorized
             return
         }

@@ -17,7 +17,7 @@ struct TodayCostTile: View {
             icon: "banknote",
             summary: summary,
             destination: CockpitSection.usage.title,
-            action: { store.show(.usage) }
+            action: store.usageState.showsBanner ? nil : { store.show(.usage) }
         ) {
             TileSource(
                 state: store.usageState, ready: overview != nil,
@@ -37,9 +37,11 @@ struct TodayCostTile: View {
                 sparkline(overview.recentDailyCost(14))
             }
             if let delta = delta(overview) {
-                TileCaption(text: deltaText(delta), tint: delta >= 0 ? .orange : Theme.emerald)
+                TileCaption(text: deltaText(delta, days: overview.historyDays), tint: delta >= 0 ? .orange : Theme.emerald)
             } else {
-                TileCaption(text: String(localized: "No spend in the last 30 days"))
+                TileCaption(text: overview.historyDays == 0
+                    ? String(localized: "First day of use")
+                    : String(localized: "No spend on the previous days"))
             }
             if let projection = overview.monthProjectionUSD {
                 TileCaption(text: String(localized: "Month on track for \(store.money(projection))", locale: AppFormat.locale))
@@ -79,17 +81,18 @@ struct TodayCostTile: View {
         return (overview.today.estimatedCostUSD - overview.meanDailyCostUSD) / overview.meanDailyCostUSD
     }
 
-    private func deltaText(_ delta: Double) -> String {
+    /// `days` is how many days the mean covers: 30, or fewer for a recent install.
+    private func deltaText(_ delta: Double, days: Int) -> String {
         let percent = AppFormat.percent(abs(delta))
         return delta >= 0
-            ? String(localized: "▲ \(percent) vs 30-day average", locale: AppFormat.locale)
-            : String(localized: "▼ \(percent) vs 30-day average", locale: AppFormat.locale)
+            ? String(localized: "▲ \(percent) vs \(days)-day average", locale: AppFormat.locale)
+            : String(localized: "▼ \(percent) vs \(days)-day average", locale: AppFormat.locale)
     }
 
     private var summary: String {
         guard let overview else { return "" }
         var parts = [store.money(overview.today.estimatedCostUSD)]
-        if let delta = delta(overview) { parts.append(deltaText(delta)) }
+        if let delta = delta(overview) { parts.append(deltaText(delta, days: overview.historyDays)) }
         if let projection = overview.monthProjectionUSD {
             parts.append(String(localized: "Month on track for \(store.money(projection))", locale: AppFormat.locale))
         }

@@ -63,7 +63,7 @@ struct RecommendationsCard: View {
 
     private func open(_ target: Recommendation.Target) {
         switch target {
-        case .sessionsWithErrors: store.showSessions(withErrorsOnly: true)
+        case .sessionsWithErrors: store.showSessions(withErrorsOnly: true, day: Date())
         case .sessions: store.showSessions()
         case .usage, .rtk: store.show(target.section)
         }
@@ -106,13 +106,13 @@ extension Recommendation {
     func sentence(money: (Double) -> String) -> String {
         switch kind {
         case .costUp(let fraction):
-            String(localized: "Spending is up \(AppFormat.percent(fraction)) on the same point last week.", locale: AppFormat.locale)
+            String(localized: "Spending is up \(AppFormat.percent(fraction)) compared with the same point last week.", locale: AppFormat.locale)
         case .costDown(let fraction):
-            String(localized: "Spending is down \(AppFormat.percent(fraction)) on the same point last week.", locale: AppFormat.locale)
-        case .opusHeavy(let share, let project?):
-            String(localized: "Opus makes up \(AppFormat.percent(share)) of the cost: try Sonnet for short tasks in \(project).", locale: AppFormat.locale)
-        case .opusHeavy(let share, nil):
-            String(localized: "Opus makes up \(AppFormat.percent(share)) of the cost: try Sonnet for short tasks.", locale: AppFormat.locale)
+            String(localized: "Spending is down \(AppFormat.percent(fraction)) compared with the same point last week.", locale: AppFormat.locale)
+        case .opusShareRose(let share, let previous, let project?):
+            String(localized: "Opus rose to \(AppFormat.percent(share)) of the cost, from \(AppFormat.percent(previous)): try Sonnet for short tasks in \(project).", locale: AppFormat.locale)
+        case .opusShareRose(let share, let previous, nil):
+            String(localized: "Opus rose to \(AppFormat.percent(share)) of the cost, from \(AppFormat.percent(previous)): try Sonnet for short tasks.", locale: AppFormat.locale)
         case .sessionsWithErrors(let count):
             String(localized: "\(count) sessions hit errors today.", locale: AppFormat.locale)
         case .lowHealthSessions(let count):
@@ -121,9 +121,7 @@ extension Recommendation {
         case .peakHour(let hour, let share):
             String(localized: "Usage peaks between \(AppFormat.hour(hour)) and \(AppFormat.hour((hour + 1) % 24)): \(AppFormat.percent(share)) of today's cost.", locale: AppFormat.locale)
         case .lowCacheRate(let rate):
-            String(localized: "Only \(AppFormat.percent(rate)) of reusable tokens come from the cache: long sessions that keep their context reuse more.", locale: AppFormat.locale)
-        case .goodCacheRate(let rate):
-            String(localized: "Cache read at \(AppFormat.percent(rate)): nothing to do.", locale: AppFormat.locale)
+            String(localized: "Only \(AppFormat.percent(rate)) of prompt tokens are read from the cache: sessions that keep their context reuse more.", locale: AppFormat.locale)
         case .rtkMissing:
             String(localized: "RTK is not set up: it trims shell output before it reaches the model.")
         case .rtkLowSavings(let fraction):

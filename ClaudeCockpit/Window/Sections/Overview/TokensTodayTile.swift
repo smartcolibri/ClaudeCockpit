@@ -14,7 +14,7 @@ struct TokensTodayTile: View {
             icon: "number.circle",
             summary: summary,
             destination: CockpitSection.usage.title,
-            action: { store.show(.usage) }
+            action: store.usageState.showsBanner ? nil : { store.show(.usage) }
         ) {
             TileSource(
                 state: store.usageState, ready: today != nil,

@@ -1209,6 +1209,46 @@
         }
       }
     },
+    "%lld without a recorded cost" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld without a recorded cost"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld without a recorded cost"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sans coût enregistré"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld sans coût enregistré"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "(no arguments)" : {
       "localizations" : {
         "en" : {
@@ -2225,22 +2265,6 @@
         }
       }
     },
-    "Cache read at %@: nothing to do." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cache read at %@: nothing to do."
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Cache relu à %@ : rien à faire."
-          }
-        }
-      }
-    },
     "Cache read rate at %@ — keeping costs down." : {
       "localizations" : {
         "en" : {
@@ -2893,22 +2917,6 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "Coût par heure"
-          }
-        }
-      }
-    },
-    "cost unknown" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "cost unknown"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "coût inconnu"
           }
         }
       }
@@ -3649,6 +3657,22 @@
         }
       }
     },
+    "First day of use" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "First day of use"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Premier jour d'utilisation"
+          }
+        }
+      }
+    },
     "First scan of ~/.claude/projects; this can take a few seconds." : {
       "localizations" : {
         "en" : {
@@ -3725,6 +3749,22 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "d'après les transcripts"
+          }
+        }
+      }
+    },
+    "Full cost of these sessions: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Full cost of these sessions: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Coût complet de ces sessions : %@"
           }
         }
       }
@@ -5449,6 +5489,22 @@
         }
       }
     },
+    "No spend on the previous days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No spend on the previous days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aucune dépense les jours précédents"
+          }
+        }
+      }
+    },
     "No tool calls in this period." : {
       "localizations" : {
         "en" : {
@@ -5673,18 +5729,18 @@
         }
       }
     },
-    "Only %@ of reusable tokens come from the cache: long sessions that keep their context reuse more." : {
+    "Only %@ of prompt tokens are read from the cache: sessions that keep their context reuse more." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Only %@ of reusable tokens come from the cache: long sessions that keep their context reuse more."
+            "value" : "Only %@ of prompt tokens are read from the cache: sessions that keep their context reuse more."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Seuls %@ des tokens réutilisables viennent du cache : des sessions qui gardent leur contexte en réutilisent davantage."
+            "value" : "Seuls %@ des tokens de prompt sont lus depuis le cache : des sessions qui gardent leur contexte en réutilisent davantage."
           }
         }
       }
@@ -5833,34 +5889,34 @@
         }
       }
     },
-    "Opus makes up %@ of the cost: try Sonnet for short tasks in %@." : {
+    "Opus rose to %@ of the cost, from %@: try Sonnet for short tasks in %@." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opus makes up %1$@ of the cost: try Sonnet for short tasks in %2$@."
+            "value" : "Opus rose to %1$@ of the cost, from %2$@: try Sonnet for short tasks in %3$@."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opus représente %1$@ du coût : essayez Sonnet pour les tâches courtes de %2$@."
+            "value" : "Opus est passé à %1$@ du coût, contre %2$@ : essayez Sonnet pour les tâches courtes de %3$@."
           }
         }
       }
     },
-    "Opus makes up %@ of the cost: try Sonnet for short tasks." : {
+    "Opus rose to %@ of the cost, from %@: try Sonnet for short tasks." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opus makes up %@ of the cost: try Sonnet for short tasks."
+            "value" : "Opus rose to %1$@ of the cost, from %2$@: try Sonnet for short tasks."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Opus représente %@ du coût : essayez Sonnet pour les tâches courtes."
+            "value" : "Opus est passé à %1$@ du coût, contre %2$@ : essayez Sonnet pour les tâches courtes."
           }
         }
       }
@@ -7809,12 +7865,12 @@
         }
       }
     },
-    "Spending is down %@ on the same point last week." : {
+    "Spending is down %@ compared with the same point last week." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spending is down %@ on the same point last week."
+            "value" : "Spending is down %@ compared with the same point last week."
           }
         },
         "fr" : {
@@ -7825,12 +7881,12 @@
         }
       }
     },
-    "Spending is up %@ on the same point last week." : {
+    "Spending is up %@ compared with the same point last week." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Spending is up %@ on the same point last week."
+            "value" : "Spending is up %@ compared with the same point last week."
           }
         },
         "fr" : {
@@ -9249,34 +9305,34 @@
         }
       }
     },
-    "▲ %@ vs 30-day average" : {
+    "▲ %@ vs %lld-day average" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "▲ %@ vs 30-day average"
+            "value" : "▲ %1$@ vs %2$lld-day average"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "▲ %@ vs moy. 30 j"
+            "value" : "▲ %1$@ vs moy. %2$lld j"
           }
         }
       }
     },
-    "▼ %@ vs 30-day average" : {
+    "▼ %@ vs %lld-day average" : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "▼ %@ vs 30-day average"
+            "value" : "▼ %1$@ vs %2$lld-day average"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "▼ %@ vs moy. 30 j"
+            "value" : "▼ %1$@ vs moy. %2$lld j"
           }
         }
       }

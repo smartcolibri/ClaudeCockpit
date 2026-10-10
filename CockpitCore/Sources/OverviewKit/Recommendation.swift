@@ -15,8 +15,9 @@ public struct Recommendation: Identifiable, Hashable, Sendable {
         case costUp(fraction: Double)
         /// This week so far costs this fraction less (positive value) than the same stretch of last week.
         case costDown(fraction: Double)
-        /// Opus takes this share of the last 30 days' cost; `project` spends the most on it.
-        case opusHeavy(share: Double, project: String?)
+        /// Opus's share of the cost rose to `share` over the last 30 days from `previous` over
+        /// the 30 before; `project` spends the most on it.
+        case opusShareRose(share: Double, previous: Double, project: String?)
         /// Sessions that hit a tool or API error today.
         case sessionsWithErrors(count: Int)
         /// Sessions graded D or F today.
@@ -25,8 +26,6 @@ public struct Recommendation: Identifiable, Hashable, Sendable {
         case peakHour(hour: Int, share: Double)
         /// Cache read rate over the last 30 days, when low.
         case lowCacheRate(Double)
-        /// Cache read rate over the last 30 days, when high: nothing to do.
-        case goodCacheRate(Double)
         /// No rtk database was found: shell output reaches the model unfiltered.
         case rtkMissing
         /// rtk saved only this fraction of the tokens it filtered over seven days.
@@ -64,6 +63,8 @@ public struct RecommendationInput: Hashable, Sendable {
         public var elapsedThisWeek: TimeInterval
         public var cost30DaysUSD: Double
         public var opusShare30Days: Double
+        /// Opus's share over the 30 days before those.
+        public var opusSharePrevious30Days: Double
         public var topOpusProject: String?
         /// Today's cost per hour of the day, 24 values.
         public var hourlyCostToday: [Double]
@@ -80,6 +81,7 @@ public struct RecommendationInput: Hashable, Sendable {
             elapsedThisWeek: TimeInterval = 0,
             cost30DaysUSD: Double = 0,
             opusShare30Days: Double = 0,
+            opusSharePrevious30Days: Double = 0,
             topOpusProject: String? = nil,
             hourlyCostToday: [Double] = [],
             cacheHitRate30Days: Double? = nil,
@@ -94,6 +96,7 @@ public struct RecommendationInput: Hashable, Sendable {
             self.elapsedThisWeek = elapsedThisWeek
             self.cost30DaysUSD = cost30DaysUSD
             self.opusShare30Days = opusShare30Days
+            self.opusSharePrevious30Days = opusSharePrevious30Days
             self.topOpusProject = topOpusProject
             self.hourlyCostToday = hourlyCostToday
             self.cacheHitRate30Days = cacheHitRate30Days

@@ -13,7 +13,7 @@ struct ActiveSkillsTile: View {
             tint: Theme.violet,
             summary: summary,
             destination: CockpitSection.skills.title,
-            action: { store.show(.skills) }
+            action: store.skillsState.showsBanner ? nil : { store.show(.skills) }
         ) {
             TileSource(
                 state: store.skillsState, ready: store.skills != nil,

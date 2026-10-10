@@ -42,12 +42,21 @@ final class RecommendationEngineTests: XCTestCase {
 
     // MARK: Opus
 
-    func testOpusHeavyNamesTheProject() {
-        let list = run(Usage(cost30DaysUSD: 40, opusShare30Days: 0.62, topOpusProject: "~/DevApps/notes-api"))
-        XCTAssertEqual(kinds(list), [.opusHeavy(share: 0.62, project: "~/DevApps/notes-api")])
+    func testOpusShareRiseNamesTheProject() {
+        let list = run(Usage(cost30DaysUSD: 40, opusShare30Days: 0.62, opusSharePrevious30Days: 0.40,
+                             topOpusProject: "~/DevApps/notes-api"))
+        XCTAssertEqual(kinds(list), [.opusShareRose(share: 0.62, previous: 0.40, project: "~/DevApps/notes-api")])
         XCTAssertEqual(list.first?.level, .info)
-        XCTAssertEqual(run(Usage(cost30DaysUSD: 40, opusShare30Days: 0.59)), [])
-        XCTAssertEqual(run(Usage(cost30DaysUSD: 4.99, opusShare30Days: 0.9)), [], "too little spend to matter")
+    }
+
+    func testOpusShareStaysQuietWithoutARise() {
+        XCTAssertEqual(run(Usage(cost30DaysUSD: 40, opusShare30Days: 0.95, opusSharePrevious30Days: 0.90)), [],
+                       "a long-settled Opus habit is not news")
+        XCTAssertEqual(run(Usage(cost30DaysUSD: 40, opusShare30Days: 0.70, opusSharePrevious30Days: 0.56)), [],
+                       "14 points is under the rise")
+        XCTAssertEqual(run(Usage(cost30DaysUSD: 40, opusShare30Days: 0.59, opusSharePrevious30Days: 0)), [])
+        XCTAssertEqual(run(Usage(cost30DaysUSD: 4.99, opusShare30Days: 0.9, opusSharePrevious30Days: 0)), [],
+                       "too little spend to matter")
     }
 
     // MARK: Sessions
@@ -94,13 +103,12 @@ final class RecommendationEngineTests: XCTestCase {
 
     // MARK: Cache
 
-    func testCacheRateLowAndGood() {
+    func testOnlyALowCacheRateIsReported() {
         let low = run(Usage(cacheHitRate30Days: 0.2, cacheableTokens30Days: 2_000_000))
         XCTAssertEqual(kinds(low), [.lowCacheRate(0.2)])
         XCTAssertEqual(low.first?.level, .warning)
-        let good = run(Usage(cacheHitRate30Days: 0.96, cacheableTokens30Days: 2_000_000))
-        XCTAssertEqual(kinds(good), [.goodCacheRate(0.96)])
-        XCTAssertEqual(good.first?.level, .good)
+        XCTAssertEqual(run(Usage(cacheHitRate30Days: 0.96, cacheableTokens30Days: 2_000_000)), [],
+                       "a good rate is the norm with Claude Code: no note")
         XCTAssertEqual(run(Usage(cacheHitRate30Days: 0.5, cacheableTokens30Days: 2_000_000)), [])
         XCTAssertEqual(run(Usage(cacheHitRate30Days: 0.1, cacheableTokens30Days: 999_999)), [], "too few tokens for a rate")
     }
@@ -139,10 +147,10 @@ final class RecommendationEngineTests: XCTestCase {
 
     func testRankedBySeverityThenRuleOrderAndCappedAtFive() {
         let usage = Usage(
-            costThisWeekToDateUSD: 20, costLastWeekToDateUSD: 10, elapsedThisWeek: 3 * day,  // warning
-            cost30DaysUSD: 50, opusShare30Days: 0.7, topOpusProject: "p",  // info
+            costThisWeekToDateUSD: 5, costLastWeekToDateUSD: 10, elapsedThisWeek: 3 * day,  // good
+            cost30DaysUSD: 50, opusShare30Days: 0.7, opusSharePrevious30Days: 0.3, topOpusProject: "p",  // info
             hourlyCostToday: hours([9: 1, 10: 4, 11: 1]),  // info
-            cacheHitRate30Days: 0.9, cacheableTokens30Days: 5_000_000,  // good
+            cacheHitRate30Days: 0.1, cacheableTokens30Days: 5_000_000,  // warning
             unpricedModels: ["m"],  // warning
             monthProjectionUSD: 300, monthElapsedDays: 12, lastMonthCostUSD: 100)  // warning
         let full = RecommendationEngine.recommend(
@@ -151,14 +159,14 @@ final class RecommendationEngineTests: XCTestCase {
         XCTAssertEqual(full.map(\.level), [.critical, .warning, .warning, .warning, .warning, .info, .info, .info, .good])
         XCTAssertEqual(kinds(full), [
             .sessionsWithErrors(count: 4),
-            .costUp(fraction: 1),
             .lowHealthSessions(count: 2),
+            .lowCacheRate(0.1),
             .unpricedModel("m"),
             .projectionAboveLastMonth(projectionUSD: 300, lastMonthUSD: 100),
-            .opusHeavy(share: 0.7, project: "p"),
+            .opusShareRose(share: 0.7, previous: 0.3, project: "p"),
             .peakHour(hour: 10, share: 4.0 / 6),
             .rtkMissing,
-            .goodCacheRate(0.9),
+            .costDown(fraction: 0.5),
         ])
 
         let capped = RecommendationEngine.recommend(

@@ -8,6 +8,8 @@ struct SessionHealthTile: View {
     @Environment(CockpitStore.self) private var store
     let today: [SessionRef]
     let week: [SessionRef]
+    /// Sessions with an error dated today (`sessionsWithErrors`), not ever.
+    let erroredToday: Int
     let loaded: Bool
 
     /// Grades D and F: the score bands the browser's badge already marks as poor.
@@ -18,7 +20,7 @@ struct SessionHealthTile: View {
         return Int((Double(sessions.reduce(0) { $0 + $1.healthScore }) / Double(sessions.count)).rounded())
     }
 
-    private var withErrors: Int { today.filter(\.hasErrors).count }
+    private var withErrors: Int { erroredToday }
     private var lowScored: Int { today.filter { $0.healthScore < Self.lowScore }.count }
 
     var body: some View {
@@ -28,7 +30,7 @@ struct SessionHealthTile: View {
             tint: tint,
             summary: summary,
             destination: CockpitSection.sessions.title,
-            action: { store.showSessions(withErrorsOnly: true) }
+            action: store.sessionsState.showsBanner ? nil : { store.showSessions(withErrorsOnly: true, day: Date()) }
         ) {
             TileSource(
                 state: store.sessionsState, ready: loaded,
