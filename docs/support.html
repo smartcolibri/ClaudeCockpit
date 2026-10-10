@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support — Cockpit for Claude</title>
+<meta name="description" content="Help with Cockpit for Claude: access to your Claude Code folder, RTK, costs, demo mode, and how to contact us.">
+<meta name="theme-color" content="#000000">
+<meta name="color-scheme" content="dark">
+<link rel="icon" type="image/png" href="assets/icon-256.png">
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" href="assets/legal.css">
+</head>
+<body class="lang-en">
+
+<nav><div class="wrap">
+  <a class="brand" href="./"><img src="assets/icon-256.png" alt=""> Cockpit for Claude</a>
+  <div class="nav-links">
+    <a href="privacy.html"><span class="en">Privacy</span><span class="fr">Confidentialité</span></a>
+    <div class="langtog" role="group" aria-label="Language / Langue">
+      <button type="button" data-lang="en" class="on" aria-pressed="true" onclick="setLang('en')">EN</button>
+      <button type="button" data-lang="fr" aria-pressed="false" onclick="setLang('fr')">FR</button>
+    </div>
+  </div>
+</div></nav>
+
+<main class="wrap doc">
+
+<!-- ============================== English ============================== -->
+<article class="en">
+  <h1>Support</h1>
+  <p class="lead">Cockpit for Claude shows your local Claude Code usage and cost, your sessions, your RTK savings and your skills, agents and commands, in one native Mac app. Requires macOS 14 Sonoma or later.</p>
+
+  <div class="contact">
+    <strong>Contact</strong>
+    <a href="mailto:contact@smartcolibri.fr?subject=Cockpit%20for%20Claude">contact@smartcolibri.fr</a>
+    <span>Please include your macOS version, the app version (Cockpit for Claude › About) and what you expected to see. Never send your transcripts: they may contain private code.</span>
+  </div>
+
+  <h2>Frequently asked questions</h2>
+
+  <details open>
+    <summary>Why does the app ask for access to a folder?</summary>
+    <p>Mac App Store apps are sandboxed: they can only read the folders you allow. On first launch, choose <em>Allow Access to My Home Folder…</em> so the app can read <code>~/.claude</code>, RTK and your project folders, or allow only <code>~/.claude</code>. Access is read-only, except for skill transfers you start yourself. You can review or remove permissions in Settings › Access.</p>
+  </details>
+
+  <details>
+    <summary>My Claude Code folder is not in <code>~/.claude</code>.</summary>
+    <p>If you set <code>CLAUDE_CONFIG_DIR</code>, choose that folder in Settings › Access, then allow it when asked.</p>
+  </details>
+
+  <details>
+    <summary>The RTK section says the database is missing.</summary>
+    <p>RTK must be installed and have run at least once. The app looks for <code>history.db</code> in RTK's usual locations. If yours is elsewhere, choose it in Settings › RTK.</p>
+  </details>
+
+  <details>
+    <summary>Are the costs what I actually pay?</summary>
+    <p>No. Costs are estimated from the tokens recorded in your transcripts, at Anthropic API rates. On a Pro or Max subscription you pay a flat price, so read the figures as the API value of your usage. You can adjust prices and currency in Settings.</p>
+  </details>
+
+  <details>
+    <summary>Why is "Not enough history to compare" shown?</summary>
+    <p>Claude Code removes old transcripts after about 30 days, and the app only knows what it has scanned since it was installed. Comparisons with a previous period appear once that period is covered.</p>
+  </details>
+
+  <details>
+    <summary>Sessions are missing or out of date.</summary>
+    <p>The index updates while the app runs. If something looks wrong, use Settings › General › <em>Rebuild Index</em>.</p>
+  </details>
+
+  <details>
+    <summary>Can I try the app without my own data?</summary>
+    <p>Yes. On the welcome screen, choose <em>Explore with Sample Data</em>. Demo mode uses fictional data and changes nothing on your Mac; leave it with <em>Exit Demo</em>.</p>
+  </details>
+
+  <details>
+    <summary>Does the app send my data anywhere?</summary>
+    <p>No. It has no network access at all. See the <a href="privacy.html">privacy policy</a>.</p>
+  </details>
+
+  <details>
+    <summary>How do I uninstall it completely?</summary>
+    <p>Move the app to the Trash, then delete <code>~/Library/Containers/fr.smartcolibri.cockpitforclaude</code>. Your Claude Code files are never touched.</p>
+  </details>
+</article>
+
+<!-- ============================== Français ============================== -->
+<article class="fr">
+  <h1>Assistance</h1>
+  <p class="lead">Cockpit for Claude affiche l'usage et le coût de Claude Code sur votre Mac, vos sessions, vos économies RTK et vos skills, agents et commandes, dans une seule app Mac native. Nécessite macOS 14 Sonoma ou plus récent.</p>
+
+  <div class="contact">
+    <strong>Contact</strong>
+    <a href="mailto:contact@smartcolibri.fr?subject=Cockpit%20for%20Claude">contact@smartcolibri.fr</a>
+    <span>Indiquez votre version de macOS, la version de l'app (Cockpit for Claude › À propos) et ce que vous vous attendiez à voir. N'envoyez jamais vos transcripts : ils peuvent contenir du code privé.</span>
+  </div>
+
+  <h2>Questions fréquentes</h2>
+
+  <details open>
+    <summary>Pourquoi l'app demande-t-elle l'accès à un dossier ?</summary>
+    <p>Les apps du Mac App Store sont isolées (sandbox) : elles ne lisent que les dossiers que vous autorisez. Au premier lancement, choisissez <em>Autoriser l'accès à mon dossier personnel…</em> pour que l'app lise <code>~/.claude</code>, RTK et vos dossiers de projets, ou n'autorisez que <code>~/.claude</code>. L'accès est en lecture seule, sauf pour les transferts de skills que vous lancez vous-même. Vous pouvez revoir ou retirer les autorisations dans Réglages › Accès.</p>
+  </details>
+
+  <details>
+    <summary>Mon dossier Claude Code n'est pas <code>~/.claude</code>.</summary>
+    <p>Si vous utilisez <code>CLAUDE_CONFIG_DIR</code>, choisissez ce dossier dans Réglages › Accès, puis autorisez-le quand l'app le demande.</p>
+  </details>
+
+  <details>
+    <summary>La section RTK indique que la base est introuvable.</summary>
+    <p>RTK doit être installé et avoir tourné au moins une fois. L'app cherche <code>history.db</code> aux emplacements habituels de RTK. S'il est ailleurs, choisissez-le dans Réglages › RTK.</p>
+  </details>
+
+  <details>
+    <summary>Les coûts affichés sont-ils ce que je paie ?</summary>
+    <p>Non. Les coûts sont estimés à partir des tokens enregistrés dans vos transcripts, aux tarifs de l'API Anthropic. Avec un abonnement Pro ou Max, vous payez un forfait : lisez ces chiffres comme la valeur API de votre usage. Tarifs et devise se règlent dans les Réglages.</p>
+  </details>
+
+  <details>
+    <summary>Pourquoi « Pas assez d'historique pour comparer » ?</summary>
+    <p>Claude Code supprime ses anciens transcripts après une trentaine de jours, et l'app ne connaît que ce qu'elle a lu depuis son installation. Les comparaisons avec la période précédente apparaissent dès que celle-ci est couverte.</p>
+  </details>
+
+  <details>
+    <summary>Des sessions manquent ou ne sont pas à jour.</summary>
+    <p>L'index se met à jour pendant que l'app tourne. En cas de doute, utilisez Réglages › Général › <em>Reconstruire l'index</em>.</p>
+  </details>
+
+  <details>
+    <summary>Puis-je essayer l'app sans mes propres données ?</summary>
+    <p>Oui. Sur l'écran d'accueil, choisissez <em>Explorer avec des données d'exemple</em>. Le mode démo utilise des données fictives et ne modifie rien sur votre Mac ; quittez-le avec <em>Quitter la démo</em>.</p>
+  </details>
+
+  <details>
+    <summary>L'app envoie-t-elle mes données quelque part ?</summary>
+    <p>Non. Elle n'a aucun accès au réseau. Voir la <a href="privacy.html">politique de confidentialité</a>.</p>
+  </details>
+
+  <details>
+    <summary>Comment la désinstaller complètement ?</summary>
+    <p>Mettez l'app à la corbeille, puis supprimez <code>~/Library/Containers/fr.smartcolibri.cockpitforclaude</code>. Vos fichiers Claude Code ne sont jamais touchés.</p>
+  </details>
+</article>
+
+</main>
+
+<footer><div class="wrap">
+  Cockpit for Claude · © 2026 Smart Colibri ·
+  <a href="./"><span class="en">Home</span><span class="fr">Accueil</span></a> ·
+  <a href="privacy.html"><span class="en">Privacy</span><span class="fr">Confidentialité</span></a> ·
+  <a href="mailto:contact@smartcolibri.fr">contact@smartcolibri.fr</a>
+</div></footer>
+
+<script src="assets/legal.js"></script>
+</body>
+</html>
