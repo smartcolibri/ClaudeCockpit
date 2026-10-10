@@ -35,7 +35,7 @@ extension SessionExporter {
         var fields: [(String, String)] = [
             (words("Project"), session.cwd.isEmpty ? session.projectDir : session.cwd),
             (words("Started"), words.date(session.firstTimestamp)),
-            (words("Duration"), AppFormat.duration(session.duration, locale: words.locale)),
+            (words("Duration"), duration(session.duration, locale: words.locale)),
             (words("Turns"), words("\(session.userTurns) user · \(session.assistantTurns) assistant")),
             (words("Tools"), words("\(session.toolCalls) calls · \(session.toolErrors) failed")),
             (words("Tokens"), "\(session.totalTokens)"),
@@ -49,6 +49,17 @@ extension SessionExporter {
             fields.append((words("Lines"), "+\(session.linesAdded) / −\(session.linesRemoved)"))
         }
         return fields
+    }
+
+    /// `2 h 10 min` / `2h 10 min` — the export spells the minutes out, unlike the compact
+    /// in-app duration, because the file is read on its own.
+    static func duration(_ seconds: TimeInterval, locale: Locale) -> String {
+        let french = locale.language.languageCode == .french
+        let total = Int(max(0, seconds))
+        let hours = total / 3600, minutes = (total % 3600) / 60
+        if hours > 0 { return french ? "\(hours) h \(minutes) min" : "\(hours)h \(minutes) min" }
+        if minutes > 0 { return "\(minutes) min" }
+        return french ? "\(total) s" : "\(total)s"
     }
 
     /// The address to link to, or `nil` when it must be shown as plain text.

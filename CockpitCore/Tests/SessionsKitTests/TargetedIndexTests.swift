@@ -245,4 +245,15 @@ final class ExportSafetyTests: XCTestCase {
         XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"], words: en),
                        "2 attachments: api.go, store.go")
     }
+
+    /// A count in a plural string keeps its locale's grouping: the plural variant picks the
+    /// word from the integer, the locale writes the digits.
+    func testPluralCountsKeepTheirGrouping() {
+        let names = Array(repeating: "a", count: 1_234)
+        let fr = Locale(identifier: "fr_FR"), en = Locale(identifier: "en_US")
+        XCTAssertTrue(SessionExporter.attachmentNote(names, words: .init(locale: fr))
+            .hasPrefix("\(AppFormat.integer(1_234, locale: fr)) pièces jointes"))
+        XCTAssertTrue(SessionExporter.attachmentNote(names, words: .init(locale: en))
+            .hasPrefix("1,234 attachments"))
+    }
 }

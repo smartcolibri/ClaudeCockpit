@@ -365,6 +365,17 @@ public struct SearchHit: Identifiable, Hashable, Sendable {
         self.snippet = snippet
         self.timestamp = timestamp
     }
+
+    /// What `snippet()` puts around each matched term: private-use characters, so the
+    /// quotes the reader sees are the app's to choose and never collide with the transcript's.
+    public static let matchStart = "\u{E000}"
+    public static let matchEnd = "\u{E001}"
+
+    /// The snippet with each match between `open` and `close`, e.g. the locale's quotes.
+    public func snippet(open: String, close: String) -> String {
+        snippet.replacingOccurrences(of: Self.matchStart, with: open)
+            .replacingOccurrences(of: Self.matchEnd, with: close)
+    }
 }
 
 /// One project (working directory) with its session count.

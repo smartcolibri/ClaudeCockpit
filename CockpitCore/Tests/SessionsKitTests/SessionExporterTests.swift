@@ -110,12 +110,22 @@ final class SessionExporterTests: XCTestCase {
             session, words: SessionExporter.Words(locale: en)))
         XCTAssertEqual(french["Début"], AppFormat.dateTime(session.firstTimestamp, locale: fr))
         XCTAssertEqual(english["Started"], AppFormat.dateTime(session.firstTimestamp, locale: en))
-        XCTAssertEqual(french["Durée"], AppFormat.duration(session.duration, locale: fr))
-        XCTAssertEqual(english["Duration"], AppFormat.duration(session.duration, locale: en))
+        XCTAssertEqual(french["Durée"], SessionExporter.duration(session.duration, locale: fr))
+        XCTAssertEqual(english["Duration"], SessionExporter.duration(session.duration, locale: en))
         XCTAssertEqual(french["Tours"],
                        "\(session.userTurns) utilisateur · \(session.assistantTurns) assistant")
         XCTAssertEqual(english["Turns"],
                        "\(session.userTurns) user · \(session.assistantTurns) assistant")
+    }
+
+    /// The export's duration keeps the minutes spelled out, as it always read in French.
+    func testDurationSpellsMinutesOut() {
+        XCTAssertEqual(SessionExporter.duration(45, locale: fr), "45 s")
+        XCTAssertEqual(SessionExporter.duration(600, locale: fr), "10 min")
+        XCTAssertEqual(SessionExporter.duration(7_800, locale: fr), "2 h 10 min")
+        XCTAssertEqual(SessionExporter.duration(-5, locale: fr), "0 s")
+        XCTAssertEqual(SessionExporter.duration(45, locale: en), "45s")
+        XCTAssertEqual(SessionExporter.duration(7_800, locale: en), "2h 10 min")
     }
 
     func testExportsAnEmptySessionWithoutCrashing() {
