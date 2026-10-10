@@ -120,8 +120,9 @@ struct ActivityHeatmapTile: View {
                     .monospacedDigit()
                     .foregroundStyle(Theme.blue)
             } else {
-                let total = sessions.values.reduce(0, +)
-                Text(String(localized: "\(total) sessions in 12 weeks", locale: AppFormat.locale))
+                // Days, not sessions: a session crossing midnight is active on both days.
+                let active = sessions.values.filter { $0 > 0 }.count
+                Text(String(localized: "\(active) active days in 12 weeks", locale: AppFormat.locale))
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.ink)
                 Text("Hover a day for its sessions and cost; click to open them.")

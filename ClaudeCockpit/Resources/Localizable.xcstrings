@@ -188,7 +188,7 @@
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "%@ d'économie sur le filtré"
+            "value" : "%@ d'économie"
           }
         }
       }
@@ -381,6 +381,46 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "%1$@ : %2$@"
+          }
+        }
+      }
+    },
+    "%lld active days in 12 weeks" : {
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld active day in 12 weeks"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld active days in 12 weeks"
+                }
+              }
+            }
+          }
+        },
+        "fr" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld jour actif en 12 semaines"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld jours actifs en 12 semaines"
+                }
+              }
+            }
           }
         }
       }
@@ -1042,46 +1082,6 @@
                 "stringUnit" : {
                   "state" : "translated",
                   "value" : "%lld sessions ont rencontré des erreurs aujourd'hui."
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "%lld sessions in 12 weeks" : {
-      "localizations" : {
-        "en" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld session in 12 weeks"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld sessions in 12 weeks"
-                }
-              }
-            }
-          }
-        },
-        "fr" : {
-          "variations" : {
-            "plural" : {
-              "one" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld session en 12 semaines"
-                }
-              },
-              "other" : {
-                "stringUnit" : {
-                  "state" : "translated",
-                  "value" : "%lld sessions en 12 semaines"
                 }
               }
             }
