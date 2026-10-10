@@ -79,12 +79,11 @@ final class DateRangeFilterTests: XCTestCase {
             TestClock.date("1999-01-01T00:00:00Z"), now: now, calendar: calendar))
     }
 
-    func testRawValuesAndLabelsCoverEveryCase() {
+    /// The raw values are persisted; the labels are the app's business.
+    func testRawValuesCoverEveryCase() {
         XCTAssertEqual(
             DateRangeFilter.allCases.map(\.rawValue),
             ["Today", "This Week", "This Month", "Prev Month", "7d", "30d", "90d", "All"])
         XCTAssertEqual(DateRangeFilter(rawValue: "Prev Month"), .prevMonth)
-        XCTAssertEqual(DateRangeFilter.prevMonth.frenchLabel, "Mois précédent")
-        XCTAssertTrue(DateRangeFilter.allCases.allSatisfy { !$0.frenchLabel.isEmpty })
     }
 }

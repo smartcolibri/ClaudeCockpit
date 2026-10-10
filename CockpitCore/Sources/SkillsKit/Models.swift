@@ -25,12 +25,12 @@ public enum ResourceKind: String, CaseIterable, Sendable, Codable {
     /// True when one resource is a directory (skills) rather than a single file.
     public var isDirectoryBased: Bool { self == .skill }
 
-    /// French plural label for the UI.
+    /// Plural label for the UI.
     public var pluralLabel: String {
         switch self {
-        case .skill: return "Skills"
-        case .agent: return "Agents"
-        case .command: return "Commandes"
+        case .skill: return String(localized: "Skills", bundle: .module)
+        case .agent: return String(localized: "Agents", bundle: .module)
+        case .command: return String(localized: "Commands", bundle: .module)
         }
     }
 }
@@ -63,11 +63,11 @@ public enum ResourceLevel: Hashable, Sendable {
     case global
     case project(ProjectRef)
 
-    /// French label shown in the level picker.
+    /// Label shown in the level picker.
     public var label: String {
         switch self {
-        case .library: return "Bibliothèque"
-        case .global: return "Global"
+        case .library: return String(localized: "Library", bundle: .module)
+        case .global: return String(localized: "Global", bundle: .module)
         case .project(let project): return project.name
         }
     }
@@ -269,17 +269,17 @@ public enum SkillsError: Error, Equatable, LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .outsideHome:
-            return "Chemin en dehors du dossier personnel."
+            return String(localized: "Path outside the home folder.", bundle: .module)
         case .alreadyExists(let url):
-            return "Existe déjà à la destination : \(url.path)"
+            return String(localized: "Already exists at the destination: \(url.path)", bundle: .module)
         case .notFound:
-            return "Ressource introuvable."
+            return String(localized: "Resource not found.", bundle: .module)
         case .io(let message):
             return message
         case .ioAfterBackup(let message, let backup):
-            return "\(message) Une sauvegarde reste disponible dans : \(backup.path)"
+            return String(localized: "\(message) A backup is still available in: \(backup.path)", bundle: .module)
         case .symlinkUnsupported(let url):
-            return "« \(url.lastPathComponent) » est un lien symbolique : le transfert et la suppression ne sont pas pris en charge. Modifiez directement sa cible."
+            return String(localized: "“\(url.lastPathComponent)” is a symbolic link: transferring and deleting it are not supported. Edit its target directly.", bundle: .module)
         }
     }
 }
@@ -311,8 +311,8 @@ public enum TransferMode: String, Sendable, CaseIterable {
 
     public var label: String {
         switch self {
-        case .copy: return "Copier"
-        case .move: return "Déplacer"
+        case .copy: return String(localized: "Copy", bundle: .module)
+        case .move: return String(localized: "Move", bundle: .module)
         }
     }
 }

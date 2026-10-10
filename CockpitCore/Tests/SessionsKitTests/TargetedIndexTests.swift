@@ -233,10 +233,16 @@ final class ExportSafetyTests: XCTestCase {
         }
     }
 
-    func testAttachmentNoteAgreesInFrenchAndNamesTheFiles() {
-        XCTAssertEqual(SessionExporter.attachmentNote(["api.go"]), "1 pièce jointe : api.go")
-        XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"]),
+    func testAttachmentNoteAgreesAndNamesTheFiles() {
+        let fr = SessionExporter.Words(locale: Locale(identifier: "fr_FR"))
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go"], words: fr), "1 pièce jointe : api.go")
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"], words: fr),
                        "2 pièces jointes : api.go, store.go")
-        XCTAssertEqual(SessionExporter.attachmentNote([]), "")
+        XCTAssertEqual(SessionExporter.attachmentNote([], words: fr), "")
+
+        let en = SessionExporter.Words(locale: Locale(identifier: "en_US"))
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go"], words: en), "1 attachment: api.go")
+        XCTAssertEqual(SessionExporter.attachmentNote(["api.go", "store.go"], words: en),
+                       "2 attachments: api.go, store.go")
     }
 }

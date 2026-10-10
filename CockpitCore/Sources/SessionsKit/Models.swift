@@ -425,19 +425,32 @@ public struct SessionHealthCounters: Hashable, Sendable, Codable {
     }
 }
 
-/// A deterministic, LLM-free verdict on how a session went, with its reasons in French.
+/// A deterministic, LLM-free verdict on how a session went, with its reasons.
 public struct SessionHealth: Hashable, Sendable, Codable {
     public let grade: HealthGrade
     /// 0–100, clamped.
     public let score: Int
-    /// French sentences, in the order the rules fired.
-    public let evidence: [String]
+    /// The reasons, in the order the rules fired. The app words them.
+    public let evidence: [HealthEvidence]
 
-    public init(grade: HealthGrade, score: Int, evidence: [String]) {
+    public init(grade: HealthGrade, score: Int, evidence: [HealthEvidence]) {
         self.grade = grade
         self.score = score
         self.evidence = evidence
     }
+}
+
+/// One reason behind a health grade, as values: the wording, and the language it is in,
+/// belong to the app. Rates are fractions (0…1) and are cited next to the counts so the
+/// sentence explains the grade instead of seeming to contradict it.
+public enum HealthEvidence: Hashable, Sendable, Codable {
+    case toolErrors(count: Int, calls: Int, rate: Double)
+    case apiErrors(count: Int, turns: Int, rate: Double)
+    case endedOnError
+    case abortedTurns(count: Int, turns: Int)
+    case repeatedFailure(times: Int)
+    /// Nothing fired.
+    case noErrors
 }
 
 // MARK: - Activity
@@ -617,8 +630,8 @@ public enum SessionsError: Error, LocalizedError, Sendable, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .sqlite(let message): return "Erreur SQLite : \(message)"
-        case .unknownSession(let id): return "Session inconnue : \(id)"
+        case .sqlite(let message): return String(localized: "SQLite error: \(message)", bundle: .module)
+        case .unknownSession(let id): return String(localized: "Unknown session: \(id)", bundle: .module)
         }
     }
 }

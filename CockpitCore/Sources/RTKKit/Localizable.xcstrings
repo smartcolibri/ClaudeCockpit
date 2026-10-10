@@ -1,0 +1,54 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "rtk database not found. Install rtk or set the path to history.db in Settings." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "rtk database not found. Install rtk or set the path to history.db in Settings."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Base rtk introuvable. Installez rtk ou indiquez le chemin de history.db dans les réglages."
+          }
+        }
+      }
+    },
+    "SQLite error: %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "SQLite error: %@"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Erreur SQLite : %@"
+          }
+        }
+      }
+    },
+    "The commands table in the rtk database does not have the expected schema." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "The commands table in the rtk database does not have the expected schema."
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La table commands de la base rtk n'a pas le schéma attendu."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

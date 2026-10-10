@@ -1,6 +1,5 @@
 // SessionsKit — see docs/superpowers/specs/2026-09-23-sessions-viewer.md
 import Foundation
-import CockpitShared
 
 extension SessionHealthRule {
 
@@ -50,11 +49,11 @@ extension SessionHealthRule {
     /// grade computed from the transcript would mean materialising every session on screen,
     /// which is exactly the greedy read the spec rules out.
     ///
-    /// Evidence is written in French and cites the rate next to the count, so the sentence
+    /// Evidence carries the rate next to the count, so the sentence the app writes from it
     /// explains the grade instead of seeming to contradict it.
     static func evaluateCounters(_ counters: SessionHealthCounters) -> SessionHealth {
         var score = 100.0
-        var evidence: [String] = []
+        var evidence: [HealthEvidence] = []
 
         // A session that called no tool has no tool error rate to speak of; dividing by a
         // floor of 1 would invent one out of nothing.
@@ -64,27 +63,19 @@ extension SessionHealthRule {
                              max(0, (rate - Penalty.toolErrorFloor) * Penalty.toolErrorSlope))
             let byCount = Penalty.pointsPerToolError * Double(counters.toolErrors)
             score -= min(byRate, byCount)
-            evidence.append("""
-                \(FRFormat.plural(counters.toolErrors, "erreur")) d'outil sur \
-                \(FRFormat.plural(counters.toolCalls, "appel")), soit \
-                \(FRFormat.percent(rate, digits: 1)).
-                """)
+            evidence.append(.toolErrors(count: counters.toolErrors, calls: counters.toolCalls, rate: rate))
         }
 
         if counters.apiErrors > 0 {
             let turns = max(counters.assistantTurns, counters.apiErrors)
             let rate = Double(counters.apiErrors) / Double(turns)
             score -= min(Penalty.apiErrorCap, rate * Penalty.apiErrorSlope)
-            evidence.append("""
-                \(FRFormat.plural(counters.apiErrors, "erreur")) d'API sur \
-                \(FRFormat.plural(turns, "tour")) assistant, soit \
-                \(FRFormat.percent(rate, digits: 1)).
-                """)
+            evidence.append(.apiErrors(count: counters.apiErrors, turns: turns, rate: rate))
         }
 
         if counters.endedOnError {
             score -= Double(Penalty.endedOnError)
-            evidence.append("La session se termine sur une erreur.")
+            evidence.append(.endedOnError)
         }
 
         if counters.abortedTurns > 0 {
@@ -92,20 +83,15 @@ extension SessionHealthRule {
             let share = Double(counters.abortedTurns) / Double(turns)
             score -= Double(Penalty.aborted)
             if share > Penalty.abortedShare { score -= Double(Penalty.abortedExtra) }
-            let word = counters.abortedTurns > 1 ? "interrompus" : "interrompu"
-            evidence.append("""
-                \(FRFormat.plural(counters.abortedTurns, "tour")) \(word) sur \
-                \(FRFormat.plural(turns, "tour")) assistant.
-                """)
+            evidence.append(.abortedTurns(count: counters.abortedTurns, turns: turns))
         }
 
         if counters.repeatedFailures >= Penalty.repeatThreshold {
             score -= Double(Penalty.repeatedFailure)
-            evidence.append(
-                "Le même appel d'outil a échoué \(counters.repeatedFailures) fois de suite.")
+            evidence.append(.repeatedFailure(times: counters.repeatedFailures))
         }
 
-        if evidence.isEmpty { evidence.append("Aucune erreur détectée.") }
+        if evidence.isEmpty { evidence.append(.noErrors) }
         let clamped = min(100, max(0, Int(score.rounded())))
         return SessionHealth(grade: grade(for: clamped), score: clamped, evidence: evidence)
     }
