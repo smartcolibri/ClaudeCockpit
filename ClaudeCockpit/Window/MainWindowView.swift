@@ -32,6 +32,14 @@ struct MainWindowView: View {
             detail(for: selection.wrappedValue ?? .overview)
                 .frame(minWidth: 860, minHeight: 640)
                 .background(Theme.background)
+                .safeAreaInset(edge: .top, spacing: 0) {
+                    if store.isDemo {
+                        DemoBanner {
+                            store.exitDemo()
+                            sectionRaw = CockpitSection.overview.rawValue
+                        }
+                    }
+                }
         }
         .navigationTitle(Self.windowTitle)
         .toolbar {
@@ -94,6 +102,28 @@ private struct SidebarStyle: ViewModifier {
         } else {
             content.listStyle(.sidebar)
         }
+    }
+}
+
+/// Shown above every section while the demo runs, with the way back to the user's data.
+private struct DemoBanner: View {
+    let exit: () -> Void
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "play.rectangle.fill").foregroundStyle(Theme.accent)
+            Text("Mode démo — données fictives").font(.system(size: 12, weight: .semibold))
+            Text("Projets, sessions et statistiques inventés pour découvrir l'app.")
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.slate)
+                .lineLimit(1)
+            Spacer()
+            Button("Quitter la démo", action: exit).controlSize(.small)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
+        .background(Theme.accent.opacity(0.12))
+        .overlay(alignment: .bottom) { Divider().opacity(0.5) }
     }
 }
 

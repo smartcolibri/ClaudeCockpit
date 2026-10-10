@@ -52,6 +52,20 @@ struct OnboardingView: View {
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
+                Divider().opacity(0.5)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Button {
+                        store.enterDemo()
+                    } label: {
+                        Label("Explorer avec des données d'exemple", systemImage: "play.rectangle")
+                    }
+                    Text("Trois projets, des sessions, des statistiques RTK et des skills fictifs, pour découvrir l'app sans autoriser aucun dossier. Vos propres données ne sont ni lues ni modifiées.")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.slate)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+
                 if let feedback {
                     SourceBanner(kind: .warning, message: feedback)
                 }
