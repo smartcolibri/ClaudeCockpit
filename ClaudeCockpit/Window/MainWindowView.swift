@@ -29,17 +29,19 @@ struct MainWindowView: View {
             .modifier(SidebarStyle())
             .navigationSplitViewColumnWidth(min: 190, ideal: 210, max: 260)
         } detail: {
-            detail(for: selection.wrappedValue ?? .overview)
-                .frame(minWidth: 860, minHeight: 640)
-                .background(Theme.background)
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    if store.isDemo {
-                        DemoBanner {
-                            store.exitDemo()
-                            sectionRaw = CockpitSection.overview.rawValue
-                        }
+            // A stack rather than a safe-area inset: the split views (RTK, resources) are
+            // AppKit-backed and would draw under an inset.
+            VStack(spacing: 0) {
+                if store.isDemo {
+                    DemoBanner {
+                        store.exitDemo()
+                        sectionRaw = CockpitSection.overview.rawValue
                     }
                 }
+                detail(for: selection.wrappedValue ?? .overview)
+            }
+            .frame(minWidth: 860, minHeight: 640)
+            .background(Theme.background)
         }
         .navigationTitle(Self.windowTitle)
         .toolbar {
