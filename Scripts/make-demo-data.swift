@@ -84,6 +84,9 @@ final class Session {
     private var firstLine: Date?
     private var linesAdded = 0
     private var linesRemoved = 0
+    /// API-price cost of the turns written so far (the app's default pricing), so the
+    /// `cost-state` line agrees with what the Usage screen computes from the same tokens.
+    private(set) var cost = 0.0
 
     init(id: String, project: Project, model: String, start: Date, agentId: String? = nil) {
         self.id = id
@@ -133,7 +136,15 @@ final class Session {
             ],
         ]
         lines.append(encode(object))
+        // $/MTok: input, output, cache write, cache read.
+        let price: [Double] = model.contains("opus") ? [5, 25, 6.25, 0.5]
+            : model.contains("haiku") ? [1, 5, 1.25, 0.1] : [3, 15, 3.75, 0.3]
+        cost += (Double(input) * price[0] + Double(output) * price[1]
+                 + Double(cacheWrite) * price[2] + Double(cacheRead) * price[3]) / 1_000_000
     }
+
+    /// Adds a sub-agent's turns to the session total, as Claude Code's own counter does.
+    func absorb(_ agent: Session) { cost += agent.cost }
 
     func toolResult(_ toolUseId: String, _ text: String, isError: Bool = false, after seconds: Double = 6) {
         var object = envelope("user", after: seconds)
@@ -177,9 +188,9 @@ final class Session {
         ]))
     }
 
-    func costState(_ usd: Double) {
+    func costState() {
         lines.append(encode([
-            "type": "cost-state", "sessionId": id, "totalCostUSD": usd,
+            "type": "cost-state", "sessionId": id, "totalCostUSD": NSDecimalNumber(string: String(format: "%.4f", cost)),
             "totalLinesAdded": linesAdded, "totalLinesRemoved": linesRemoved,
             "startTime": Int64((firstLine ?? clock).timeIntervalSince1970 * 1000),
         ]))
@@ -240,6 +251,7 @@ do {
     agent.assistant([agent.text("`WeatherService.hourly(for:)` already returns `[HourlyPoint]` (time, temperature, symbol, precipitation chance). No view consumes it yet; `CurrentConditionsCard` only reads `current(for:)`.")],
                     after: 10, output: 188, cacheRead: 5_300, cacheWrite: 900)
     agent.save(parent: s.id)
+    s.absorb(agent)
 
     s.toolResult(exploreId, "WeatherService.hourly(for:) returns [HourlyPoint]; nothing renders it yet. CurrentConditionsCard reads current(for:) only.\n\nagentId: a4f2c9e17b3d58a60 (use SendMessage with to: 'a4f2c9e17b3d58a60' to continue this agent)",
                  after: 40)
@@ -297,7 +309,7 @@ do {
     s.assistant([s.text("Done. The home screen now shows a 24-hour strip under the current conditions card:\n\n- `HourlyForecastStrip` (new) renders one cell per hour, combined for VoiceOver.\n- `HomeViewModel` loads `hourly` alongside `current`.\n- The build passes.")],
                 output: 318, cacheRead: 30_900, cacheWrite: 520)
     s.title("Add hourly forecast strip")
-    s.costState(1.84)
+    s.costState()
     checkToday(s)
     s.save()
 }
@@ -333,7 +345,7 @@ do {
     s.assistant([s.text("Fixed and opened #128: the cursor now encodes `(created_at, id)` and the query uses a strict keyset comparison, so no row repeats across pages, even for notes created in the same second.")],
                 output: 210, cacheRead: 19_500, cacheWrite: 180)
     s.title("Fix duplicated note on paginated list")
-    s.costState(0.46)
+    s.costState()
     checkToday(s)
     s.save()
 }
@@ -374,7 +386,7 @@ do {
     s.assistant([s.text("The pricing page now reads its plans from `src/data/plans.json`, shows them side by side and highlights Team. The yearly toggle reuses the existing `Toggle` component.")],
                 output: 180, cacheRead: 13_900, cacheWrite: 200)
     s.title("Redesign pricing page")
-    s.costState(0.31)
+    s.costState()
     s.save()
 }
 
@@ -437,13 +449,14 @@ do {
     agent.assistant([agent.text("Added `ForecastCacheTests` (round trip; missing and corrupt files return nil).")],
                     after: 8, output: 90, cacheRead: 7_000, cacheWrite: 400)
     agent.save(parent: s.id)
+    s.absorb(agent)
 
     s.toolResult(agentCallId, "Tests written in Tests/ForecastCacheTests.swift.\n\nagentId: a9b1d3e5f7c20486e (use SendMessage with to: 'a9b1d3e5f7c20486e' to continue this agent)",
                  after: 45)
     s.assistant([s.text("The app now falls back to the last cached forecast when the network fails, and the cache has tests.")],
                 output: 160, cacheRead: 26_000, cacheWrite: 300)
     s.title("Offline forecast cache")
-    s.costState(1.12)
+    s.costState()
     s.save()
 }
 
@@ -485,7 +498,7 @@ do {
     s.assistant([s.text("Rate limiting is on: 60 requests per minute per token, `429` with `Retry-After` beyond that.")],
                 output: 120, cacheRead: 15_300, cacheWrite: 200)
     s.title("Per-token rate limiting")
-    s.costState(0.29)
+    s.costState()
     s.save()
 }
 
@@ -511,7 +524,7 @@ do {
     s.toolResult(feedId, "File created successfully at: \(site.cwd)/src/pages/rss.xml.ts")
     s.assistant([s.text("The feed is served at `/rss.xml`.")], output: 60, cacheRead: 6_600, cacheWrite: 120)
     s.title("Blog RSS feed")
-    s.costState(0.04)
+    s.costState()
     s.save()
 }
 
@@ -530,7 +543,7 @@ do {
     s.toolResult(testId, "ok  \texample.com/notes-api/internal/store\t1.92s", after: 70)
     s.assistant([s.text("Postgres 17 runs locally and in CI; the store tests pass against it.")], output: 110, cacheRead: 19_300, cacheWrite: 200)
     s.title("Upgrade to Postgres 17")
-    s.costState(0.58)
+    s.costState()
     s.save()
 }
 
@@ -552,7 +565,7 @@ do {
     s.toolResult(wfId, "File created successfully at: \(weather.cwd)/.github/workflows/ci.yml")
     s.assistant([s.text("Every pull request now builds and runs the test suite on macOS.")], output: 70, cacheRead: 8_900, cacheWrite: 150)
     s.title("CI on pull requests")
-    s.costState(0.12)
+    s.costState()
     s.save()
 }
 
