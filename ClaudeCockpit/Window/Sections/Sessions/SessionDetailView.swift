@@ -151,28 +151,50 @@ struct SessionDetailView: View {
         .foregroundStyle(Theme.slate)
     }
 
+    /// One row when the pane is wide enough; otherwise the token chips and the rest
+    /// split over two rows, so no pill ever wraps its own label.
     private var statsLine: some View {
-        HStack(spacing: 6) {
-            SessionChip(title: String(localized: "Input \(AppFormat.tokens(session.inputTokens))"), tint: Theme.blue)
-            SessionChip(title: String(localized: "Output \(AppFormat.tokens(session.outputTokens))"), tint: Theme.blue)
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 6) {
+                tokenChips
+                activityChips
+                Spacer(minLength: 8)
+                healthControl
+            }
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 6) { tokenChips }
+                HStack(spacing: 6) {
+                    activityChips
+                    Spacer(minLength: 8)
+                    healthControl
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var tokenChips: some View {
+        SessionChip(title: String(localized: "Input \(AppFormat.tokens(session.inputTokens))", locale: AppFormat.locale), tint: Theme.blue)
+        SessionChip(title: String(localized: "Output \(AppFormat.tokens(session.outputTokens))", locale: AppFormat.locale), tint: Theme.blue)
+        SessionChip(
+            title: String(localized: "Cache \(AppFormat.tokens(session.cacheReadTokens + session.cacheCreationTokens))", locale: AppFormat.locale),
+            tint: Theme.blue)
+    }
+
+    @ViewBuilder
+    private var activityChips: some View {
+        if let cost = store.sessionCost(session) {
+            // Estimated from the per-model tokens when the transcript carries
+            // no recorded total; the tilde keeps the two apart.
             SessionChip(
-                title: String(localized: "Cache \(AppFormat.tokens(session.cacheReadTokens + session.cacheCreationTokens))"),
-                tint: Theme.blue)
-            if let cost = store.sessionCost(session) {
-                // Estimated from the per-model tokens when the transcript carries
-                // no recorded total; the tilde keeps the two apart.
-                SessionChip(
-                    title: cost.estimated ? "~\(store.money(cost.usd))" : store.money(cost.usd),
-                    systemImage: "eurosign.circle", active: true, tint: Theme.blue)
-            }
-            SessionChip(title: String(localized: "\(session.toolCalls) tools"), systemImage: "wrench.and.screwdriver")
-            if session.toolErrors > 0 {
-                SessionChip(
-                    title: String(localized: "\(session.toolErrors) errors"),
-                    systemImage: "exclamationmark.triangle", active: true, tint: .red)
-            }
-            Spacer(minLength: 8)
-            healthControl
+                title: cost.estimated ? "~\(store.money(cost.usd))" : store.money(cost.usd),
+                systemImage: "eurosign.circle", active: true, tint: Theme.blue)
+        }
+        SessionChip(title: String(localized: "\(session.toolCalls) tools", locale: AppFormat.locale), systemImage: "wrench.and.screwdriver")
+        if session.toolErrors > 0 {
+            SessionChip(
+                title: String(localized: "\(session.toolErrors) errors", locale: AppFormat.locale),
+                systemImage: "exclamationmark.triangle", active: true, tint: .red)
         }
     }
 
@@ -185,6 +207,7 @@ struct SessionDetailView: View {
                     Text(verbatim: "\(health.score)/100")
                         .font(.data(10))
                         .monospacedDigit()
+                        .fixedSize()
                         .foregroundStyle(Theme.slate)
                 }
                 .contentShape(Rectangle())
@@ -317,7 +340,7 @@ struct SessionDetailView: View {
     private func copyIdentifier() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(session.id, forType: .string)
-        store.notice = String(localized: "ID copied: \(session.id)")
+        store.notice = String(localized: "ID copied: \(session.id)", locale: AppFormat.locale)
     }
 
     // MARK: - Find bar
@@ -333,7 +356,7 @@ struct SessionDetailView: View {
             if !findQuery.isEmpty {
                 Text(findMatches.isEmpty
                      ? String(localized: "No turns")
-                     : String(localized: "\(findIndex + 1) of \(findMatches.count)"))
+                     : String(localized: "\(findIndex + 1) of \(findMatches.count)", locale: AppFormat.locale))
                     .font(.data(11))
                     .monospacedDigit()
                     .foregroundStyle(Theme.slate)
@@ -509,7 +532,7 @@ struct SessionDetailView: View {
             if total > 0 {
                 // The total now counts the same set the pages return, so the two
                 // denominators match and this can honestly say "messages".
-                Text("\(String(localized: "\(messages.count) messages")) out of \(AppFormat.integer(total))")
+                Text("\(String(localized: "\(messages.count) messages", locale: AppFormat.locale)) out of \(AppFormat.integer(total))")
                     .font(.system(size: 10))
                     .monospacedDigit()
                     .foregroundStyle(Theme.mist)

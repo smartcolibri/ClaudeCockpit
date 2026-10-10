@@ -228,8 +228,9 @@ struct SessionChip: View {
             if let systemImage {
                 Image(systemName: systemImage).font(.system(size: 10, weight: .semibold))
             }
-            Text(title).font(.label(11))
+            Text(title).font(.label(11)).lineLimit(1)
         }
+        .fixedSize()
         .padding(.horizontal, 9)
         .padding(.vertical, 4)
         .foregroundStyle(active ? Color.white : Theme.slate)
@@ -272,15 +273,15 @@ extension HealthEvidence {
     var displayText: String {
         switch self {
         case .toolErrors(let count, let calls, let rate):
-            String(localized: "\(String(localized: "\(count) tool errors")) out of \(String(localized: "\(calls) calls")), or \(AppFormat.percent(rate, digits: 1)).")
+            String(localized: "\(String(localized: "\(count) tool errors", locale: AppFormat.locale)) out of \(String(localized: "\(calls) calls", locale: AppFormat.locale)), or \(AppFormat.percent(rate, digits: 1)).", locale: AppFormat.locale)
         case .apiErrors(let count, let turns, let rate):
-            String(localized: "\(String(localized: "\(count) API errors")) out of \(String(localized: "\(turns) assistant turns")), or \(AppFormat.percent(rate, digits: 1)).")
+            String(localized: "\(String(localized: "\(count) API errors", locale: AppFormat.locale)) out of \(String(localized: "\(turns) assistant turns", locale: AppFormat.locale)), or \(AppFormat.percent(rate, digits: 1)).", locale: AppFormat.locale)
         case .endedOnError:
             String(localized: "The session ends on an error.")
         case .abortedTurns(let count, let turns):
-            String(localized: "\(String(localized: "\(count) interrupted turns")) out of \(String(localized: "\(turns) assistant turns")).")
+            String(localized: "\(String(localized: "\(count) interrupted turns", locale: AppFormat.locale)) out of \(String(localized: "\(turns) assistant turns", locale: AppFormat.locale)).", locale: AppFormat.locale)
         case .repeatedFailure(let times):
-            String(localized: "The same tool call failed \(times) times in a row.")
+            String(localized: "The same tool call failed \(times) times in a row.", locale: AppFormat.locale)
         case .noErrors:
             String(localized: "No errors detected.")
         }
