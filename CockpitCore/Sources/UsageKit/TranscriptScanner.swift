@@ -262,6 +262,10 @@ public actor TranscriptScanner {
         }()
 
         for (path, state) in persisted.fileStates {
+            // The caches live in the app's own folder, shared by every config directory the
+            // user ever pointed the app at. Entries from another archive must not leak into
+            // this one's totals.
+            guard isInsideProjectsDir(path) else { continue }
             guard let events = storedEvents[path],
                   events.offset == state.offset,
                   events.mtime == state.mtime
@@ -269,6 +273,14 @@ public actor TranscriptScanner {
             fileStates[path] = FileState(
                 offset: state.offset, mtime: state.mtime, size: state.size, events: events.events)
         }
+    }
+
+    /// Whether a cached transcript path belongs to the archive this scanner reads. Checked
+    /// against the symlink-resolved form too: the enumerator may report `/private/var/…`
+    /// for a `projectsDir` given as `/var/…`.
+    private func isInsideProjectsDir(_ path: String) -> Bool {
+        AccessCoverage.isPath(path, inside: paths.projectsDir.path)
+            || AccessCoverage.isPath(path, inside: paths.projectsDir.resolvingSymlinksInPath().path)
     }
 
     /// Writes whichever cache is due. `force` bypasses both throttles.
