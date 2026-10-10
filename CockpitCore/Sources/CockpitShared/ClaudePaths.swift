@@ -57,12 +57,22 @@ public struct ClaudePaths: Sendable, Equatable {
     }
 
     /// Setting first, then `CLAUDE_CONFIG_DIR`, `~` expanded against `home`; nil when neither is set.
+    /// A relative value is skipped: it would resolve against whatever the working directory is.
     public static func resolveConfigDir(setting: String?, environment: [String: String], home: URL) -> URL? {
         for raw in [setting, environment["CLAUDE_CONFIG_DIR"]] {
             let trimmed = raw?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-            if !trimmed.isEmpty { return URL(fileURLWithPath: expandTilde(trimmed, home: home), isDirectory: true) }
+            if !trimmed.isEmpty, isUsableConfigDirSetting(trimmed) {
+                return URL(fileURLWithPath: expandTilde(trimmed, home: home), isDirectory: true)
+            }
         }
         return nil
+    }
+
+    /// Whether a config-directory value can be used: empty (no override), absolute, or a
+    /// `~` / `~/…` form.
+    public static func isUsableConfigDirSetting(_ raw: String) -> Bool {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty || trimmed == "~" || trimmed.hasPrefix("~/") || trimmed.hasPrefix("/")
     }
 
     /// `~` and `~/…` expanded against `home` (the real one by default). Unlike

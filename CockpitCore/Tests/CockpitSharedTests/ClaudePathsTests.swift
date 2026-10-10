@@ -52,4 +52,19 @@ final class ClaudePathsSandboxTests: XCTestCase {
         XCTAssertEqual(ClaudePaths.resolveConfigDir(setting: "  ", environment: env, home: home)?.path, "/Users/x/env-cfg")
         XCTAssertNil(ClaudePaths.resolveConfigDir(setting: nil, environment: [:], home: home))
     }
+
+    func testRelativeConfigDirIsRefused() {
+        let home = URL(fileURLWithPath: "/Users/x")
+        XCTAssertTrue(ClaudePaths.isUsableConfigDirSetting(""))
+        XCTAssertTrue(ClaudePaths.isUsableConfigDirSetting("~"))
+        XCTAssertTrue(ClaudePaths.isUsableConfigDirSetting("~/cfg"))
+        XCTAssertTrue(ClaudePaths.isUsableConfigDirSetting(" /Volumes/Data/claude "))
+        XCTAssertFalse(ClaudePaths.isUsableConfigDirSetting("claude"))
+        XCTAssertFalse(ClaudePaths.isUsableConfigDirSetting("./claude"))
+        XCTAssertFalse(ClaudePaths.isUsableConfigDirSetting("~other/claude"))
+        // A relative setting falls through to the variable, then to the default.
+        XCTAssertEqual(ClaudePaths.resolveConfigDir(
+            setting: "claude", environment: ["CLAUDE_CONFIG_DIR": "/env"], home: home)?.path, "/env")
+        XCTAssertNil(ClaudePaths.resolveConfigDir(setting: "claude", environment: [:], home: home))
+    }
 }

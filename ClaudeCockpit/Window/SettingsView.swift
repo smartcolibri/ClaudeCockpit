@@ -332,6 +332,10 @@ private struct ProjectsSettingsTab: View {
 private struct AccessSettingsTab: View {
     @Environment(CockpitStore.self) private var store
     @AppStorage(SettingsKey.claudeConfigDir) private var configDir = ""
+    /// What the field shows. Written to the setting only once valid and the typing has
+    /// paused, so no reload ever runs on a half-typed or relative path.
+    @State private var configDraft = ""
+    @State private var configError: String?
 
     var body: some View {
         Form {
@@ -379,14 +383,25 @@ private struct AccessSettingsTab: View {
             }
 
             Section("Dossier de configuration Claude") {
-                TextField("Dossier", text: $configDir, prompt: Text("~/.claude"))
+                TextField("Dossier", text: $configDraft, prompt: Text("~/.claude"))
                     .font(.data(11))
-                    .onSubmit { store.accessDidChange() }
+                    .onSubmit { applyConfigDraft() }
+                    .task(id: configDraft) {
+                        try? await Task.sleep(for: .milliseconds(800))
+                        guard !Task.isCancelled else { return }
+                        applyConfigDraft()
+                    }
+                if let configError {
+                    Text(configError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 HStack {
                     Button("Choisir…") { chooseConfigDir() }
                     Button("Par défaut") {
-                        configDir = ""
-                        store.accessDidChange()
+                        configDraft = ""
+                        applyConfigDraft()
                     }
                     .disabled(configDir.isEmpty)
                     Spacer()
@@ -401,6 +416,20 @@ private struct AccessSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear { configDraft = configDir }
+    }
+
+    /// Stores the field's value when it is usable and differs from the setting, then reloads.
+    private func applyConfigDraft() {
+        let value = configDraft.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard ClaudePaths.isUsableConfigDirSetting(value) else {
+            configError = "Chemin relatif refusé : indiquez un chemin absolu (/…) ou commençant par ~/."
+            return
+        }
+        configError = nil
+        guard value != configDir else { return }
+        configDir = value
+        store.accessDidChange()
     }
 
     private func statusLabel(_ status: AccessStore.Grant.Status) -> String {
@@ -426,8 +455,11 @@ private struct AccessSettingsTab: View {
             directory: start, message: "Choisissez le dossier de configuration de Claude Code.", prompt: "Choisir")
         else { return }
         configDir = store.displayPath(picked)
-        // Granting fires `accessDidChange`, which also picks up the new directory.
-        if store.isCovered(picked) { store.accessDidChange() } else { store.grant(picked) }
+        configDraft = configDir
+        configError = nil
+        // A stored grant fires `accessDidChange`, which also picks up the new directory; without
+        // one (already covered, or the grant failed) the reload still has to run.
+        if store.isCovered(picked) || !store.grant(picked) { store.accessDidChange() }
     }
 }
 
