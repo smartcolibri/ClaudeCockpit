@@ -152,7 +152,7 @@ public struct UsageOverview: Hashable, Sendable {
         var iso = Calendar(identifier: .iso8601)
         iso.timeZone = calendar.timeZone
         let thisWeek = iso.dateInterval(of: .weekOfYear, for: now)?.start ?? calendar.startOfDay(for: now)
-        return iso.date(byAdding: .weekOfYear, value: -(weeks - 1), to: thisWeek) ?? thisWeek
+        return calendar.startOfDay(for: iso.date(byAdding: .weekOfYear, value: -(weeks - 1), to: thisWeek) ?? thisWeek)
     }
 }
 
@@ -167,9 +167,9 @@ extension UsageAggregator {
     ) -> UsageOverview {
         let todayStart = calendar.startOfDay(for: now)
         let tomorrowStart = calendar.date(byAdding: .day, value: 1, to: todayStart) ?? now
-        let yesterdayStart = calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart
-        let last30Start = calendar.date(byAdding: .day, value: -29, to: todayStart) ?? todayStart
-        let meanStart = calendar.date(byAdding: .day, value: -30, to: todayStart) ?? todayStart
+        let yesterdayStart = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -1, to: todayStart) ?? todayStart)
+        let last30Start = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -29, to: todayStart) ?? todayStart)
+        let meanStart = calendar.startOfDay(for: calendar.date(byAdding: .day, value: -30, to: todayStart) ?? todayStart)
         let activityStart = UsageOverview.activityStart(now: now, calendar: calendar)
 
         let monthStart = calendar.dateInterval(of: .month, for: now)?.start ?? todayStart
@@ -190,7 +190,9 @@ extension UsageAggregator {
         while cursor < tomorrowStart, dayStarts.count < 800 {
             dayStarts.append(cursor)
             guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
-            cursor = next
+            // Normalised: where summer time starts at midnight, adding a day to the day before
+            // lands at 01:00 and every later step would stay off the calendar's day starts.
+            cursor = calendar.startOfDay(for: next)
         }
         var costPerDay = [Date: Double](minimumCapacity: dayStarts.count)
         var familyCostPerDay: [Date: [ModelFamily: Double]] = [:]

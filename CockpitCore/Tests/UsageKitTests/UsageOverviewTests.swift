@@ -192,4 +192,33 @@ final class UsageOverviewTests: XCTestCase {
         XCTAssertEqual(filtered.overview, overview(events))
         XCTAssertEqual(filtered.overview.today.estimatedCostUSD, 8, accuracy: 1e-9)
     }
+
+    // MARK: Midnight DST
+
+    /// Where summer time starts at midnight the day begins at 01:00. Every day of the series
+    /// must still be the calendar's own start of day, or no event finds its bucket.
+    func testDaysStayAtStartOfDayWhereDSTStartsAtMidnight() {
+        for (zone, now, switchDay) in [
+            ("America/Santiago", "2025-09-20 15:00", "2025-09-07"),
+            ("America/Havana", "2026-03-20 15:00", "2026-03-08"),
+        ] {
+            var calendar = Calendar(identifier: .gregorian)
+            calendar.timeZone = TimeZone(identifier: zone)!
+            let formatter = DateFormatter()
+            formatter.timeZone = calendar.timeZone
+            formatter.locale = Locale(identifier: "en_US_POSIX")
+            formatter.dateFormat = "yyyy-MM-dd HH:mm"
+            func at(_ text: String) -> Date { formatter.date(from: text)! }
+            let events = [
+                EventFactory.make(model: "claude-sonnet-5", timestamp: at(switchDay + " 12:00"), inputTokens: 1_000_000),
+                EventFactory.make(model: "claude-sonnet-5", timestamp: at("\(String(now.prefix(10))) 10:00"), inputTokens: 1_000_000),
+            ]
+            let result = UsageAggregator.overview(events: events, now: at(now), calendar: calendar, home: home)
+            XCTAssertTrue(result.dailyCost.allSatisfy { calendar.startOfDay(for: $0.day) == $0.day }, zone)
+            XCTAssertTrue(result.last30Days.allSatisfy { calendar.startOfDay(for: $0) == $0 }, zone)
+            XCTAssertEqual(result.dailyCost.reduce(0) { $0 + $1.costUSD }, 6, accuracy: 1e-9, zone)
+            XCTAssertEqual(result.costByDayAndFamily.reduce(0) { $0 + $1.costUSD }, 6, accuracy: 1e-9, zone)
+            XCTAssertEqual(result.meanDailyCostUSD, 3.0 / 30, accuracy: 1e-9, zone)
+        }
+    }
 }

@@ -673,7 +673,9 @@ extension SessionStore {
                 sessions: sessions[label]?.count ?? 0,
                 turns: turns[label] ?? 0))
             guard let next = calendar.date(byAdding: .day, value: 1, to: cursor) else { break }
-            cursor = next
+            // Back to the day's start: where summer time begins at midnight, the step lands at
+            // 01:00 and would carry that hour into every later day.
+            cursor = calendar.startOfDay(for: next)
         }
         return result
     }
