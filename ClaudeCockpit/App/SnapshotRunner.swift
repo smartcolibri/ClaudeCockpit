@@ -1,6 +1,7 @@
 import AppKit
 import SwiftUI
 import CockpitShared
+import UsageKit
 
 /// Developer mode: when `CLAUDECOCKPIT_SNAPSHOT_DIR` is set, the app walks every
 /// section of the main window, renders it from inside the process (no screen
@@ -73,6 +74,22 @@ enum SnapshotRunner {
             }
         }
 
+        // The Usage screen scrolls: its window shot shows only the top. Render the whole
+        // dashboard at several periods (long ones switch to weekly or monthly bars), then at a
+        // narrow width where its rows stack.
+        let savedFilters = store.usageFilters
+        let ranges: [(DateRangeFilter, String)] = [(.last30Days, "30d"), (.last90Days, "90d"), (.all, "all"), (.today, "today")]
+        for (range, name) in ranges {
+            var filters = savedFilters
+            filters.range = range
+            store.usageFilters = filters
+            try? await Task.sleep(for: .seconds(3))
+            await writeUsage(store: store, width: 1100, to: dir.appendingPathComponent("usage-full-\(name).png"))
+        }
+        store.usageFilters = savedFilters
+        try? await Task.sleep(for: .seconds(3))
+        await writeUsage(store: store, width: 760, to: dir.appendingPathComponent("usage-full-narrow.png"))
+
         // The Access tab: granted folders and what they cover. Under the sandbox with no
         // grant yet, the overview shot above is the onboarding screen.
         UserDefaults.standard.set(SettingsView.Tab.access.rawValue, forKey: SettingsKey.settingsTab)
@@ -109,6 +126,28 @@ enum SnapshotRunner {
         panel.close()
 
         NSApp.terminate(nil)
+    }
+
+    /// The Usage dashboard at its full content height, hosted in a borderless window (a
+    /// titled one would be clamped to the screen's height).
+    private static func writeUsage(store: CockpitStore, width: CGFloat, to url: URL) async {
+        let root = UsageDashboard(width: width)
+            .environment(store)
+            .environment(\.locale, AppFormat.locale)
+            .background(Theme.background)
+        let host = NSHostingView(rootView: root)
+        let window = NSWindow(
+            contentRect: NSRect(x: 0, y: 0, width: width, height: 800),
+            styleMask: [.borderless], backing: .buffered, defer: false)
+        window.isReleasedWhenClosed = false
+        window.contentView = host
+        window.orderFront(nil)
+        host.layoutSubtreeIfNeeded()
+        let height = host.fittingSize.height
+        if height > 0 { window.setContentSize(NSSize(width: width, height: min(height, 8000))) }
+        try? await Task.sleep(for: .seconds(1.5))
+        write(window, to: url)
+        window.close()
     }
 
     private static func write(_ window: NSWindow, to url: URL) {
