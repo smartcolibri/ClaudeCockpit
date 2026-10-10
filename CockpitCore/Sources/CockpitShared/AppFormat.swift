@@ -25,6 +25,31 @@ public enum AppFormat {
         return Locale(identifier: formattingLocales[language] ?? "en_US")
     }
 
+    /// Formatters for ``locale`` are built once per style and reused: building one is costly
+    /// and the screens format hundreds of values per refresh. An explicit other locale (tests,
+    /// the export) gets a fresh one. Configured formatters are safe to share across threads.
+    private static let cacheLock = NSLock()
+    private static var cache: [String: Formatter] = [:]
+
+    private static func formatter<F: Formatter>(_ key: String, locale: Locale, make: () -> F) -> F {
+        guard locale == Self.locale else { return make() }
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let cached = cache[key] as? F { return cached }
+        let made = make()
+        cache[key] = made
+        return made
+    }
+
+    private static func number(_ key: String, locale: Locale, configure: (NumberFormatter) -> Void) -> NumberFormatter {
+        formatter("number|\(key)", locale: locale) { () -> NumberFormatter in
+            let f = NumberFormatter()
+            f.locale = locale
+            configure(f)
+            return f
+        }
+    }
+
     private static func isFrench(_ locale: Locale) -> Bool {
         locale.language.languageCode == .french
     }
@@ -48,19 +73,19 @@ public enum AppFormat {
     }
 
     public static func integer(_ value: Int, locale: Locale = locale) -> String {
-        let f = NumberFormatter()
-        f.locale = locale
-        f.numberStyle = .decimal
-        f.maximumFractionDigits = 0
+        let f = number("integer", locale: locale) {
+            $0.numberStyle = .decimal
+            $0.maximumFractionDigits = 0
+        }
         return f.string(from: NSNumber(value: value)) ?? String(value)
     }
 
     public static func decimal(_ value: Double, digits: Int = 1, locale: Locale = locale) -> String {
-        let f = NumberFormatter()
-        f.locale = locale
-        f.numberStyle = .decimal
-        f.minimumFractionDigits = digits
-        f.maximumFractionDigits = digits
+        let f = number("decimal|\(digits)", locale: locale) {
+            $0.numberStyle = .decimal
+            $0.minimumFractionDigits = digits
+            $0.maximumFractionDigits = digits
+        }
         return f.string(from: NSNumber(value: value)) ?? String(format: "%.\(digits)f", value)
     }
 
@@ -68,12 +93,12 @@ public enum AppFormat {
     public static func money(
         _ value: Double, currency: String = "USD", digits: Int = 2, locale: Locale = locale
     ) -> String {
-        let f = NumberFormatter()
-        f.locale = locale
-        f.numberStyle = .currency
-        f.currencyCode = currency
-        f.minimumFractionDigits = digits
-        f.maximumFractionDigits = digits
+        let f = number("money|\(currency)|\(digits)", locale: locale) {
+            $0.numberStyle = .currency
+            $0.currencyCode = currency
+            $0.minimumFractionDigits = digits
+            $0.maximumFractionDigits = digits
+        }
         return f.string(from: NSNumber(value: value)) ?? String(format: "%.2f", value)
     }
 
@@ -81,11 +106,11 @@ public enum AppFormat {
     public static func percent(
         _ value: Double, fraction: Bool = true, digits: Int = 0, locale: Locale = locale
     ) -> String {
-        let f = NumberFormatter()
-        f.locale = locale
-        f.numberStyle = .percent
-        f.minimumFractionDigits = digits
-        f.maximumFractionDigits = digits
+        let f = number("percent|\(digits)", locale: locale) {
+            $0.numberStyle = .percent
+            $0.minimumFractionDigits = digits
+            $0.maximumFractionDigits = digits
+        }
         let ratio = fraction ? value : value / 100
         return f.string(from: NSNumber(value: ratio)) ?? String(format: "%.\(digits)f%%", ratio * 100)
     }
@@ -104,7 +129,12 @@ public enum AppFormat {
     }
 
     /// `just now` · `3 min ago` · `2h ago` · `on Oct 10`; `à l'instant` · `il y a 3 min` · `le 10 oct.`
-    public static func relative(_ date: Date, now: Date = Date(), locale: Locale = locale) -> String {
+    ///
+    /// `standalone: true` drops the preposition before an older date (`Oct 10` / `10 oct.`),
+    /// for a column or after a separator, where "on Oct 10" would read as a fragment.
+    public static func relative(
+        _ date: Date, now: Date = Date(), standalone: Bool = false, locale: Locale = locale
+    ) -> String {
         let french = isFrench(locale)
         let delta = now.timeIntervalSince(date)
         if delta < 45 { return french ? "à l'instant" : "just now" }
@@ -117,6 +147,7 @@ public enum AppFormat {
             return french ? "il y a \(hours) h" : "\(hours)h ago"
         }
         let day = shortDate(date, locale: locale)
+        if standalone { return day }
         return french ? "le \(day)" : "on \(day)"
     }
 
@@ -135,15 +166,46 @@ public enum AppFormat {
         formatted(date, template: "jmm", locale: locale)
     }
 
+    /// `2:05:09 PM` / `14:05:09`
+    public static func timeWithSeconds(_ date: Date, locale: Locale = locale) -> String {
+        formatted(date, template: "jmmss", locale: locale)
+    }
+
+    /// An hour of the day as a chart label: `2 PM` / `14 h`. French keeps its shipped
+    /// `0 h`…`23 h` rather than the formatter's zero-padded `00 h`.
+    public static func hour(_ hour: Int, locale: Locale = locale) -> String {
+        if isFrench(locale) { return "\(hour) h" }
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "UTC")!
+        let date = calendar.date(from: DateComponents(year: 2026, month: 1, day: 1, hour: hour)) ?? Date()
+        let f = formatter("hour", locale: locale) { () -> DateFormatter in
+            let f = DateFormatter()
+            f.locale = locale
+            f.timeZone = calendar.timeZone
+            f.setLocalizedDateFormatFromTemplate("j")
+            return f
+        }
+        return f.string(from: date)
+    }
+
+    /// `1.5 MB` / `1,5 Mo` — file sizes.
+    public static func bytes(_ count: Int64, locale: Locale = locale) -> String {
+        count.formatted(.byteCount(style: .file).locale(locale))
+    }
+
     /// `10/10/2026, 2:05 PM` / `10/10/2026 14:05`
     public static func dateTime(_ date: Date, locale: Locale = locale) -> String {
         formatted(date, template: "ddMMyyyyjmm", locale: locale)
     }
 
     private static func formatted(_ date: Date, template: String, locale: Locale) -> String {
-        let f = DateFormatter()
-        f.locale = locale
-        f.setLocalizedDateFormatFromTemplate(template)
+        let f = formatter("date|\(template)", locale: locale) { () -> DateFormatter in
+            let f = DateFormatter()
+            f.locale = locale
+            f.timeZone = .autoupdatingCurrent
+            f.setLocalizedDateFormatFromTemplate(template)
+            return f
+        }
         return f.string(from: date)
     }
 }

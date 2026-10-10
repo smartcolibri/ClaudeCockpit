@@ -1,8 +1,8 @@
 import XCTest
 @testable import CockpitShared
 
-/// Every assertion pins its locale: the default follows the app's language and the user's
-/// region, which a test must not depend on. Expected strings that carry a locale's spacing
+/// Every assertion pins its locale: the default follows the app's language, which a test
+/// must not depend on. Expected strings that carry a locale's spacing
 /// are built from the formatter rather than typed out, so the test checks the shape, not
 /// whether the separator is a no-break space this year.
 final class AppFormatTests: XCTestCase {
@@ -69,6 +69,44 @@ final class AppFormatTests: XCTestCase {
         XCTAssertEqual(AppFormat.weekday(now, locale: fr), "sam. 10")
     }
 
+    /// 14:05:09 on Oct 10, 2026 in the machine's time zone, which the formatters use.
+    private var afternoon: Date {
+        Calendar(identifier: .gregorian).date(
+            from: DateComponents(year: 2026, month: 10, day: 10, hour: 14, minute: 5, second: 9))!
+    }
+
+    func testTimesInEnglish() {
+        XCTAssertEqual(AppFormat.time(afternoon, locale: en), "2:05\u{202F}PM")
+        XCTAssertEqual(AppFormat.timeWithSeconds(afternoon, locale: en), "2:05:09\u{202F}PM")
+        XCTAssertEqual(AppFormat.dateTime(afternoon, locale: en), "10/10/2026, 2:05\u{202F}PM")
+        XCTAssertEqual(AppFormat.hour(14, locale: en), "2\u{202F}PM")
+        XCTAssertEqual(AppFormat.hour(0, locale: en), "12\u{202F}AM")
+    }
+
+    func testTimesInFrench() {
+        XCTAssertEqual(AppFormat.time(afternoon, locale: fr), "14:05")
+        XCTAssertEqual(AppFormat.timeWithSeconds(afternoon, locale: fr), "14:05:09")
+        XCTAssertEqual(AppFormat.dateTime(afternoon, locale: fr), "10/10/2026 14:05")
+        XCTAssertEqual(AppFormat.hour(14, locale: fr), "14 h")
+        XCTAssertEqual(AppFormat.hour(0, locale: fr), "0 h")
+    }
+
+    func testBytes() {
+        XCTAssertEqual(AppFormat.bytes(1_500_000, locale: en), "1.5 MB")
+        XCTAssertEqual(AppFormat.bytes(1_500_000, locale: fr), "1,5\u{202F}Mo")
+    }
+
+    /// The app's locale reuses one formatter per style; the output is the same as a fresh one.
+    func testDefaultLocaleFormattersMatchFreshOnes() {
+        let other = AppFormat.locale.identifier == "en_US" ? fr : en
+        for _ in 0..<2 {
+            XCTAssertEqual(AppFormat.money(0.36), AppFormat.money(0.36, locale: Locale(identifier: AppFormat.locale.identifier)))
+            XCTAssertEqual(AppFormat.integer(1_234), AppFormat.integer(1_234, locale: Locale(identifier: AppFormat.locale.identifier)))
+            XCTAssertEqual(AppFormat.shortDate(now), AppFormat.shortDate(now, locale: Locale(identifier: AppFormat.locale.identifier)))
+        }
+        XCTAssertNotEqual(AppFormat.money(0.36, locale: other), AppFormat.money(0.36))
+    }
+
     func testRelativeInEnglish() {
         XCTAssertEqual(AppFormat.relative(now.addingTimeInterval(-10), now: now, locale: en), "just now")
         XCTAssertEqual(AppFormat.relative(now.addingTimeInterval(-180), now: now, locale: en), "3 min ago")
@@ -76,6 +114,9 @@ final class AppFormatTests: XCTestCase {
         let old = now.addingTimeInterval(-3 * 86_400)
         XCTAssertEqual(AppFormat.relative(old, now: now, locale: en),
                        "on \(AppFormat.shortDate(old, locale: en))")
+        XCTAssertEqual(AppFormat.relative(old, now: now, standalone: true, locale: en), "Oct 7")
+        XCTAssertEqual(AppFormat.relative(now.addingTimeInterval(-180), now: now, standalone: true, locale: en),
+                       "3 min ago")
     }
 
     func testRelativeInFrench() {
@@ -85,6 +126,7 @@ final class AppFormatTests: XCTestCase {
         let old = now.addingTimeInterval(-3 * 86_400)
         XCTAssertEqual(AppFormat.relative(old, now: now, locale: fr),
                        "le \(AppFormat.shortDate(old, locale: fr))")
+        XCTAssertEqual(AppFormat.relative(old, now: now, standalone: true, locale: fr), "7 oct.")
     }
 
     /// A language without its own wording falls back to English words, in its own numbers.
