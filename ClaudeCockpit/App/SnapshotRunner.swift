@@ -151,6 +151,8 @@ enum SnapshotRunner {
             contentRect: NSRect(x: 0, y: 0, width: width, height: 800),
             styleMask: [.borderless], backing: .buffered, defer: false)
         window.isReleasedWhenClosed = false
+        // The real pointer may rest where the window opens: no hover tooltip in the shot.
+        window.ignoresMouseEvents = true
         window.contentView = host
         window.orderFront(nil)
         host.layoutSubtreeIfNeeded()
