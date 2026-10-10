@@ -233,7 +233,7 @@ extension UsageAggregator {
             if event.timestamp < firstEvent ?? .distantFuture { firstEvent = event.timestamp }
             guard event.timestamp >= firstDay, event.timestamp < tomorrowStart else { continue }
             // `<synthetic>` placeholders and turns that used no token say nothing about a model.
-            let isModelUsage = event.model != "<synthetic>" && event.totalTokens > 0
+            let isModelUsage = event.model != UsageEvent.syntheticModel && event.totalTokens > 0
             let family = ModelFamily.detect(from: event.model)
             let cost = pricing.pricing(for: family).cost(for: event)
             let time = event.timestamp

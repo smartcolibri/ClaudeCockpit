@@ -6,7 +6,7 @@ import CockpitShared
 /// `recomputeFixedWindows`, with no observable state of its own.
 public enum UsageAggregator {
     public static func snapshot(
-        events allEvents: [UsageEvent],
+        events scannedEvents: [UsageEvent],
         sessionInfo: [String: SessionInfo] = [:],
         filters: UsageFilters = UsageFilters(),
         pricing: PricingSettings = .default,
@@ -15,6 +15,8 @@ public enum UsageAggregator {
         home: URL = ClaudePaths.realHome,
         overview precomputed: UsageOverview? = nil
     ) -> UsageSnapshot {
+        // Placeholder turns go before anything is counted, so every figure, chip and list agree.
+        let allEvents = scannedEvents.filter { !$0.isSynthetic }
         // Model/project filtering only: the previous period needs the events before the range.
         let unranged = allEvents.filter(filters.matchesModelAndProject)
 
@@ -78,10 +80,7 @@ public enum UsageAggregator {
             }
             let session = event.sessionId
             projectBuckets[projectKey, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
-            // `<synthetic>` placeholders name no model, as on the Overview.
-            if event.model != "<synthetic>" {
-                modelBuckets[event.model, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
-            }
+            modelBuckets[event.model, default: Bucket()].add(tokens: tokens, cost: cost, session: session)
             agentBuckets[event.attributionAgent ?? BreakdownDimension.directLabel, default: Bucket()]
                 .add(tokens: tokens, cost: cost, session: session)
             skillBuckets[event.attributionSkill ?? BreakdownDimension.directLabel, default: Bucket()]
@@ -133,7 +132,7 @@ public enum UsageAggregator {
             tokensTodayUnfiltered: tokensTodayUnfiltered,
             sessionsThisWeekUnfilteredTotal: sessionsThisWeekUnfiltered,
             sessionsLastWeekUnfilteredTotal: sessionsLastWeekUnfiltered,
-            overview: precomputed ?? overview(events: allEvents, pricing: pricing, now: now, calendar: calendar, home: home),
+            overview: precomputed ?? overview(events: scannedEvents, pricing: pricing, now: now, calendar: calendar, home: home),
             period: period(ranged: filtered, unranged: unranged, range: filters.range, pricing: pricing, now: now, calendar: calendar),
             availableProjects: availableProjects,
             availableModelFamilies: availableModelFamilies)

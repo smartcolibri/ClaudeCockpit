@@ -282,6 +282,6 @@ final class UsagePeriodTests: XCTestCase {
         XCTAssertEqual(byModel[0].turnCount, 3)
         XCTAssertEqual(byModel[0].estimatedCostUSD, 15, accuracy: 1e-9)
         let byProject = snap.breakdown(for: .project)
-        XCTAssertEqual(byProject.map(\.sessionCount), [3, 1])
+        XCTAssertEqual(byProject.map(\.sessionCount), [2, 1])
     }
 }

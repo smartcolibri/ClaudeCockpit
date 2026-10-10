@@ -170,4 +170,31 @@ final class UsageAggregatorTests: XCTestCase {
         XCTAssertTrue(snap.breakdown(for: .project).isEmpty)
         XCTAssertEqual(snap.costTodayUnfilteredUSD, 0, accuracy: 1e-9)
     }
+
+    /// Claude Code's zero-token `<synthetic>` placeholder turns name no model. Left in, the
+    /// family fallback files them under Sonnet: a Sonnet-only filter would list Opus sessions
+    /// at $0 and an Opus-only user would see a Sonnet chip.
+    func testSyntheticTurnsAreLeftOutOfEveryFigure() {
+        let opusOnly = [
+            EventFactory.make(sessionId: "a", model: "claude-opus-5", timestamp: TestClock.date("2026-09-23T10:00:00Z"),
+                              cwd: projA, inputTokens: 1_000_000),
+            EventFactory.make(sessionId: "a", model: "<synthetic>", timestamp: TestClock.date("2026-09-23T10:05:00Z"), cwd: projA),
+            EventFactory.make(sessionId: "b", model: "<synthetic>", timestamp: TestClock.date("2026-09-23T11:00:00Z"), cwd: projB),
+        ]
+        func snap(_ models: Set<ModelFamily>? = nil) -> UsageSnapshot {
+            UsageAggregator.snapshot(events: opusOnly, filters: UsageFilters(models: models, range: .all),
+                                     pricing: .default, now: now, calendar: calendar, home: home)
+        }
+        XCTAssertEqual(snap().availableModelFamilies, [.opus])
+        XCTAssertEqual(snap().availableProjects, [projA])
+        XCTAssertEqual(snap().totals.turnCount, 1)
+        XCTAssertEqual(snap().totals.sessionCount, 1)
+        XCTAssertEqual(snap().sessions.map(\.id), ["a"])
+        XCTAssertEqual(snap().breakdown(for: .model).map(\.label), ["claude-opus-5"])
+        XCTAssertEqual(snap().period.sessionsByWeekday.reduce(0, +), 1)
+        XCTAssertEqual(snap([.sonnet]).filteredEventCount, 0)
+        XCTAssertTrue(snap([.sonnet]).sessions.isEmpty)
+        XCTAssertTrue(UsageEvent(id: "x", sessionId: "s", model: "<synthetic>", timestamp: now, inputTokens: 0,
+                                 outputTokens: 0, cacheCreationTokens: 0, cacheReadTokens: 0, cwd: projA).isSynthetic)
+    }
 }

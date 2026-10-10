@@ -58,6 +58,15 @@ public struct UsageEvent: Identifiable, Hashable, Codable, Sendable {
         inputTokens + outputTokens + cacheCreationTokens + cacheReadTokens
     }
 
+    /// The model id Claude Code writes on placeholder turns that no model produced.
+    public static let syntheticModel = "<synthetic>"
+
+    /// A zero-token placeholder turn: it names no model, and the family fallback would file it
+    /// under Sonnet. The Usage screen leaves these out of every figure.
+    public var isSynthetic: Bool {
+        model == Self.syntheticModel && totalTokens == 0
+    }
+
     public var day: Date {
         Calendar.current.startOfDay(for: timestamp)
     }
