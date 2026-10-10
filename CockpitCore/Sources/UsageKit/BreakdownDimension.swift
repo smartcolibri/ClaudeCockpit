@@ -9,18 +9,23 @@ public struct BreakdownRow: Identifiable, Hashable, Sendable {
     public let turnCount: Int
     public let totalTokens: Int
     public let estimatedCostUSD: Double
+    /// Distinct sessions with at least one turn under this key.
+    public let sessionCount: Int
 
-    public init(label: String, turnCount: Int, totalTokens: Int, estimatedCostUSD: Double) {
+    public init(label: String, turnCount: Int, totalTokens: Int, estimatedCostUSD: Double, sessionCount: Int = 0) {
         self.label = label
         self.turnCount = turnCount
         self.totalTokens = totalTokens
         self.estimatedCostUSD = estimatedCostUSD
+        self.sessionCount = sessionCount
     }
 }
 
 /// The grouping dimensions offered by the breakdown panel.
 public enum BreakdownDimension: String, CaseIterable, Identifiable, Hashable, Sendable {
     case project = "Project"
+    /// The model id as Claude Code wrote it (`claude-opus-4-8`), finer than the family.
+    case model = "Model"
     case agent = "Agent"
     case skill = "Skill"
 
@@ -39,6 +44,7 @@ public enum BreakdownDimension: String, CaseIterable, Identifiable, Hashable, Se
     ) -> String {
         switch self {
         case .project: UsagePath.shorten(event.cwd, home: home)
+        case .model: event.model
         case .agent: event.attributionAgent ?? Self.directLabel
         case .skill: event.attributionSkill ?? Self.directLabel
         }
