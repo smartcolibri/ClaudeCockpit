@@ -138,6 +138,12 @@ final class TrackingRepositoryTests: XCTestCase {
         XCTAssertEqual(days.map(\.count), [2, 0, 0, 5, 3, 0, 4])
     }
 
+    /// Input tokens per day, so a week's savings rate is weighted like rtk's own.
+    func testDailyTotalsCarryTheFilteredInput() throws {
+        let days = try repository.dailyTotals(days: 7, now: Fixture.now)
+        XCTAssertEqual(days.map(\.inputTokens), [800, 0, 0, 5_500, 2_400, 0, 4_500])
+    }
+
     func testDailyTotalsExcludeRowsOlderThanTheWindow() throws {
         // D-10 carries 3 000 saved tokens; none of it may leak into a 7-day series.
         let days = try repository.dailyTotals(days: 7, now: Fixture.now)
