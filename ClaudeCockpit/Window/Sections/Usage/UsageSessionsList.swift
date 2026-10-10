@@ -31,7 +31,7 @@ struct UsageSessionsList: View {
                     }
                 }
                 if sessions.count > Self.maxRows {
-                    Text("\(Self.maxRows) sessions affichées sur \(FRFormat.integer(sessions.count)) — affinez la période ou le projet pour voir les autres.")
+                    Text("\(Self.maxRows) sessions affichées sur \(AppFormat.integer(sessions.count)) — affinez la période ou le projet pour voir les autres.")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -71,11 +71,11 @@ struct UsageSessionsList: View {
                 .frame(width: 180, alignment: .leading)
                 .lineLimit(1)
                 .truncationMode(.head)
-            Text(FRFormat.dateTime(session.lastSeen))
+            Text(AppFormat.dateTime(session.lastSeen))
                 .frame(width: 130, alignment: .leading)
-            Text(FRFormat.integer(session.turnCount))
+            Text(AppFormat.integer(session.turnCount))
                 .frame(width: 60, alignment: .trailing)
-            Text(FRFormat.tokens(session.totalTokens))
+            Text(AppFormat.tokens(session.totalTokens))
                 .frame(width: 90, alignment: .trailing)
             Text(money(session.estimatedCostUSD))
                 .foregroundStyle(Theme.blue)
@@ -113,33 +113,33 @@ struct SessionDetailSheet: View {
                 .foregroundStyle(Theme.slate)
                 .lineLimit(1)
                 .truncationMode(.head)
-            Text("\(FRFormat.dateTime(session.firstSeen)) → \(FRFormat.dateTime(session.lastSeen)) · \(FRFormat.duration(session.lastSeen.timeIntervalSince(session.firstSeen)))")
+            Text("\(AppFormat.dateTime(session.firstSeen)) → \(AppFormat.dateTime(session.lastSeen)) · \(AppFormat.duration(session.lastSeen.timeIntervalSince(session.firstSeen)))")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.slate)
             Divider().overlay(Theme.cardStroke)
             LazyVGrid(columns: columns, spacing: 12) {
                 StatTile(
                     label: "Tours",
-                    value: FRFormat.integer(session.turnCount),
+                    value: AppFormat.integer(session.turnCount),
                     note: session.modelsUsed.joined(separator: ", "))
                 StatTile(
                     label: "Entrée",
-                    value: FRFormat.tokens(session.inputTokens),
+                    value: AppFormat.tokens(session.inputTokens),
                     note: "tokens",
                     tint: UsagePalette.input)
                 StatTile(
                     label: "Sortie",
-                    value: FRFormat.tokens(session.outputTokens),
+                    value: AppFormat.tokens(session.outputTokens),
                     note: "tokens",
                     tint: UsagePalette.output)
                 StatTile(
                     label: "Cache lu",
-                    value: FRFormat.tokens(session.cacheReadTokens),
+                    value: AppFormat.tokens(session.cacheReadTokens),
                     note: "tokens",
                     tint: UsagePalette.cacheRead)
                 StatTile(
                     label: "Cache créé",
-                    value: FRFormat.tokens(session.cacheCreationTokens),
+                    value: AppFormat.tokens(session.cacheCreationTokens),
                     note: "tokens",
                     tint: UsagePalette.cacheCreation)
                 StatTile(

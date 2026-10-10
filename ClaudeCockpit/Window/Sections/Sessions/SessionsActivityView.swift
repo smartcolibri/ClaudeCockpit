@@ -140,7 +140,7 @@ struct SessionsActivityView: View {
                     DatePicker("Au", selection: $customEnd, displayedComponents: .date)
                     Spacer(minLength: 0)
                 }
-                .environment(\.locale, FRFormat.locale)
+                .environment(\.locale, AppFormat.locale)
                 .font(.system(size: 12))
             }
         }
@@ -179,7 +179,7 @@ struct SessionsActivityView: View {
             ActivityPlaceholder(
                 icon: "hourglass",
                 title: "Indexation en cours",
-                message: "\(FRFormat.integer(store.sessionIndex.filesDone)) transcripts sur \(FRFormat.integer(store.sessionIndex.filesTotal)) analysés.",
+                message: "\(AppFormat.integer(store.sessionIndex.filesDone)) transcripts sur \(AppFormat.integer(store.sessionIndex.filesTotal)) analysés.",
                 isBusy: true)
         } else {
             ActivityPlaceholder(
@@ -207,18 +207,18 @@ struct SessionsActivityView: View {
         LazyVGrid(columns: tileColumns, spacing: 12) {
             StatTile(
                 label: "Sessions",
-                value: FRFormat.integer(report.sessions),
+                value: AppFormat.integer(report.sessions),
                 note: range.note,
                 icon: "bubble.left.and.bubble.right")
             StatTile(
                 label: "Tours",
-                value: FRFormat.tokens(report.turns),
+                value: AppFormat.tokens(report.turns),
                 note: "tours assistant",
                 tint: Theme.violet,
                 icon: "arrow.triangle.2.circlepath")
             StatTile(
                 label: "Appels d'outils",
-                value: FRFormat.tokens(report.toolCalls),
+                value: AppFormat.tokens(report.toolCalls),
                 note: toolErrorNote(report),
                 tint: Theme.accent,
                 icon: "wrench.and.screwdriver")
@@ -234,6 +234,6 @@ struct SessionsActivityView: View {
     private func toolErrorNote(_ report: ActivityReport) -> String {
         let errors = report.tools.reduce(0) { $0 + $1.errors }
         guard errors > 0 else { return "aucune erreur" }
-        return "\(FRFormat.integer(errors)) en erreur"
+        return "\(AppFormat.integer(errors)) en erreur"
     }
 }

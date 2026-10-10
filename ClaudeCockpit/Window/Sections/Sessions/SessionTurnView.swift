@@ -66,7 +66,7 @@ struct SessionTurnView: View {
                 blockView(block)
             }
             if message.attachmentCount > 0 {
-                Label(FRFormat.plural(message.attachmentCount, "pièce jointe"),
+                Label(AppFormat.plural(message.attachmentCount, "pièce jointe"),
                       systemImage: "paperclip")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
@@ -103,14 +103,14 @@ struct SessionTurnView: View {
         HStack(spacing: 10) {
             Text(SessionsPalette.modelLabel(message.model))
             if message.totalTokens > 0 {
-                Text("\(FRFormat.tokens(message.totalTokens)) jetons")
+                Text("\(AppFormat.tokens(message.totalTokens)) jetons")
             }
             let cost = SessionsPalette.turnCost(message, pricing: store.pricing)
             if cost > 0 {
                 Text(store.money(cost, digits: 4)).foregroundStyle(Theme.blue)
             }
             if let elapsed, elapsed > 0 {
-                Text("+\(FRFormat.duration(elapsed))")
+                Text("+\(AppFormat.duration(elapsed))")
             }
             Spacer(minLength: 0)
         }
@@ -217,7 +217,7 @@ struct SessionTurnView: View {
             Image(systemName: icon).font(.system(size: 11)).foregroundStyle(tint)
             Text(role).font(.label(11)).tracking(0.6).foregroundStyle(tint)
             Spacer(minLength: 8)
-            Text(FRFormat.time(message.timestamp))
+            Text(AppFormat.time(message.timestamp))
                 .font(.data(10))
                 .foregroundStyle(Theme.mist)
         }

@@ -136,7 +136,7 @@ struct RecentEditsView: View {
                 icon: "hourglass",
                 title: store.sessionIndex.isRunning ? "Indexation en cours" : "Lecture des modifications…",
                 message: store.sessionIndex.isRunning
-                    ? "\(FRFormat.integer(store.sessionIndex.filesDone)) transcripts sur \(FRFormat.integer(store.sessionIndex.filesTotal)) analysés."
+                    ? "\(AppFormat.integer(store.sessionIndex.filesDone)) transcripts sur \(AppFormat.integer(store.sessionIndex.filesTotal)) analysés."
                     : "Recherche des fichiers écrits par les sessions indexées.",
                 isBusy: true)
         } else if groups.isEmpty {
@@ -160,7 +160,7 @@ struct RecentEditsView: View {
             HStack(alignment: .firstTextBaseline) {
                 SectionLabel(text: UsagePath.shorten(project.cwd))
                 Spacer()
-                Text("\(FRFormat.plural(project.files.count, "fichier")) · \(FRFormat.plural(project.editCount, "modification"))")
+                Text("\(AppFormat.plural(project.files.count, "fichier")) · \(AppFormat.plural(project.editCount, "modification"))")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .monospacedDigit()
@@ -200,16 +200,16 @@ struct RecentEditsView: View {
                         .help(file.path)
                 }
                 Spacer(minLength: 8)
-                Text("\(FRFormat.integer(file.edits.count)) modif.")
+                Text("\(AppFormat.integer(file.edits.count)) modif.")
                     .font(.system(size: 11))
                     .monospacedDigit()
                     .foregroundStyle(Theme.slate)
                 lineDelta(added: file.linesAdded, removed: file.linesRemoved)
-                Text(FRFormat.relative(file.lastTimestamp))
+                Text(AppFormat.relative(file.lastTimestamp))
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
                     .frame(width: 96, alignment: .trailing)
-                    .help(FRFormat.dateTime(file.lastTimestamp))
+                    .help(AppFormat.dateTime(file.lastTimestamp))
                 actions(file)
             }
             .padding(.horizontal, 12)
@@ -261,13 +261,13 @@ struct RecentEditsView: View {
                         .font(.data(10))
                         .foregroundStyle(Theme.violet)
                         .frame(width: 92, alignment: .leading)
-                    Text(FRFormat.dateTime(edit.timestamp))
+                    Text(AppFormat.dateTime(edit.timestamp))
                         .font(.system(size: 11))
                         .monospacedDigit()
                         .foregroundStyle(Theme.slate)
                     Spacer(minLength: 8)
                     lineDelta(added: edit.linesAdded, removed: edit.linesRemoved)
-                    Text(FRFormat.relative(edit.timestamp))
+                    Text(AppFormat.relative(edit.timestamp))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.mist)
                         .frame(width: 96, alignment: .trailing)
@@ -282,9 +282,9 @@ struct RecentEditsView: View {
 
     private func lineDelta(added: Int, removed: Int) -> some View {
         HStack(spacing: 6) {
-            Text("+\(FRFormat.integer(added))")
+            Text("+\(AppFormat.integer(added))")
                 .foregroundStyle(added > 0 ? Theme.emerald : Theme.mist)
-            Text("−\(FRFormat.integer(removed))")
+            Text("−\(AppFormat.integer(removed))")
                 .foregroundStyle(removed > 0 ? .red : Theme.mist)
         }
         .font(.system(size: 11, weight: .semibold))

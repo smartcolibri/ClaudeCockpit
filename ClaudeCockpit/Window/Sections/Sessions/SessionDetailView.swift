@@ -143,8 +143,8 @@ struct SessionDetailView: View {
             if let version = session.claudeVersion, !version.isEmpty {
                 Label("Claude Code \(version)", systemImage: "app.badge").lineLimit(1)
             }
-            Label(FRFormat.dateTime(session.firstTimestamp), systemImage: "calendar")
-            Label(FRFormat.duration(session.duration), systemImage: "clock")
+            Label(AppFormat.dateTime(session.firstTimestamp), systemImage: "calendar")
+            Label(AppFormat.duration(session.duration), systemImage: "clock")
             Spacer(minLength: 0)
         }
         .font(.system(size: 11))
@@ -153,10 +153,10 @@ struct SessionDetailView: View {
 
     private var statsLine: some View {
         HStack(spacing: 6) {
-            SessionChip(title: "Entrée \(FRFormat.tokens(session.inputTokens))", tint: Theme.blue)
-            SessionChip(title: "Sortie \(FRFormat.tokens(session.outputTokens))", tint: Theme.blue)
+            SessionChip(title: "Entrée \(AppFormat.tokens(session.inputTokens))", tint: Theme.blue)
+            SessionChip(title: "Sortie \(AppFormat.tokens(session.outputTokens))", tint: Theme.blue)
             SessionChip(
-                title: "Cache \(FRFormat.tokens(session.cacheReadTokens + session.cacheCreationTokens))",
+                title: "Cache \(AppFormat.tokens(session.cacheReadTokens + session.cacheCreationTokens))",
                 tint: Theme.blue)
             if let cost = store.sessionCost(session) {
                 // Estimated from the per-model tokens when the transcript carries
@@ -165,10 +165,10 @@ struct SessionDetailView: View {
                     title: cost.estimated ? "~\(store.money(cost.usd))" : store.money(cost.usd),
                     systemImage: "eurosign.circle", active: true, tint: Theme.blue)
             }
-            SessionChip(title: FRFormat.plural(session.toolCalls, "outil"), systemImage: "wrench.and.screwdriver")
+            SessionChip(title: AppFormat.plural(session.toolCalls, "outil"), systemImage: "wrench.and.screwdriver")
             if session.toolErrors > 0 {
                 SessionChip(
-                    title: FRFormat.plural(session.toolErrors, "erreur"),
+                    title: AppFormat.plural(session.toolErrors, "erreur"),
                     systemImage: "exclamationmark.triangle", active: true, tint: .red)
             }
             Spacer(minLength: 8)
@@ -509,7 +509,7 @@ struct SessionDetailView: View {
             if total > 0 {
                 // The total now counts the same set the pages return, so the two
                 // denominators match and this can honestly say "messages".
-                Text("\(FRFormat.plural(messages.count, "message")) sur \(FRFormat.integer(total))")
+                Text("\(AppFormat.plural(messages.count, "message")) sur \(AppFormat.integer(total))")
                     .font(.system(size: 10))
                     .monospacedDigit()
                     .foregroundStyle(Theme.mist)

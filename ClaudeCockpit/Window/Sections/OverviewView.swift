@@ -67,7 +67,7 @@ struct OverviewView: View {
             store.usageState.lastSuccess, store.rtkState.lastSuccess, store.skillsState.lastSuccess,
         ].compactMap { $0 }
         guard let latest = dates.max() else { return "Aucune source lue pour l'instant" }
-        return "Mis à jour \(FRFormat.relative(latest, now: now))"
+        return "Mis à jour \(AppFormat.relative(latest, now: now))"
     }
 
     // MARK: Tiles
@@ -82,20 +82,20 @@ struct OverviewView: View {
                 icon: "eurosign.circle")
             StatTile(
                 label: "Tokens du jour",
-                value: store.usage.map { FRFormat.tokens($0.tokensTodayUnfiltered) } ?? "—",
+                value: store.usage.map { AppFormat.tokens($0.tokensTodayUnfiltered) } ?? "—",
                 note: store.usage == nil ? nil : "depuis minuit, cache compris",
                 tint: Theme.blue,
                 icon: "number.circle")
             StatTile(
                 label: "Tokens économisés RTK, 7 j",
-                value: store.rtk == nil ? "—" : FRFormat.tokens(rtkWeekSaved),
-                note: store.rtk.map { "\(FRFormat.tokens($0.today.savedTokens)) aujourd'hui" },
+                value: store.rtk == nil ? "—" : AppFormat.tokens(rtkWeekSaved),
+                note: store.rtk.map { "\(AppFormat.tokens($0.today.savedTokens)) aujourd'hui" },
                 tint: Theme.emerald,
                 icon: "scissors")
             StatTile(
                 label: "Skills actifs",
-                value: store.skills.map { FRFormat.integer($0.count(kind: .skill, level: .global)) } ?? "—",
-                note: store.skills.map { "\(FRFormat.integer($0.count(kind: .skill))) au total, tous niveaux" },
+                value: store.skills.map { AppFormat.integer($0.count(kind: .skill, level: .global)) } ?? "—",
+                note: store.skills.map { "\(AppFormat.integer($0.count(kind: .skill))) au total, tous niveaux" },
                 tint: Theme.violet,
                 icon: "sparkles")
         }
@@ -160,7 +160,7 @@ struct OverviewView: View {
                     .padding(.vertical, 10)
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
-                    Text(FRFormat.integer(todaySessions.count))
+                    Text(AppFormat.integer(todaySessions.count))
                         .font(.display(26))
                         .monospacedDigit()
                         .foregroundStyle(Theme.violet)
@@ -179,7 +179,7 @@ struct OverviewView: View {
                         .foregroundStyle(Theme.ink)
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text("dernière activité \(FRFormat.relative(latest.lastTimestamp, now: sessionsAsOf))")
+                    Text("dernière activité \(AppFormat.relative(latest.lastTimestamp, now: sessionsAsOf))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -207,7 +207,7 @@ struct OverviewView: View {
         let missing = todayCost.missing
         return missing == todaySessions.count
             ? "Aucune de ces sessions n'a enregistré son coût."
-            : "Coût partiel : \(FRFormat.plural(missing, "session")) sans coût enregistré."
+            : "Coût partiel : \(AppFormat.plural(missing, "session")) sans coût enregistré."
     }
 
     private var insightsCard: some View {
@@ -275,13 +275,13 @@ struct OverviewView: View {
     private func sentence(_ insight: Insight) -> String {
         switch insight.kind {
         case .costUp(let fraction):
-            return "Le coût a augmenté de \(FRFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
+            return "Le coût a augmenté de \(AppFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
         case .costDown(let fraction):
-            return "Le coût a baissé de \(FRFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
+            return "Le coût a baissé de \(AppFormat.percent(fraction)) par rapport à la même période de la semaine précédente."
         case .unpricedModel(let model):
             return "Le modèle \(model) n'a pas de tarif dédié : le tarif Sonnet lui est appliqué."
         case .cacheHitRate(let rate):
-            return "Le cache est bien utilisé : \(FRFormat.percent(rate)) des tokens réutilisables sont relus."
+            return "Le cache est bien utilisé : \(AppFormat.percent(rate)) des tokens réutilisables sont relus."
         case .noNotableChange:
             return "Rien de notable sur la période analysée."
         }
@@ -301,7 +301,7 @@ struct OverviewView: View {
                             Capsule()
                                 .fill(day.savedTokens > 0 ? Theme.emerald : Theme.track)
                                 .frame(height: max(4, 74 * CGFloat(day.savedTokens) / CGFloat(peak)))
-                            Text(FRFormat.weekday(day.date))
+                            Text(AppFormat.weekday(day.date))
                                 .font(.system(size: 9))
                                 .foregroundStyle(Theme.slate)
                                 .lineLimit(1)
@@ -310,7 +310,7 @@ struct OverviewView: View {
                     }
                 }
                 .frame(height: 96, alignment: .bottom)
-                Text("\(FRFormat.tokens(rtkWeekSaved)) tokens évités sur sept jours")
+                Text("\(AppFormat.tokens(rtkWeekSaved)) tokens évités sur sept jours")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.slate)
             } else {

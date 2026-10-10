@@ -326,7 +326,7 @@ private struct ResourceRow: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            Text(FRFormat.relative(resource.modifiedAt))
+            Text(AppFormat.relative(resource.modifiedAt))
                 .font(.label(10))
                 .foregroundStyle(Theme.mist)
         }

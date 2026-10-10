@@ -94,7 +94,7 @@ struct SessionsPerWeekCard: View {
     ) -> some View {
         VStack(alignment: alignment, spacing: 2) {
             SectionLabel(text: label)
-            Text(FRFormat.integer(value))
+            Text(AppFormat.integer(value))
                 .font(.display(20))
                 .monospacedDigit()
                 .foregroundStyle(color)

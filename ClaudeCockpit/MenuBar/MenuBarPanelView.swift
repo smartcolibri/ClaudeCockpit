@@ -107,12 +107,12 @@ struct MenuBarPanelView: View {
                 InfoRow(label: "Coût local du jour", value: store.money(usage.costTodayUnfilteredUSD), tint: Theme.blue)
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Tokens du jour", value: FRFormat.tokens(usage.tokensTodayUnfiltered),
+                    label: "Tokens du jour", value: AppFormat.tokens(usage.tokensTodayUnfiltered),
                     note: "entrée + sortie + cache, tous modèles confondus")
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Sessions cette semaine", value: FRFormat.integer(usage.sessionsThisWeekUnfilteredTotal),
-                    note: "\(FRFormat.integer(usage.sessionsLastWeekUnfilteredTotal)) la semaine précédente")
+                    label: "Sessions cette semaine", value: AppFormat.integer(usage.sessionsThisWeekUnfilteredTotal),
+                    note: "\(AppFormat.integer(usage.sessionsLastWeekUnfilteredTotal)) la semaine précédente")
             } else if store.usageState.isUnauthorized {
                 AccessRequiredBanner(message: "ouvrez le cockpit pour autoriser la lecture de vos transcripts.")
                     .padding(.vertical, 6)
@@ -135,17 +135,17 @@ struct MenuBarPanelView: View {
             if let rtk = store.rtk {
                 let week = rtk.last7Days.reduce(0) { $0 + $1.savedTokens }
                 InfoRow(
-                    label: "Tokens économisés aujourd'hui", value: FRFormat.tokens(rtk.today.savedTokens),
+                    label: "Tokens économisés aujourd'hui", value: AppFormat.tokens(rtk.today.savedTokens),
                     tint: Theme.emerald,
-                    note: "\(FRFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) de \(FRFormat.tokens(rtk.today.inputTokens)) tokens, sur \(FRFormat.integer(rtk.today.count)) commandes filtrées")
+                    note: "\(AppFormat.percent(rtk.today.savingsPct, fraction: false, digits: 1)) de \(AppFormat.tokens(rtk.today.inputTokens)) tokens, sur \(AppFormat.integer(rtk.today.count)) commandes filtrées")
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Sur 7 jours", value: FRFormat.tokens(week),
+                    label: "Sur 7 jours", value: AppFormat.tokens(week),
                     note: "cumul des sept derniers jours")
                 Divider().opacity(0.4)
                 InfoRow(
-                    label: "Depuis l'installation", value: FRFormat.tokens(rtk.allTime.savedTokens),
-                    note: "\(FRFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) économisés sur \(FRFormat.integer(rtk.allTime.count)) commandes")
+                    label: "Depuis l'installation", value: AppFormat.tokens(rtk.allTime.savedTokens),
+                    note: "\(AppFormat.percent(rtk.allTime.savingsPct, fraction: false, digits: 1)) économisés sur \(AppFormat.integer(rtk.allTime.count)) commandes")
             } else if store.rtkState.isUnauthorized {
                 InfoRow(
                     label: "Économies rtk", value: "accès non autorisé",
@@ -214,6 +214,6 @@ struct MenuBarPanelView: View {
     /// Says when the transcripts were last read.
     private var refreshSubtitle: String {
         guard let scanned = store.usageLastScan else { return "Transcripts jamais lus" }
-        return "Transcripts lus \(FRFormat.relative(scanned, now: now))"
+        return "Transcripts lus \(AppFormat.relative(scanned, now: now))"
     }
 }

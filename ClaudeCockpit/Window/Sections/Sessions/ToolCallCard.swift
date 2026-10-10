@@ -128,7 +128,7 @@ struct ToolCallCard: View {
                 VStack(alignment: .leading, spacing: 6) {
                     MonospacedBox(text: shownOutput(result.text), tint: result.isError ? .red : Theme.ink)
                     if isCut(result.text) {
-                        Button("Afficher tout (\(FRFormat.integer(result.text.count)) caractères)") {
+                        Button("Afficher tout (\(AppFormat.integer(result.text.count)) caractères)") {
                             showFullOutput = true
                         }
                         .buttonStyle(.link)
@@ -287,7 +287,7 @@ private struct DiffBox: View {
             .frame(maxHeight: 320)
             .background(Theme.cardFill, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
             if lines.count >= SessionsPalette.diffLineCap {
-                Text("Diff tronqué à \(FRFormat.integer(SessionsPalette.diffLineCap)) lignes.")
+                Text("Diff tronqué à \(AppFormat.integer(SessionsPalette.diffLineCap)) lignes.")
                     .font(.system(size: 10))
                     .foregroundStyle(Theme.mist)
             }

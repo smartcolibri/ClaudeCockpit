@@ -172,12 +172,12 @@ private struct GeneralSettingsTab: View {
     private var indexStateLabel: String {
         let progress = store.sessionIndex
         if progress.isRunning {
-            return "\(FRFormat.integer(progress.filesDone)) / \(FRFormat.integer(progress.filesTotal)) transcripts"
+            return "\(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) transcripts"
         }
         guard let last = progress.lastRun else { return "jamais indexé" }
         // `filesDone` counts the files the last pass actually read, which is a handful
         // on an incremental tick — so it is shown against `filesTotal`, never alone.
-        return "dernier passage : \(FRFormat.integer(progress.filesDone)) / \(FRFormat.integer(progress.filesTotal)) · \(FRFormat.relative(last))"
+        return "dernier passage : \(AppFormat.integer(progress.filesDone)) / \(AppFormat.integer(progress.filesTotal)) · \(AppFormat.relative(last))"
     }
 
     private func setLaunchAtLogin(_ enabled: Bool) {
@@ -308,7 +308,7 @@ private struct ProjectsSettingsTab: View {
                         .disabled(store.isDemo)
                     Button("Rescanner") { Task { await store.refreshSkills() } }
                     Spacer()
-                    Text(FRFormat.plural(store.projectRoots.count - store.inaccessibleProjectRoots.count, "racine analysée"))
+                    Text(AppFormat.plural(store.projectRoots.count - store.inaccessibleProjectRoots.count, "racine analysée"))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -392,7 +392,7 @@ private struct AccessSettingsTab: View {
                     "Racines de projets",
                     store.inaccessibleProjectRoots.isEmpty,
                     detail: store.inaccessibleProjectRoots.isEmpty ? nil
-                        : "\(FRFormat.plural(store.inaccessibleProjectRoots.count, "racine")) non accessible(s)")
+                        : "\(AppFormat.plural(store.inaccessibleProjectRoots.count, "racine")) non accessible(s)")
             }
 
             Section("Dossier de configuration Claude") {

@@ -104,7 +104,7 @@ struct RTKView: View {
 
     private var subtitle: String {
         if databaseMissing { return "rtk non détecté" }
-        if let date = store.rtkState.lastSuccess { return "Relu \(FRFormat.relative(date))" }
+        if let date = store.rtkState.lastSuccess { return "Relu \(AppFormat.relative(date))" }
         if store.rtkState.isLoading { return "Lecture de la base…" }
         return "En attente"
     }
@@ -183,13 +183,13 @@ struct RTKView: View {
 
             VStack(alignment: .leading, spacing: 3) {
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
-                    Text(FRFormat.tokens(snapshot.allTime.savedTokens))
+                    Text(AppFormat.tokens(snapshot.allTime.savedTokens))
                         .font(.display(44, weight: .bold))
                         .monospacedDigit()
                         .foregroundStyle(Theme.ink)
                         .lineLimit(1)
                         .minimumScaleFactor(0.5)
-                    Text(FRFormat.percent(snapshot.allTime.savingsPct, fraction: false))
+                    Text(AppFormat.percent(snapshot.allTime.savingsPct, fraction: false))
                         .font(.display(20, weight: .bold))
                         .monospacedDigit()
                         .foregroundStyle(Theme.emerald)
@@ -213,15 +213,15 @@ struct RTKView: View {
                     .font(.data(11))
                     .foregroundStyle(Theme.slate)
             } else {
-                Text(FRFormat.tokens(snapshot.today.savedTokens) + " économisés")
+                Text(AppFormat.tokens(snapshot.today.savedTokens) + " économisés")
                     .font(.data(12))
                     .foregroundStyle(Theme.emerald)
                 Text("·").foregroundStyle(Theme.mist)
-                Text("\(FRFormat.integer(snapshot.today.count)) cmd")
+                Text("\(AppFormat.integer(snapshot.today.count)) cmd")
                     .font(.data(12))
                     .foregroundStyle(Theme.slate)
                 Text("·").foregroundStyle(Theme.mist)
-                Text(FRFormat.percent(snapshot.today.savingsPct, fraction: false))
+                Text(AppFormat.percent(snapshot.today.savingsPct, fraction: false))
                     .font(.data(12))
                     .foregroundStyle(Theme.savingsIntensity(snapshot.today.savingsPct))
             }
@@ -239,7 +239,7 @@ struct RTKView: View {
             HStack(alignment: .firstTextBaseline) {
                 SectionLabel(text: "Sept derniers jours")
                 Spacer()
-                Text(FRFormat.tokens(snapshot.last7Days.reduce(0) { $0 + $1.savedTokens }) + " économisés")
+                Text(AppFormat.tokens(snapshot.last7Days.reduce(0) { $0 + $1.savedTokens }) + " économisés")
                     .font(.data(11))
                     .foregroundStyle(Theme.emerald)
             }
@@ -259,23 +259,23 @@ struct RTKView: View {
             ) {
                 StatTile(
                     label: "Commandes",
-                    value: FRFormat.integer(snapshot.allTime.count),
+                    value: AppFormat.integer(snapshot.allTime.count),
                     note: "filtrées par rtk",
                     icon: "number")
                 StatTile(
                     label: "Entrée",
-                    value: FRFormat.tokens(snapshot.allTime.inputTokens),
+                    value: AppFormat.tokens(snapshot.allTime.inputTokens),
                     note: "avant filtrage",
                     icon: "arrow.down.to.line.compact")
                 StatTile(
                     label: "Sortie",
-                    value: FRFormat.tokens(snapshot.allTime.outputTokens),
+                    value: AppFormat.tokens(snapshot.allTime.outputTokens),
                     note: "après filtrage",
                     icon: "arrow.up.right")
                 StatTile(
                     label: "Économisé",
-                    value: FRFormat.tokens(snapshot.allTime.savedTokens),
-                    note: FRFormat.percent(snapshot.allTime.savingsPct, fraction: false) + " de l'entrée",
+                    value: AppFormat.tokens(snapshot.allTime.savedTokens),
+                    note: AppFormat.percent(snapshot.allTime.savingsPct, fraction: false) + " de l'entrée",
                     tint: Theme.emerald,
                     icon: "leaf.fill")
             }

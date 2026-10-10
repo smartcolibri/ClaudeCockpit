@@ -108,7 +108,7 @@ struct ResourceDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             PathRow(url: resource.url) { copyPath() }
-            Text("Modifié \(FRFormat.relative(resource.modifiedAt)) · \(Self.bytes.string(fromByteCount: resource.sizeBytes))")
+            Text("Modifié \(AppFormat.relative(resource.modifiedAt)) · \(Self.bytes.string(fromByteCount: resource.sizeBytes))")
                 .font(.label(10))
                 .foregroundStyle(Theme.mist)
         }

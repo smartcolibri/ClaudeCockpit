@@ -66,7 +66,7 @@ struct UsageView: View {
 
     private var updatedLabel: String {
         guard let date = store.usageLastScan else { return "Analyse des transcripts…" }
-        return "Mis à jour \(FRFormat.relative(date))"
+        return "Mis à jour \(AppFormat.relative(date))"
     }
 
     // MARK: Body states

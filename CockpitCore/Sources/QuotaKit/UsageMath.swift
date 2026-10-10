@@ -66,13 +66,16 @@ public enum UsageMath {
 
 /// French sentences describing a pace, ported from the ClaudeMenu panel so the wording
 /// stays in one place. The app is free to ignore these and format the numbers itself.
+/// QuotaKit is not linked into the app, so these stay French and are not localised.
 public enum PaceSentence {
+    private static let french = Locale(identifier: "fr_FR")
+
     /// "À ce rythme, le quota finira la semaine à 92 % : la marge est suffisante."
     public static func pace(_ projection: PaceProjection) -> String {
         if projection.used >= 100 {
             return "Quota épuisé. Il se recharge à la réinitialisation."
         }
-        let landing = FRFormat.percent(projection.landing, fraction: false)
+        let landing = AppFormat.percent(projection.landing, fraction: false, locale: french)
         if projection.isOver {
             return "À ce rythme, le quota atteint \(landing) : il sera épuisé avant la réinitialisation."
         }
@@ -81,9 +84,9 @@ public enum PaceSentence {
 
     /// "Rythme actuel 0,52 %/h · rythme tenable 0,71 %/h · fin de fenêtre prévue à 88 %"
     public static func rates(_ projection: PaceProjection) -> String {
-        let running = FRFormat.decimal(projection.runningPerHour, digits: 2)
-        let needed = FRFormat.decimal(projection.neededPerHour, digits: 2)
-        let landing = FRFormat.percent(projection.landing, fraction: false)
+        let running = AppFormat.decimal(projection.runningPerHour, digits: 2, locale: french)
+        let needed = AppFormat.decimal(projection.neededPerHour, digits: 2, locale: french)
+        let landing = AppFormat.percent(projection.landing, fraction: false, locale: french)
         return "Rythme actuel \(running) %/h · rythme tenable \(needed) %/h · fin de fenêtre prévue à \(landing)"
     }
 }

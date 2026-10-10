@@ -52,7 +52,7 @@ struct ModelMixCard: View {
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(row.family.color)
                         .frame(width: 9, height: 9)
-                    Text("\(row.family.label) · \(FRFormat.percent(row.costUSD / total))")
+                    Text("\(row.family.label) · \(AppFormat.percent(row.costUSD / total))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                     Spacer(minLength: 4)

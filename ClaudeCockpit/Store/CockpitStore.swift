@@ -161,9 +161,9 @@ final class CockpitStore {
     func money(_ usd: Double, digits: Int = 2) -> String {
         if currency == "EUR" {
             let rate = defaults.double(forKey: SettingsKey.eurRate)
-            return FRFormat.money(usd * (rate > 0 ? rate : 0.92), currency: "EUR", digits: digits)
+            return AppFormat.money(usd * (rate > 0 ? rate : 0.92), currency: "EUR", digits: digits)
         }
-        return FRFormat.money(usd, currency: "USD", digits: digits)
+        return AppFormat.money(usd, currency: "USD", digits: digits)
     }
 
     // MARK: Init

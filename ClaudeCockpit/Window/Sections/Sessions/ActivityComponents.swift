@@ -86,12 +86,12 @@ struct ActivityHeatmapCard: View {
     /// French weekday names, from the shared locale rather than a hardcoded list.
     private static let shortWeekdays: [String] = {
         let formatter = DateFormatter()
-        formatter.locale = FRFormat.locale
+        formatter.locale = AppFormat.locale
         return formatter.shortWeekdaySymbols
     }()
     private static let standaloneWeekdays: [String] = {
         let formatter = DateFormatter()
-        formatter.locale = FRFormat.locale
+        formatter.locale = AppFormat.locale
         return formatter.standaloneWeekdaySymbols
     }()
 
@@ -112,7 +112,7 @@ struct ActivityHeatmapCard: View {
                 SectionLabel(text: "Activité par heure")
                 Spacer()
                 if peak > 0 {
-                    Text("pic : " + FRFormat.plural(peak, "tour"))
+                    Text("pic : " + AppFormat.plural(peak, "tour"))
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                         .monospacedDigit()
@@ -201,7 +201,7 @@ struct ActivityHeatmapCard: View {
         switch turns {
         case 0: count = "aucun tour"
         case 1: count = "1 tour"
-        default: count = FRFormat.plural(turns, "tour")
+        default: count = AppFormat.plural(turns, "tour")
         }
         return "\(day) \(hour) h · \(count)"
     }
@@ -241,7 +241,7 @@ struct ActivityCostChart: View {
             SectionLabel(text: "Coût par jour")
             Spacer()
             if let day = hoveredDay {
-                Text("\(FRFormat.shortDate(day.day)) · \(money(day.costUSD))")
+                Text("\(AppFormat.shortDate(day.day)) · \(money(day.costUSD))")
                     .font(.system(size: 11, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Theme.blue)
@@ -312,7 +312,7 @@ struct ActivityCostChart: View {
     }
 
     private var summary: String {
-        days.map { "\(FRFormat.shortDate($0.day)) : \(money($0.costUSD))" }.joined(separator: ", ")
+        days.map { "\(AppFormat.shortDate($0.day)) : \(money($0.costUSD))" }.joined(separator: ", ")
     }
 }
 
@@ -337,7 +337,7 @@ struct ActivityToolMix: View {
                 SectionLabel(text: "Outils")
                 Spacer()
                 if rows.count > top.count {
-                    Text("\(FRFormat.integer(top.count)) sur \(FRFormat.integer(rows.count))")
+                    Text("\(AppFormat.integer(top.count)) sur \(AppFormat.integer(rows.count))")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.slate)
                 }
@@ -389,17 +389,17 @@ struct ActivityToolMix: View {
                 }
             }
             .frame(height: 12)
-            Text(FRFormat.integer(row.calls))
+            Text(AppFormat.integer(row.calls))
                 .font(.system(size: 11, weight: .semibold))
                 .monospacedDigit()
                 .foregroundStyle(Theme.ink)
                 .frame(width: 52, alignment: .trailing)
-            Text(row.errors > 0 ? FRFormat.percent(row.errorRate) : "")
+            Text(row.errors > 0 ? AppFormat.percent(row.errorRate) : "")
                 .font(.system(size: 11))
                 .monospacedDigit()
                 .foregroundStyle(.red)
                 .frame(width: 46, alignment: .trailing)
-                .help(row.errors > 0 ? "\(FRFormat.integer(row.errors)) appels en erreur" : "")
+                .help(row.errors > 0 ? "\(AppFormat.integer(row.errors)) appels en erreur" : "")
         }
     }
 }
@@ -461,11 +461,11 @@ struct ActivityModelShare: View {
                         .lineLimit(1)
                         .help(row.model)
                     Spacer(minLength: 4)
-                    Text(FRFormat.percent(Double(row.turns) / Double(total)))
+                    Text(AppFormat.percent(Double(row.turns) / Double(total)))
                         .font(.system(size: 11))
                         .monospacedDigit()
                         .foregroundStyle(Theme.slate)
-                    Text(FRFormat.plural(row.turns, "tour"))
+                    Text(AppFormat.plural(row.turns, "tour"))
                         .font(.system(size: 11, weight: .semibold))
                         .monospacedDigit()
                         .foregroundStyle(Theme.ink)

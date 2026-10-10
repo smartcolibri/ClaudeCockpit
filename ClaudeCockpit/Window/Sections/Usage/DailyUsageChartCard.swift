@@ -148,7 +148,7 @@ struct DailyUsageChartCard: View {
                 AxisGridLine().foregroundStyle(Theme.cardStroke)
                 AxisValueLabel {
                     if let fraction = value.as(Double.self) {
-                        Text(FRFormat.tokens(Int((fraction - Self.groupShare) / Self.groupShare * cacheMax)))
+                        Text(AppFormat.tokens(Int((fraction - Self.groupShare) / Self.groupShare * cacheMax)))
                             .foregroundStyle(UsagePalette.cacheRead)
                     }
                 }
@@ -157,7 +157,7 @@ struct DailyUsageChartCard: View {
                 AxisGridLine().foregroundStyle(Theme.cardStroke)
                 AxisValueLabel {
                     if let fraction = value.as(Double.self) {
-                        Text(FRFormat.tokens(Int(fraction / Self.groupShare * ioMax)))
+                        Text(AppFormat.tokens(Int(fraction / Self.groupShare * ioMax)))
                             .foregroundStyle(UsagePalette.input)
                     }
                 }

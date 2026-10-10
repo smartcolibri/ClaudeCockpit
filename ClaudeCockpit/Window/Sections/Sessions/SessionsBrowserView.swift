@@ -237,7 +237,7 @@ struct SessionsBrowserView: View {
                 if store.sessionsTruncated {
                     Section {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text("Affichage limité à \(FRFormat.plural(store.sessions.count, "session")) · il y en a d'autres")
+                            Text("Affichage limité à \(AppFormat.plural(store.sessions.count, "session")) · il y en a d'autres")
                                 .font(.system(size: 11))
                                 .foregroundStyle(Theme.slate)
                             Button("Afficher 200 sessions de plus") {
@@ -305,7 +305,7 @@ struct SessionsBrowserView: View {
     private func dayTitle(_ day: Date, calendar: Calendar) -> String {
         if calendar.isDateInToday(day) { return "Aujourd'hui" }
         if calendar.isDateInYesterday(day) { return "Hier" }
-        return FRFormat.shortDate(day)
+        return AppFormat.shortDate(day)
     }
 
     private var projectGroups: [SessionGroupRows] {
@@ -332,7 +332,7 @@ struct SessionsBrowserView: View {
                 Text("Indexation des transcripts…")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.ink)
-                Text("\(FRFormat.plural(store.sessionIndex.filesDone, "fichier")) sur \(store.sessionIndex.filesTotal). La liste se remplit au fur et à mesure.")
+                Text("\(AppFormat.plural(store.sessionIndex.filesDone, "fichier")) sur \(store.sessionIndex.filesTotal). La liste se remplit au fur et à mesure.")
                     .font(.system(size: 12))
                     .foregroundStyle(Theme.slate)
                     .multilineTextAlignment(.center)
@@ -499,11 +499,11 @@ private struct SessionRowView: View {
 
     private var statsLine: some View {
         HStack(spacing: 8) {
-            Text(FRFormat.time(session.firstTimestamp))
-            Text(FRFormat.duration(session.duration))
-            Text(FRFormat.plural(session.userTurns + session.assistantTurns, "tour"))
+            Text(AppFormat.time(session.firstTimestamp))
+            Text(AppFormat.duration(session.duration))
+            Text(AppFormat.plural(session.userTurns + session.assistantTurns, "tour"))
             if session.toolErrors > 0 {
-                Text("\(FRFormat.integer(session.toolErrors)) err.").foregroundStyle(.red)
+                Text("\(AppFormat.integer(session.toolErrors)) err.").foregroundStyle(.red)
             }
             Spacer(minLength: 4)
             // `~` marks a cost priced from tokens rather than read from the

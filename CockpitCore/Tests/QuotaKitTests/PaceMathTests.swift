@@ -119,12 +119,12 @@ final class PaceMathTests: XCTestCase {
         let comfortable = try XCTUnwrap(
             UsageMath.projection(for: weekMeter(utilization: 40, hoursUntilReset: 84), now: now))
         XCTAssertEqual(PaceSentence.pace(comfortable),
-                       "À ce rythme, le quota finira la semaine à 80 % : la marge est suffisante.")
+                       "À ce rythme, le quota finira la semaine à 80\u{A0}% : la marge est suffisante.")
 
         let over = try XCTUnwrap(
             UsageMath.projection(for: weekMeter(utilization: 90, hoursUntilReset: 56), now: now))
         XCTAssertEqual(PaceSentence.pace(over),
-                       "À ce rythme, le quota atteint 135 % : il sera épuisé avant la réinitialisation.")
+                       "À ce rythme, le quota atteint 135\u{A0}% : il sera épuisé avant la réinitialisation.")
         XCTAssertTrue(PaceSentence.rates(over).hasPrefix("Rythme actuel 0,80 %/h"))
     }
 }
