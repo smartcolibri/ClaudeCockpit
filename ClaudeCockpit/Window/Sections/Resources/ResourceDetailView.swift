@@ -54,26 +54,26 @@ struct ResourceDetailView: View {
         // watcher reloads the pane; the identity itself never changes here.
         .task(id: resource.modifiedAt) { await load() }
         .alert(
-            "Écraser la ressource existante ?",
+            "Replace the Existing Resource?",
             isPresented: Binding(get: { overwrite != nil }, set: { if !$0 { overwrite = nil } }),
             presenting: overwrite
         ) { request in
-            Button("Écraser", role: .destructive) {
+            Button("Replace", role: .destructive) {
                 overwrite = nil
                 transfer(request.mode, to: request.level, overwriteExisting: true)
             }
-            Button("Annuler", role: .cancel) { overwrite = nil }
+            Button("Cancel", role: .cancel) { overwrite = nil }
         } message: { request in
-            Text("« \(resource.name) » existe déjà dans \(request.level.label) :\n\(request.existing.path)\n\nL'élément écrasé est sauvegardé avant d'être remplacé.")
+            Text("“\(resource.name)” already exists in \(request.level.label):\n\(request.existing.path)\n\nThe replaced item is backed up before it is overwritten.")
         }
-        .alert("Supprimer « \(resource.name) » ?", isPresented: $confirmDelete) {
-            Button("Supprimer", role: .destructive) { performDelete() }
-            Button("Annuler", role: .cancel) { }
+        .alert("Delete “\(resource.name)”?", isPresented: $confirmDelete) {
+            Button("Delete", role: .destructive) { performDelete() }
+            Button("Cancel", role: .cancel) { }
         } message: {
-            Text("Une sauvegarde est créée dans \(store.paths.backupsDir.path) avant la suppression.")
+            Text("A backup is created in \(store.paths.backupsDir.path) before deleting.")
         }
         .alert(
-            "Erreur",
+            "Error",
             isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
         ) {
             Button("OK", role: .cancel) { errorMessage = nil }
@@ -93,10 +93,10 @@ struct ResourceDetailView: View {
                     .lineLimit(2)
                 LevelTag(label: resource.level.label)
                 if resource.isSymlink {
-                    Label("Lien symbolique", systemImage: "link")
+                    Label("Symbolic Link", systemImage: "link")
                         .font(.label(10))
                         .foregroundStyle(Theme.slate)
-                        .help("Copie, déplacement et suppression désactivés : modifiez directement la cible du lien.")
+                        .help("Copy, move and delete are disabled: edit the link's target directly.")
                 }
                 Spacer(minLength: 0)
                 if busy { ProgressView().controlSize(.small) }
@@ -108,7 +108,7 @@ struct ResourceDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             PathRow(url: resource.url) { copyPath() }
-            Text("Modifié \(AppFormat.relative(resource.modifiedAt)) · \(Self.bytes.string(fromByteCount: resource.sizeBytes))")
+            Text("Modified \(AppFormat.relative(resource.modifiedAt)) · \(Self.bytes.string(fromByteCount: resource.sizeBytes))")
                 .font(.label(10))
                 .foregroundStyle(Theme.mist)
         }
@@ -121,7 +121,7 @@ struct ResourceDetailView: View {
 
     private var actionBar: some View {
         HStack(spacing: 10) {
-            Menu("Copier vers…") {
+            Menu("Copy To…") {
                 ForEach(otherLevels, id: \.id) { level in
                     Button(level.label) { transfer(.copy, to: level) }
                 }
@@ -130,7 +130,7 @@ struct ResourceDetailView: View {
             .fixedSize()
             .disabled(otherLevels.isEmpty || busy || resource.isSymlink || store.isDemo)
 
-            Menu("Déplacer vers…") {
+            Menu("Move To…") {
                 ForEach(otherLevels, id: \.id) { level in
                     Button(level.label) { transfer(.move, to: level) }
                 }
@@ -144,14 +144,14 @@ struct ResourceDetailView: View {
             Button {
                 store.reveal(resource)
             } label: {
-                Label("Révéler dans le Finder", systemImage: "folder")
+                Label("Show in Finder", systemImage: "folder")
             }
             .controlSize(.small)
 
             Button(role: .destructive) {
                 confirmDelete = true
             } label: {
-                Label("Supprimer", systemImage: "trash")
+                Label("Delete", systemImage: "trash")
             }
             .controlSize(.small)
             .disabled(busy || resource.isSymlink || store.isDemo)
@@ -205,7 +205,7 @@ struct ResourceDetailView: View {
     private func copyPath() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(resource.url.path, forType: .string)
-        store.notice = "Chemin copié dans le presse-papiers"
+        store.notice = String(localized: "Path copied to the clipboard")
     }
 }
 
@@ -237,20 +237,20 @@ struct PluginDetailView: View {
         .background(Theme.background)
         .task { await load() }
         .alert(
-            "Écraser la skill existante ?",
+            "Replace the Existing Skill?",
             isPresented: Binding(get: { overwrite != nil }, set: { if !$0 { overwrite = nil } }),
             presenting: overwrite
         ) { request in
-            Button("Écraser", role: .destructive) {
+            Button("Replace", role: .destructive) {
                 overwrite = nil
                 performImport(to: request.level, overwriteExisting: true)
             }
-            Button("Annuler", role: .cancel) { overwrite = nil }
+            Button("Cancel", role: .cancel) { overwrite = nil }
         } message: { request in
-            Text("« \(plugin.name) » existe déjà dans \(request.level.label) :\n\(request.existing.path)\n\nL'élément écrasé est sauvegardé avant d'être remplacé.")
+            Text("“\(plugin.name)” already exists in \(request.level.label):\n\(request.existing.path)\n\nThe replaced item is backed up before it is overwritten.")
         }
         .alert(
-            "Erreur",
+            "Error",
             isPresented: Binding(get: { errorMessage != nil }, set: { if !$0 { errorMessage = nil } })
         ) {
             Button("OK", role: .cancel) { errorMessage = nil }
@@ -266,7 +266,7 @@ struct PluginDetailView: View {
                     .font(.display(18))
                     .foregroundStyle(Theme.ink)
                     .lineLimit(2)
-                LevelTag(label: "Plugin")
+                LevelTag(label: String(localized: "Plugin"))
                 Spacer(minLength: 0)
                 if busy { ProgressView().controlSize(.small) }
             }
@@ -277,7 +277,7 @@ struct PluginDetailView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             PathRow(url: plugin.url) { copyPath() }
-            Text("\(plugin.org) · version \(plugin.version) · lecture seule")
+            Text("\(plugin.org) · version \(plugin.version) · read-only")
                 .font(.label(10))
                 .foregroundStyle(Theme.mist)
         }
@@ -288,7 +288,7 @@ struct PluginDetailView: View {
 
     private var actionBar: some View {
         HStack(spacing: 10) {
-            Menu("Importer vers…") {
+            Menu("Import To…") {
                 ForEach(levels, id: \.id) { level in
                     Button(level.label) { performImport(to: level) }
                 }
@@ -302,7 +302,7 @@ struct PluginDetailView: View {
             Button {
                 store.reveal(plugin)
             } label: {
-                Label("Révéler dans le Finder", systemImage: "folder")
+                Label("Show in Finder", systemImage: "folder")
             }
             .controlSize(.small)
         }
@@ -340,7 +340,7 @@ struct PluginDetailView: View {
     private func copyPath() {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(plugin.url.path, forType: .string)
-        store.notice = "Chemin copié dans le presse-papiers"
+        store.notice = String(localized: "Path copied to the clipboard")
     }
 }
 
@@ -377,8 +377,8 @@ private struct PathRow: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(Theme.mist)
-            .help("Copier le chemin")
-            .accessibilityLabel("Copier le chemin")
+            .help("Copy the Path")
+            .accessibilityLabel("Copy the path")
         }
     }
 }
@@ -412,7 +412,7 @@ struct MarkdownContentView: View {
                 } else {
                     HStack(spacing: 8) {
                         ProgressView().controlSize(.small)
-                        Text("Lecture du fichier…").font(.system(size: 12)).foregroundStyle(Theme.slate)
+                        Text("Reading the file…").font(.system(size: 12)).foregroundStyle(Theme.slate)
                     }
                 }
             }
