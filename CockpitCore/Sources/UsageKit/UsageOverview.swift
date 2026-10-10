@@ -59,7 +59,7 @@ public struct UsageOverview: Hashable, Sendable {
     /// The project that spent the most on Opus over the last 30 days, `~`-shortened.
     public let topOpusProject: String?
     /// Cache read tokens over everything sent as prompt (cache read + cache write + input) for
-    /// the last 30 days. Unlike `InsightEngine`'s ratio, cache writes count: Claude Code writes
+    /// the last 30 days. Cache writes count: Claude Code writes
     /// its cache on nearly every turn, and without them any account reads close to 100 %.
     /// `nil` when nothing was sent.
     public let cacheHitRate: Double?
