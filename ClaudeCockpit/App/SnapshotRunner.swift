@@ -83,11 +83,11 @@ enum SnapshotRunner {
             var filters = savedFilters
             filters.range = range
             store.usageFilters = filters
-            try? await Task.sleep(for: .seconds(3))
+            await waitForUsage(store, filters: filters)
             await writeUsage(store: store, width: 1100, to: dir.appendingPathComponent("usage-full-\(name).png"))
         }
         store.usageFilters = savedFilters
-        try? await Task.sleep(for: .seconds(3))
+        await waitForUsage(store, filters: savedFilters)
         await writeUsage(store: store, width: 760, to: dir.appendingPathComponent("usage-full-narrow.png"))
 
         // The Access tab: granted folders and what they cover. Under the sandbox with no
@@ -126,6 +126,17 @@ enum SnapshotRunner {
         panel.close()
 
         NSApp.terminate(nil)
+    }
+
+    /// Waits until the store's snapshot reflects `filters`, a recompute that can take longer
+    /// than a fixed pause on a large archive; gives up after 30 seconds.
+    private static func waitForUsage(_ store: CockpitStore, filters: UsageFilters) async {
+        let deadline = Date().addingTimeInterval(30)
+        while store.usage?.filters != filters, Date() < deadline {
+            try? await Task.sleep(for: .milliseconds(200))
+        }
+        // Let SwiftUI lay the new figures out before rendering them.
+        try? await Task.sleep(for: .milliseconds(500))
     }
 
     /// The Usage dashboard at its full content height, hosted in a borderless window (a
