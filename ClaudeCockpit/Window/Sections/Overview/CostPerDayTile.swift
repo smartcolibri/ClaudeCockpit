@@ -29,10 +29,10 @@ struct CostPerDayTile: View {
     }
 
     private func content(_ overview: UsageOverview) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 10) {
-                Text(verbatim: store.money(overview.cost30DaysUSD))
-                    .font(.system(size: 13, weight: .semibold))
+                Text(String(localized: "\(store.money(overview.cost30DaysUSD)) over 30 days", locale: AppFormat.locale))
+                    .font(.system(size: 12, weight: .semibold))
                     .monospacedDigit()
                     .foregroundStyle(Theme.ink)
                 Spacer(minLength: 0)

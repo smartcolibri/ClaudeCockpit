@@ -119,7 +119,7 @@ extension Recommendation {
             // 60 is `SessionHealthTile.lowScore`, written out so the count stays the only number.
             String(localized: "\(count) sessions scored below 60 today.", locale: AppFormat.locale)
         case .peakHour(let hour, let share):
-            String(localized: "Usage peaks between \(hour) h and \(hour + 1) h: \(AppFormat.percent(share)) of today's cost.", locale: AppFormat.locale)
+            String(localized: "Usage peaks between \(AppFormat.hour(hour)) and \(AppFormat.hour((hour + 1) % 24)): \(AppFormat.percent(share)) of today's cost.", locale: AppFormat.locale)
         case .lowCacheRate(let rate):
             String(localized: "Only \(AppFormat.percent(rate)) of reusable tokens come from the cache: long sessions that keep their context reuse more.", locale: AppFormat.locale)
         case .goodCacheRate(let rate):

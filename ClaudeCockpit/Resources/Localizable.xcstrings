@@ -241,6 +241,22 @@
         }
       }
     },
+    "%@ over 30 days" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ over 30 days"
+          }
+        },
+        "fr" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sur 30 j"
+          }
+        }
+      }
+    },
     "%@ saved" : {
       "localizations" : {
         "en" : {
@@ -757,22 +773,6 @@
                 }
               }
             }
-          }
-        }
-      }
-    },
-    "%lld h – %lld h" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld:00–%2$lld:00"
-          }
-        },
-        "fr" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "%1$lld h – %2$lld h"
           }
         }
       }
@@ -8929,18 +8929,18 @@
         }
       }
     },
-    "Usage peaks between %lld h and %lld h: %@ of today's cost." : {
+    "Usage peaks between %@ and %@: %@ of today's cost." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Usage peaks between %1$lld:00 and %2$lld:00: %3$@ of today's cost."
+            "value" : "Usage peaks between %1$@ and %2$@: %3$@ of today's cost."
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Pic d'usage entre %1$lld h et %2$lld h : %3$@ du coût du jour."
+            "value" : "Pic d'usage entre %1$@ et %2$@ : %3$@ du coût du jour."
           }
         }
       }

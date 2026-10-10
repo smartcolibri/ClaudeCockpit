@@ -54,7 +54,7 @@ struct HourlyTile: View {
                     .foregroundStyle(Theme.slate.opacity(0.25))
                     .annotation(position: .top, spacing: 0, overflowResolution: .init(x: .fit(to: .chart), y: .fit(to: .chart))) {
                         ChartTooltip(lines: [
-                            String(localized: "\(hour) h – \(hour + 1) h", locale: AppFormat.locale),
+                            "\(AppFormat.hour(hour)) – \(AppFormat.hour((hour + 1) % 24))",
                             String(localized: "Today \(store.money(overview.hourlyToday[hour].estimatedCostUSD))", locale: AppFormat.locale),
                             String(localized: "Yesterday \(store.money(overview.hourlyYesterday[hour].estimatedCostUSD))", locale: AppFormat.locale),
                         ])
@@ -66,7 +66,7 @@ struct HourlyTile: View {
             AxisMarks(values: [0, 6, 12, 18]) { value in
                 AxisValueLabel {
                     if let hour = value.as(Int.self) {
-                        Text(String(localized: "\(hour) h", locale: AppFormat.locale)).foregroundStyle(Theme.slate)
+                        Text(verbatim: AppFormat.hour(hour)).foregroundStyle(Theme.slate)
                     }
                 }
             }
